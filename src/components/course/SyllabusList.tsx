@@ -1,0 +1,52 @@
+"use client";
+
+import { Lock, Zap } from "lucide-react";
+import type { Course } from "@/types";
+import { AccordionItem } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { useProgress } from "@/lib/hooks/useProgress";
+
+export function SyllabusList({ course }: { course: Course }) {
+  const { isWeekUnlocked } = useProgress();
+  const other = course.id === "mern" ? "Python" : "MERN Stack";
+
+  return (
+    <div className="rounded-xl border border-default bg-surface px-5">
+      {course.weeks.map((week, index) => {
+        const unlocked = isWeekUnlocked(course.id, week.id);
+        return (
+          <AccordionItem
+            defaultOpen={index === 0}
+            key={week.id}
+            title={
+              <span className="flex flex-wrap items-center gap-3">
+                <span className="font-display text-lg font-bold">{week.title}</span>
+                {week.isShared ? (
+                  <Badge title="This module is identical across MERN Stack and Python courses" variant="course">
+                    <Zap className="size-3" aria-hidden />
+                    Shared with {other}
+                  </Badge>
+                ) : null}
+                {!unlocked ? <Lock className="size-4 animate-lock-pulse text-[var(--amber-600)]" aria-hidden /> : null}
+              </span>
+            }
+          >
+            <div className={!unlocked && index > 0 ? "blur-[1px] opacity-60" : ""}>
+              {week.days.map((day) => (
+                <div className="border-t border-muted py-3 first:border-t-0" key={day.id}>
+                  <p className="text-sm font-bold text-foreground">{day.label}: {day.title}</p>
+                  <ul className="mt-2 grid gap-1 text-sm text-secondary">
+                    {day.subModules.map((module) => (
+                      <li key={module.id}>{module.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {!unlocked && index > 0 ? <p className="mt-3 text-sm font-semibold text-xp">Complete Week {index} to unlock</p> : null}
+          </AccordionItem>
+        );
+      })}
+    </div>
+  );
+}
