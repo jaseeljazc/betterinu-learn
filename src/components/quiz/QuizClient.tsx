@@ -85,7 +85,7 @@ export function QuizClient({
       <header className="rounded-xl border border-default bg-surface p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Badge variant="course">{course.title}</Badge>
+            <Badge variant="secondary" className="bg-[#1a4031] text-white">{course.title}</Badge>
             <h1 className="mt-3 font-display text-3xl font-bold">{moduleTitle}</h1>
           </div>
           <Link href={`/course/${course.id}/learn`} className="text-secondary hover:text-foreground transition-colors p-2 -mr-2" title="Exit Quiz">

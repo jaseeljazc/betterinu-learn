@@ -58,7 +58,7 @@ export function SubModuleItem({
   onClick={() => markSubModuleComplete(module.id)}
   size="sm"
   type="button"
-  variant={complete ? "success" : "secondary"}
+  variant={complete ? "secondary" : "secondary"}
 >
   <span
     className={`flex items-center gap-2 rounded-md px-5 py-2 ${

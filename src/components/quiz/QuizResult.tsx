@@ -20,12 +20,12 @@ export function QuizResult({
 
   return (
     <div className="space-y-5 rounded-xl border border-default bg-surface p-6 text-center">
-      <Badge variant={passed ? "success" : "danger"}>{passed ? "Passed" : "Needs retry"}</Badge>
+      <Badge variant={passed ? "secondary" : "destructive"} className={passed ? "bg-emerald-100 text-emerald-800" : ""}>{passed ? "Passed" : "Needs retry"}</Badge>
       <p className="font-display text-6xl font-bold">{score} / {questions.length}</p>
       <p className="text-secondary">
         {passed ? "You passed. Great job!" : `Try again. You need ${passingScore} correct to pass.`}
       </p>
-      <Badge variant="xp">+{passed ? 150 : 30} XP</Badge>
+      <Badge variant="secondary" className="bg-amber-100 text-amber-800">+{passed ? 150 : 30} XP</Badge>
       <Accordion type="multiple" className="rounded-xl border border-muted px-4 text-left w-full">
         {questions.map((question: any, index: number) => {
           const userAnswer = selected[question.id] || "";
@@ -49,7 +49,7 @@ export function QuizResult({
             >
               <AccordionTrigger className="hover:no-underline">
                 <span className="flex items-center gap-3">
-                  <Badge variant={correct ? "success" : "danger"}>{correct ? "Correct" : "Review"}</Badge>
+                  <Badge variant={correct ? "secondary" : "destructive"} className={correct ? "bg-emerald-100 text-emerald-800" : ""}>{correct ? "Correct" : "Review"}</Badge>
                   Question {index + 1}
                 </span>
               </AccordionTrigger>

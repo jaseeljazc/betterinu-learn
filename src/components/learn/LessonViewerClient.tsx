@@ -85,7 +85,7 @@ export function LessonViewerClient({
 
       <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
         <Badge>{completeCount} of {modules.length} sub-modules completed</Badge>
-        {complete ? <Badge variant="success"><CheckCircle2 className="size-3" aria-hidden /> Complete</Badge> : null}
+        {complete ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-800"><CheckCircle2 className="size-3" aria-hidden /> Complete</Badge> : null}
       </div>
 
       <div className="space-y-8">
@@ -194,8 +194,8 @@ export function LessonViewerClient({
               onClick={() => markSubModuleComplete(subModule.id, day.id, day.subModules.map(m => m.id))} 
               type="button" 
               size="default"
-              className="shadow-md gap-2 font-bold min-w-[180px]"
-              variant={complete ? "success" : "primary"}
+              className={`shadow-md gap-2 font-bold min-w-[180px] ${complete ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
+              variant={complete ? "default" : "default"}
             >
               {complete ? <CheckCircle2 className="size-5" /> : null}
               {complete ? "Completed" : "Mark Complete"}
