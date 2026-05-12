@@ -1,4 +1,4 @@
-export type CourseId = "mern" | "python" | "hr" | "marketing";
+export type CourseId = string;
 
 export interface Course {
   id: CourseId;
@@ -8,7 +8,7 @@ export interface Course {
   instructor: string;
   duration: string;
   totalModules: number;
-  level: "Beginner" | "Intermediate" | "Advanced";
+  level: string;
   color: string;
   icon: string;
   weeks: Week[];
@@ -33,16 +33,34 @@ export interface Day {
   isCompleted: boolean;
 }
 
+export type MixedBlock = 
+  | { kind: "video"; title: string; videoUrl: string; description?: string }
+  | { kind: "doc"; title: string; content: string };
+
+// ── Multi-section lesson types ────────────────────────────────
+export type LessonSectionType = "rich_text" | "image" | "video" | "pdf" | "link";
+
+export type LessonSection =
+  | { id: string; type: "rich_text"; content: string }
+  | { id: string; type: "image"; url: string; caption?: string; size?: "sm" | "md" | "lg" | "full" }
+  | { id: string; type: "video"; url: string; title?: string }
+  | { id: string; type: "pdf"; url: string; filename?: string }
+  | { id: string; type: "link"; title: string; url: string; description?: string };
+
 export interface SubModule {
   id: string;
   title: string;
-  type: "doc" | "video" | "exercise" | "resource";
+  type: "doc" | "video" | "exercise" | "resource" | "quiz" | "mixed" | "assignment";
   duration: string;
-  content?: DocContent;
+  content?: any; // String for rich HTML, or DocContent for legacy structure
   videoUrl?: string;
   description?: string;
   externalLinks?: ExternalLink[];
   isCompleted: boolean;
+  blocks?: MixedBlock[]; // for mixed type
+  quizData?: any;
+  attachedFiles?: { url: string; name: string; type: string }[];
+  sections?: LessonSection[]; // new multi-section content
 }
 
 export interface DocContent {

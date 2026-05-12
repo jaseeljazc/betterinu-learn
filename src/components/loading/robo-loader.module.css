@@ -1,0 +1,130 @@
+@keyframes roboBob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/*
+ * Single blink per long cycle (~human rhythm: open several seconds, then one blink).
+ * Close: quick (~120–160ms) with denser stops near “shut” (lid acceleration).
+ * Hold shut: brief (~40–60ms).
+ * Open: slower than close + tiny overshoot, then settle (like real upper lid).
+ */
+@keyframes roboBlink {
+  0%,
+  71.5% {
+    transform: scaleY(1);
+  }
+  71.9% {
+    transform: scaleY(0.9);
+  }
+  72.35% {
+    transform: scaleY(0.55);
+  }
+  72.75% {
+    transform: scaleY(0.22);
+  }
+  73.15% {
+    transform: scaleY(0.07);
+  }
+  73.55% {
+    transform: scaleY(0.018);
+  }
+  74.1% {
+    transform: scaleY(0.012);
+  }
+  74.85% {
+    transform: scaleY(0.012);
+  }
+  75.35% {
+    transform: scaleY(0.28);
+  }
+  75.95% {
+    transform: scaleY(0.72);
+  }
+  76.55% {
+    transform: scaleY(0.96);
+  }
+  77.05% {
+    transform: scaleY(1.035);
+  }
+  77.55%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes roboAntenna {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.svg {
+  display: block;
+  height: auto;
+  color: var(--primary);
+  animation: roboBob 2.35s ease-in-out infinite;
+  will-change: transform;
+}
+
+.eye {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: roboBlink 2.25s linear infinite;
+}
+
+/* ~25–40ms between lids in humans; tiny offset reads natural, not robotic sync */
+.eyeDelayed {
+  animation-delay: 36ms;
+}
+
+.antenna {
+  animation: roboAntenna 1.15s ease-in-out infinite;
+  transform-origin: 33.8424px 3.03376px;
+}
+
+.fillShell {
+  fill: currentColor;
+  opacity: 0.92;
+}
+
+.fillFace {
+  fill: var(--background);
+}
+
+.strokeFace {
+  fill: none;
+  stroke: var(--primary);
+}
+
+.fillEye {
+  fill: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svg {
+    animation: none;
+  }
+
+  .eye {
+    animation: none;
+  }
+
+  .eyeDelayed {
+    animation: none;
+  }
+
+  .antenna {
+    animation: none;
+    opacity: 1;
+  }
+}

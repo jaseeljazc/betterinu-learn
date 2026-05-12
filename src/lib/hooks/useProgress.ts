@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { courses, getCourse } from "@/lib/data/courses";
-import type { CourseId, QuizResult, StudentProgress } from "@/types";
+import type { Course, CourseId, QuizResult, StudentProgress } from "@/types";
 import { notify, todayKey } from "@/lib/utils";
 
-const storageKey = "learnforge-progress";
+const storageKey = "betterinu-progress";
 
 const initialProgress: StudentProgress = {
   enrolledCourses: [],
@@ -63,17 +63,21 @@ export function useProgress() {
   }, [isHydrated, progress]);
 
   const enrollInCourse = useCallback((courseId: CourseId) => {
+    let shouldNotify = false;
     setProgress((current) => {
       if (current.enrolledCourses.includes(courseId)) {
         return current;
       }
-
-      notify("Course added to your dashboard.");
+      shouldNotify = true;
       return { ...current, enrolledCourses: [...current.enrolledCourses, courseId] };
     });
+    if (shouldNotify) {
+      notify("Course added to your dashboard.");
+    }
   }, []);
 
-  const markSubModuleComplete = useCallback((subModuleId: string) => {
+  const markSubModuleComplete = useCallback((subModuleId: string, dayId?: string, daySubModulesIds?: string[]) => {
+    let notifications: string[] = [];
     setProgress((current) => {
       if (current.completedSubModules.includes(subModuleId)) {
         return current;
@@ -84,27 +88,41 @@ export function useProgress() {
         completedSubModules: [...current.completedSubModules, subModuleId],
         xp: current.xp + 10,
       });
+      notifications.push("Lesson completed. +10 XP");
 
-      for (const course of courses) {
-        for (const week of course.weeks) {
-          for (const day of week.days) {
-            const belongsToDay = day.subModules.some((item) => item.id === subModuleId);
-            const allDone = day.subModules.every((item) => next.completedSubModules.includes(item.id));
-            if (belongsToDay && allDone && !next.completedDays.includes(day.id)) {
-              next = {
-                ...next,
-                completedDays: [...next.completedDays, day.id],
-                xp: next.xp + 25,
-              };
-              notify("Day complete. +25 XP");
+      if (dayId && daySubModulesIds) {
+        const allDone = daySubModulesIds.every((id) => next.completedSubModules.includes(id));
+        if (allDone && !next.completedDays.includes(dayId)) {
+          next = {
+            ...next,
+            completedDays: [...next.completedDays, dayId],
+            xp: next.xp + 25,
+          };
+          notifications.push("Day complete. +25 XP");
+        }
+      } else {
+        // Fallback for hardcoded courses if day info not provided
+        for (const course of courses) {
+          for (const week of course.weeks) {
+            for (const day of week.days) {
+              const belongsToDay = day.subModules.some((item) => item.id === subModuleId);
+              const allDone = day.subModules.every((item) => next.completedSubModules.includes(item.id));
+              if (belongsToDay && allDone && !next.completedDays.includes(day.id)) {
+                next = {
+                  ...next,
+                  completedDays: [...next.completedDays, day.id],
+                  xp: next.xp + 25,
+                };
+                notifications.push("Day complete. +25 XP");
+              }
             }
           }
         }
       }
 
-      notify("Sub-module completed. +10 XP");
       return next;
     });
+    notifications.forEach(msg => notify(msg));
   }, []);
 
   const markDayComplete = useCallback((dayId: string) => {
@@ -127,7 +145,6 @@ export function useProgress() {
       const completedWeeks = result.passed ? unique([...current.completedWeeks, `${result.courseId}:${result.weekId}`]) : current.completedWeeks;
       const xp = current.xp + (result.passed ? 150 : 30);
 
-      notify(result.passed ? "Quiz passed. Next week unlocked." : "Attempt saved. Review and try again.");
       return updateStreak({
         ...current,
         quizResults: [...current.quizResults, result],
@@ -136,6 +153,7 @@ export function useProgress() {
         xp,
       });
     });
+    notify(result.passed ? "Quiz passed. Next week unlocked." : "Attempt saved. Review and try again.");
   }, []);
 
   const isSubModuleComplete = useCallback(
@@ -157,40 +175,45 @@ export function useProgress() {
   );
 
   const areAllWeekDaysComplete = useCallback(
-    (courseId: CourseId, weekId: string) => {
-      const week = getCourse(courseId)?.weeks.find((item) => item.id === weekId);
-      return Boolean(week?.days.every((day) => progress.completedDays.includes(day.id)));
+    (courseOrId: Course | string, weekId: string) => {
+      const course = typeof courseOrId === "string" ? getCourse(courseOrId) : courseOrId;
+      if (!course) return false;
+      const week = course.weeks.find((item: any) => item.id === weekId);
+      if (!week || !week.days || week.days.length === 0) return false;
+      return Boolean(week.days.every((day: any) => progress.completedDays.includes(day.id)));
     },
     [progress.completedDays],
   );
 
   const isWeekUnlocked = useCallback(
-    (courseId: CourseId, weekId: string) => {
-      const course = getCourse(courseId);
-      const index = course?.weeks.findIndex((week) => week.id === weekId) ?? -1;
+    (courseOrId: Course | string, weekId: string) => {
+      const course = typeof courseOrId === "string" ? getCourse(courseOrId) : courseOrId;
+      if (!course) return false;
+      const index = course.weeks.findIndex((week: any) => week.id === weekId);
       if (index <= 0) {
         return true;
       }
 
-      const previousWeek = course?.weeks[index - 1];
+      const previousWeek = course.weeks[index - 1];
       if (!previousWeek) {
         return false;
       }
 
-      return areAllWeekDaysComplete(courseId, previousWeek.id) && hasPassedQuiz(courseId, previousWeek.id);
+      return areAllWeekDaysComplete(course, previousWeek.id) && hasPassedQuiz(course.id, previousWeek.id);
     },
     [areAllWeekDaysComplete, hasPassedQuiz],
   );
 
   const getCourseProgress = useCallback(
-    (courseId: CourseId) => {
-      const course = getCourse(courseId);
-      const allSubModules = course?.weeks.flatMap((week) => week.days.flatMap((day) => day.subModules)) ?? [];
+    (courseOrId: Course | string) => {
+      const course = typeof courseOrId === "string" ? getCourse(courseOrId) : courseOrId;
+      if (!course) return 0;
+      const allSubModules = course.weeks.flatMap((week: any) => week.days.flatMap((day: any) => day.subModules)) ?? [];
       if (!allSubModules.length) {
         return 0;
       }
 
-      const completed = allSubModules.filter((item) => progress.completedSubModules.includes(item.id)).length;
+      const completed = allSubModules.filter((item: any) => progress.completedSubModules.includes(item.id)).length;
       return Math.round((completed / allSubModules.length) * 100);
     },
     [progress.completedSubModules],

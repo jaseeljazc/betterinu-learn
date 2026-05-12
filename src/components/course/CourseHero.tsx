@@ -8,7 +8,7 @@ export function CourseHero({ course }: { course: Course }) {
   return (
     <section className="course-hero rounded-2xl border border-muted px-6 py-12 shadow-sm sm:px-10" style={{ "--course-color": `var(${course.color})` } as CSSProperties}>
       <div className="max-w-3xl">
-        <Badge variant="course">Course Track</Badge>
+        <Badge variant="secondary" className="bg-[#1a4031] text-white">Course Track</Badge>
         <h1 className="mt-5 font-display text-[40px] font-medium leading-[1.1] tracking-tight md:text-[52px]">{course.title}</h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-secondary">{course.description}</p>
         <div className="mt-6 flex flex-wrap gap-3">

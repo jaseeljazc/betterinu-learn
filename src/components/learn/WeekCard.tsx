@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Zap } from "lucide-react";
 import type { CourseId, Week } from "@/types";
 import { useProgress } from "@/lib/hooks/useProgress";
+import { Accordion } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { buttonClasses } from "@/components/ui/button";
-import { ProgressBar } from "./ProgressBar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ModuleAccordion } from "./ModuleAccordion";
 
 export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week }) {
@@ -18,44 +19,86 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
   const passed = hasPassedQuiz(courseId, week.id);
 
   return (
-    <section className="space-y-5" id={week.id}>
-      <div className="rounded-xl border border-default bg-surface p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-2xl font-bold">{week.title.replace(":", " -")}</h2>
-              {week.isShared ? (
-                <Badge title="This module is identical across MERN Stack and Python courses" variant="course">
-                  <Zap className="size-3" aria-hidden />
-                  Shared Module
-                </Badge>
-              ) : null}
-              {passed ? <Badge variant="success">Quiz passed</Badge> : null}
+    <section className="space-y-4" id={week.id}>
+      {/* Week Header */}
+      <Card className={passed ? "border-green-200" : ""}>
+        <CardContent className="pt-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                {week.isShared && (
+                  <Badge variant="outline" className="gap-1">
+                    <Zap className="size-3" aria-hidden />
+                    Shared
+                  </Badge>
+                )}
+                {passed && (
+                  <Badge className="gap-1 bg-green-600 text-white hover:bg-green-700">
+                    <CheckCircle2 className="size-3" />
+                    Quiz Passed
+                  </Badge>
+                )}
+              </div>
+              <h2 className="font-display text-xl font-bold tracking-tight">
+                {week.title.replace(":", " —")}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {complete} of {allSubModules.length} lessons complete
+              </p>
             </div>
-            <p className="mt-2 text-sm text-secondary">{complete} of {allSubModules.length} sub-modules complete</p>
-          </div>
-          <div className="w-full md:w-64">
-            <ProgressBar value={percent} label={`${week.title} progress`} />
-          </div>
-        </div>
-      </div>
 
-      <div className="grid gap-4">
-        {week.days.map((day) => (
-          <ModuleAccordion courseId={courseId} day={day} key={day.id} weekId={week.id} />
-        ))}
-      </div>
+            {/* Inline progress */}
+            <div className="w-full md:w-52 shrink-0">
+              <div className="flex items-center justify-between mb-1.5 text-xs font-semibold">
+                <span className="text-muted-foreground">Progress</span>
+                <span className={percent === 100 ? "text-green-600" : ""}>{percent}%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${percent}%`, background: "var(--green-700)" }}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {daysComplete ? (
-        <div className="rounded-xl border border-course bg-course-soft p-5">
-          <p className="font-display text-xl font-bold text-course">Week complete. Your quiz is ready.</p>
-          <p className="mt-2 text-sm text-secondary">Pass the checkpoint to unlock the next week.</p>
-          <Link className={buttonClasses({ className: "mt-4 animate-xp-pop", size: "lg" })} href={`/quiz/${courseId}/${week.id}`}>
-            Take Week Quiz
-            <ArrowRight className="size-5" aria-hidden />
-          </Link>
-        </div>
-      ) : null}
+      {/* Days */}
+      <Accordion type="multiple" defaultValue={!week.days[0] || (week.days.length > 1 && !week.days[0].subModules.every(m => isSubModuleComplete(m.id))) ? [] : [week.days[0].id]} className="grid gap-3 w-full">
+        {week.days.map((day, idx) => {
+          const isLocked = idx > 0 && !week.days[idx - 1].subModules.every((m) => isSubModuleComplete(m.id));
+          return (
+            <ModuleAccordion
+              courseId={courseId}
+              day={day}
+              key={day.id}
+              weekId={week.id}
+              isLocked={isLocked}
+            />
+          );
+        })}
+      </Accordion>
+
+      {/* Quiz CTA */}
+      {daysComplete && (
+        <Card className="border-primary bg-primary text-primary-foreground shadow-md">
+          <CardContent className="pt-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-display text-lg font-bold">Week complete! 🎉</p>
+                <p className="mt-0.5 text-sm text-green-200">Pass the quiz to unlock the next week and earn 150 XP.</p>
+              </div>
+              <Button asChild variant="secondary" className="shrink-0 gap-2 font-bold">
+                <Link href={`/quiz/${courseId}/${week.id}`}>
+                  Take Quiz
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </section>
   );
 }

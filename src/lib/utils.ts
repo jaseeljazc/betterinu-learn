@@ -1,21 +1,8 @@
-type ClassValue = string | number | false | null | undefined | Record<string, boolean | undefined>;
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
-  return inputs
-    .flatMap((input) => {
-      if (!input) {
-        return [];
-      }
-
-      if (typeof input === "object") {
-        return Object.entries(input)
-          .filter(([, value]) => value)
-          .map(([key]) => key);
-      }
-
-      return [String(input)];
-    })
-    .join(" ");
+  return twMerge(clsx(inputs))
 }
 
 export function formatDate(date: string | Date) {

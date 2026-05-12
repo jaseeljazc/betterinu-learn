@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Navbar } from "@/components/layout/Navbar";
-import { ToastHost } from "@/components/ui/toast";
 import "./globals.css";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "LearnForge LMS",
-  description: "A weekly skill-building LMS demo with courses, quizzes, progress, XP, and streaks.",
+  title: "BetterInU LMS",
+  description: "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
 };
 
+/**
+ * Bare root layout. Each route group adds its own layout:
+ *   (student)/layout.tsx → Navbar + ToastHost
+ *   (admin)/layout.tsx   → AdminSidebar + header
+ */
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <Navbar />
-        {children}
-        <ToastHost />
-      </body>
+    <html lang="en" className={cn("font-sans", geist.variable)}>
+      <body>{children}</body>
     </html>
   );
 }

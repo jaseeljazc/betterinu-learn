@@ -8,24 +8,24 @@ export function LockedWeekCard({ week, previousWeekNumber }: { week: Week; previ
   return (
     <button
       aria-disabled="true"
-      className="locked-card relative w-full cursor-default overflow-hidden rounded-lg p-5 text-left focus-ring"
-      onClick={() => notify(`Finish Week ${previousWeekNumber} first.`)}
+      className="group relative w-full cursor-default overflow-hidden rounded-lg border border-dashed border-default bg-white/70 p-5 text-left transition-all hover:border-strong"
+      onClick={() => notify(`Complete Week ${previousWeekNumber} first.`)}
       type="button"
     >
-      <div className="flex items-center gap-4 blur-[1.5px]">
-        <span className="grid size-11 place-items-center rounded-full border border-[var(--amber-200)] bg-xp-soft text-[var(--amber-600)]">
-          <Lock className="size-5 animate-lock-pulse" aria-hidden />
+      <div className="flex items-center gap-4 opacity-40 blur-[1.5px] transition-all group-hover:blur-[0.5px]">
+        <span className="grid size-10 shrink-0 place-items-center rounded-sm bg-subtle text-muted">
+          <Lock className="size-5" aria-hidden />
         </span>
         <div>
-          <h3 className="font-display text-xl font-bold">{week.title}</h3>
-          <p className="mt-1 text-sm text-secondary">Complete Week {previousWeekNumber} to unlock</p>
-          <p className="mt-2 text-xs uppercase text-muted">Estimated unlock: after your next study sprint</p>
+          <h3 className="font-display text-base font-bold text-foreground">{week.title}</h3>
+          <p className="mt-0.5 text-xs text-secondary">Complete Week {previousWeekNumber} to unlock</p>
         </div>
       </div>
-      <span className="absolute inset-0 grid place-items-center bg-[rgba(247,245,240,0.5)] backdrop-blur-[1.5px]">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--amber-200)] bg-xp-soft px-3.5 py-1.5 text-[13px] font-semibold text-[var(--amber-600)]">
-          <Lock className="size-4 animate-lock-pulse" aria-hidden />
-          Complete previous week
+
+      <span className="absolute inset-0 grid place-items-center">
+        <span className="inline-flex items-center gap-2 rounded-sm border border-default bg-white/90 px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+          <Lock className="size-3.5 animate-lock-pulse" aria-hidden />
+          Locked
         </span>
       </span>
     </button>

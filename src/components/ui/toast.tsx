@@ -12,8 +12,8 @@ export function ToastHost() {
       window.setTimeout(() => setMessage(""), 2600);
     };
 
-    window.addEventListener("learnforge-toast", listener);
-    return () => window.removeEventListener("learnforge-toast", listener);
+    window.addEventListener("betterinu-toast", listener);
+    return () => window.removeEventListener("betterinu-toast", listener);
   }, []);
 
   if (!message) {

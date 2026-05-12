@@ -1,5 +1,7 @@
 import { Trophy } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 const learners = [
   ["1", "Mira", "2,840 XP"],
@@ -11,26 +13,32 @@ const learners = [
 
 export function Leaderboard() {
   return (
-    <Card className="p-5">
-      <h2 className="font-display text-xl font-bold">Top Learners This Week</h2>
-      <div className="mt-4 grid gap-3">
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-bold">Top Learners</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2">
         {learners.map(([rank, name, xp]) => (
           <div
-            className={
+            className={`flex items-center gap-2.5 rounded-sm p-2 text-sm transition-colors ${
               name === "You"
-                ? "flex items-center gap-3 rounded-lg border border-course bg-course-soft p-3"
-                : "flex items-center gap-3 rounded-lg bg-subtle p-3"
-            }
+                ? "bg-primary/8 ring-1 ring-primary/20"
+                : "bg-muted/50 hover:bg-muted"
+            }`}
             key={rank}
           >
-            <span className="grid size-8 place-items-center rounded-full bg-elevated text-sm font-bold">{rank}</span>
-            <span className="grid size-9 place-items-center rounded-full bg-surface font-bold">{name[0]}</span>
-            <span className="flex-1 font-semibold">{name}</span>
-            {Number(rank) <= 3 ? <Trophy className="size-4 text-xp" aria-hidden /> : null}
-            <span className="text-sm font-bold text-secondary">{xp}</span>
+            <span className="grid size-5 shrink-0 place-items-center text-[11px] font-bold text-muted-foreground">{rank}</span>
+            <Avatar className="size-7 border border-border">
+              <AvatarFallback className={`text-[11px] font-bold ${name === "You" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                {name[0]}
+              </AvatarFallback>
+            </Avatar>
+            <span className="flex-1 truncate font-medium">{name}</span>
+            {Number(rank) <= 3 && <Trophy className="size-3.5 text-amber-500 shrink-0" aria-hidden />}
+            <span className="text-xs font-bold text-muted-foreground shrink-0">{xp}</span>
           </div>
         ))}
-      </div>
+      </CardContent>
     </Card>
   );
 }

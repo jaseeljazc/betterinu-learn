@@ -13,7 +13,7 @@ export function XpProgress({ xp }: { xp: number }) {
         </div>
         <Sparkles className="size-8 text-xp" aria-hidden />
       </div>
-      <Progress className="mt-4" label="XP level progress" value={(levelProgress / 500) * 100} variant="amber" />
+      <Progress className="mt-4 [&>div]:bg-amber-500" aria-label="XP level progress" value={(levelProgress / 500) * 100} />
     </Card>
   );
 }
