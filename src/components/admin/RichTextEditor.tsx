@@ -35,6 +35,7 @@ export function RichTextEditor({
         ["bold", "italic", "underline", "strike"],
         [{ color: [] }, { background: [] }],
         [{ list: "ordered" }, { list: "bullet" }],
+        [{ align: [] }],
         ["link", "code-block"],
         ["clean"],
       ],

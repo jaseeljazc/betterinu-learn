@@ -33,7 +33,7 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
                   </Badge>
                 )}
                 {passed && (
-                  <Badge className="gap-1 bg-green-600 text-white hover:bg-green-700">
+                  <Badge className="gap-1 bg-primary text-white hover:bg-primary/90">
                     <CheckCircle2 className="size-3" />
                     Quiz Passed
                   </Badge>
@@ -56,7 +56,7 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${percent}%`, background: "var(--green-700)" }}
+                  style={{ width: `${percent}%`, background: "var(--color-primary)" }}
                 />
               </div>
             </div>

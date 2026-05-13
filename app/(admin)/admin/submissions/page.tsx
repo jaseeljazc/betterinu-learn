@@ -33,7 +33,7 @@ interface Submission {
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   pending:  { label: "Pending",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
-  approved: { label: "Approved", cls: "bg-green-100 text-green-700 border-green-200" },
+  approved: { label: "Approved", cls: "bg-green-100 text-primary border-green-200" },
   rejected: { label: "Rejected", cls: "bg-red-100 text-red-700 border-red-200" },
 };
 

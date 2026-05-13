@@ -38,19 +38,52 @@ export type MixedBlock =
   | { kind: "doc"; title: string; content: string };
 
 // ── Multi-section lesson types ────────────────────────────────
-export type LessonSectionType = "rich_text" | "image" | "video" | "pdf" | "link";
+export type LessonSectionType = "rich_text" | "image" | "video" | "pdf" | "link" | "task";
 
 export type LessonSection =
-  | { id: string; type: "rich_text"; content: string }
-  | { id: string; type: "image"; url: string; caption?: string; size?: "sm" | "md" | "lg" | "full" }
-  | { id: string; type: "video"; url: string; title?: string }
-  | { id: string; type: "pdf"; url: string; filename?: string }
-  | { id: string; type: "link"; title: string; url: string; description?: string };
+  | { id: string; type: "rich_text"; content: string; align?: "left" | "center" | "right" }
+  | { id: string; type: "image"; url: string; caption?: string; size?: "sm" | "md" | "lg" | "full"; align?: "left" | "center" | "right"; captionAlign?: "left" | "center" | "right" }
+  | { id: string; type: "video"; url: string; title?: string; align?: "left" | "center" | "right"; size?: "sm" | "md" | "lg" | "full" }
+  | { id: string; type: "pdf"; url: string; filename?: string; align?: "left" | "center" | "right" }
+  | { id: string; type: "link"; title: string; url: string; description?: string; align?: "left" | "center" | "right" }
+  | { id: string; type: "task"; title: string; description: string; submissionType: string; deadline?: string; align?: "left" | "center" | "right" };
+
+// ── Quiz SubModule types ──────────────────────────────────────
+export interface QuizSubModuleQuestion {
+  id: string;
+  type: "mcq" | "text";
+  question: string;
+  description?: string;    // optional sub-instructions
+  options?: string[];      // MCQ only (up to 6)
+  correctIndex?: number;   // MCQ: index of correct option
+  correctText?: string;    // Text: correct answer string (case-insensitive)
+  marks: number;           // points this question is worth
+  explanation?: string;    // feedback shown after answering
+}
+
+export interface QuizSubModuleData {
+  questions: QuizSubModuleQuestion[];
+  passingScore?: number;   // 0–100 percentage required to pass
+  maxAttempts?: number;    // undefined = unlimited
+  totalMarks?: number;     // auto-calculated
+}
+
+// ── Assignment SubModule types ────────────────────────────────
+export interface AssignmentSubModuleData {
+  title: string;
+  instructions: string;          // rich HTML content
+  dueDate?: string;              // ISO date string (optional)
+  totalMarks?: number;
+  allowedSubmissionTypes: Array<"text" | "file" | "image" | "url">;
+  requiresApproval: boolean;     // if true, gates the next day
+  attachedFiles?: Array<{ url: string; name: string; type: string }>;  // admin-uploaded resources
+  referenceLinks?: Array<{ label: string; url: string }>;              // admin reference links
+}
 
 export interface SubModule {
   id: string;
   title: string;
-  type: "doc" | "video" | "exercise" | "resource" | "quiz" | "mixed" | "assignment";
+  type: "doc" | "video" | "exercise" | "resource" | "quiz" | "mixed" | "assignment" | "lesson";
   duration: string;
   content?: any; // String for rich HTML, or DocContent for legacy structure
   videoUrl?: string;
@@ -58,10 +91,13 @@ export interface SubModule {
   externalLinks?: ExternalLink[];
   isCompleted: boolean;
   blocks?: MixedBlock[]; // for mixed type
-  quizData?: any;
+  quizData?: QuizSubModuleData;         // for type: "quiz"
+  assignmentData?: AssignmentSubModuleData; // for type: "assignment"
   attachedFiles?: { url: string; name: string; type: string }[];
   sections?: LessonSection[]; // new multi-section content
+  pagePadding?: "none" | "sm" | "md" | "lg" | "xl";
 }
+
 
 export interface DocContent {
   sections: DocSection[];

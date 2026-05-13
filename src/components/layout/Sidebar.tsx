@@ -14,7 +14,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
       {/* Course progress block */}
       <div className="mb-5 rounded-lg border border-default bg-white overflow-hidden">
         <div className="border-b border-primary bg-primary px-4 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-green-200">Course Progress</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-primary-light">Course Progress</p>
           <p className="mt-0.5 text-sm font-bold text-white truncate">{course.title}</p>
         </div>
         <div className="p-4">
@@ -25,7 +25,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
           <div className="h-2 w-full rounded-full bg-subtle overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${progress}%`, background: "var(--green-700)" }}
+              style={{ width: `${progress}%`, background: "var(--color-primary)" }}
             />
           </div>
         </div>

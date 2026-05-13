@@ -1,14 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { onIdTokenChanged } from "firebase/auth";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { clientAuth } from "@/lib/firebase-client";
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Read from localStorage on mount
+    // Silently refresh the __session cookie whenever Firebase auto-rotates the ID token.
+    // Firebase rotates tokens every ~55 minutes; without this the cookie would hold
+    // an expired token even though the cookie itself is still alive.
+    const unsubscribeToken = onIdTokenChanged(clientAuth, async (user) => {
+      if (user) {
+        const freshToken = await user.getIdToken();
+        document.cookie = `__session=${freshToken}; path=/; max-age=604800; SameSite=Lax`;
+      } else {
+        // Signed out — clear the session cookie.
+        document.cookie = `__session=; path=/; max-age=0; SameSite=Lax`;
+      }
+    });
+
+    // Sidebar collapsed state
     const saved = localStorage.getItem("admin-sidebar-collapsed");
     if (saved === "true") {
       setCollapsed(true);
@@ -27,7 +42,10 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      unsubscribeToken();
+    };
   }, []);
 
   function toggle() {

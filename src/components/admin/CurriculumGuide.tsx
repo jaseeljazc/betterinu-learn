@@ -106,7 +106,7 @@ const moduleTypes = [
   {
     kind: "quiz",
     Icon: HelpCircle,
-    color: "bg-green-100 text-green-700",
+    color: "bg-green-100 text-primary",
     label: "Quiz",
     desc: "An interactive multiple-choice quiz. Students must submit answers before the module is marked complete.",
     fields: ["quizData.title — Quiz heading", "quizData.questions — Array of question objects with options and correctAnswer index"],

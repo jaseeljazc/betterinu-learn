@@ -36,6 +36,7 @@ function defaultSection(type: LessonSectionType): LessonSection {
     case "video":     return { id: uid(), type, url: "", title: "" };
     case "pdf":       return { id: uid(), type, url: "", filename: "" };
     case "link":      return { id: uid(), type, title: "", url: "", description: "" };
+    case "task":      return { id: uid(), type, title: "", description: "", submissionType: "url", deadline: "" };
   }
 }
 

@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      document.cookie = `__session=${idToken}; path=/; max-age=3600; SameSite=Lax`;
+      document.cookie = `__session=${idToken}; path=/; max-age=604800; SameSite=Lax`;
       router.push("/admin/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials.";

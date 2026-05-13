@@ -198,7 +198,7 @@ export default function AdminStudentDetailPage() {
                         </div>
                         <span className={`inline-flex items-center gap-1 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                           isPending ? "bg-amber-100 text-amber-700 border-amber-200" :
-                          isApproved ? "bg-green-100 text-green-700 border-green-200" :
+                          isApproved ? "bg-green-100 text-primary border-green-200" :
                           "bg-red-100 text-red-700 border-red-200"
                         }`}>
                           {isPending && <Clock className="size-3" />}

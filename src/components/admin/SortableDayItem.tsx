@@ -38,16 +38,14 @@ export function SortableDayItem({
     <div ref={setNodeRef} style={style} className="rounded-lg border border-default bg-subtle p-3 relative shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 mr-4">
-          <button
-            type="button"
+          <button type="button"
             {...attributes}
             {...listeners}
             className="cursor-grab active:cursor-grabbing text-muted hover:text-primary touch-none p-1"
           >
             <GripVertical className="size-4" />
           </button>
-          <button
-            type="button"
+          <button type="button"
             onClick={() => setCollapsedDays((prev: any) => ({ ...prev, [day.id]: !prev[day.id] }))}
             className="text-muted hover:text-primary transition-colors p-1"
           >
@@ -68,15 +66,13 @@ export function SortableDayItem({
           <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mr-2">
             {sectionsCount} {sectionsCount === 1 ? 'section' : 'sections'}
           </span>
-          <button
-            type="button"
+          <button type="button"
             onClick={addModule}
             className="text-[10px] uppercase font-bold text-primary hover:underline"
           >
             + Add Lesson
           </button>
-          <button
-            type="button"
+          <button type="button"
             onClick={() => removeDay(wIdx, dIdx)}
             className="text-muted hover:text-red-600 ml-2"
           >
@@ -134,8 +130,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
   return (
     <div ref={setNodeRef} style={style} className="flex flex-col gap-3 bg-white border border-default rounded-xl p-4 text-sm shadow-sm transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 relative z-10">
       <div className="flex items-center gap-3">
-        <button
-          type="button"
+        <button type="button"
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing text-muted hover:text-primary touch-none p-1"
@@ -177,8 +172,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           }}
           className="w-24 text-right outline-none text-secondary border border-default rounded-md px-2 py-1"
         />
-        <button
-          type="button"
+        <button type="button"
           onClick={() => removeModule(mIdx)}
           className="text-muted hover:text-red-600 ml-1 p-1"
         >

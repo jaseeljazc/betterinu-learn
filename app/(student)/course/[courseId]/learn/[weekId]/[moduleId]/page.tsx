@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { PageWrapper } from "@/components/layout/PageWrapper";
 import { LessonViewerClient } from "@/components/learn/LessonViewerClient";
 import { sql } from "@/lib/db";
 import type { Course } from "@/types";
@@ -53,10 +52,10 @@ export default async function ModuleViewerPage({
   }
 
   return (
-    <PageWrapper>
-      <div className="mx-auto max-w-7xl">
+    <div className="pt-[72px] h-screen overflow-hidden flex flex-col">
+      <div className="mx-auto w-full max-w-7xl h-full">
         <LessonViewerClient course={course} day={match.day} subModule={match.subModule} week={match.week} />
       </div>
-    </PageWrapper>
+    </div>
   );
 }

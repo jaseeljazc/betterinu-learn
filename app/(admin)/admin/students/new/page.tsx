@@ -85,7 +85,7 @@ export default function NewStudentPage() {
             <CheckCircle2 className="mx-auto mb-3 size-10 text-green-600" />
             <h2 className="text-lg font-bold text-green-900">Student Created Successfully!</h2>
             {successData.emailSent ? (
-              <p className="mt-2 text-sm text-green-700">The welcome email has been sent to the student. Redirecting...</p>
+              <p className="mt-2 text-sm text-primary">The welcome email has been sent to the student. Redirecting...</p>
             ) : (
               <div className="mt-4 text-left">
                 <div className="flex items-center gap-2 rounded-lg bg-amber-100 p-3 text-amber-800 text-sm mb-4">

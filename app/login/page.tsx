@@ -40,7 +40,7 @@ export default function StudentLoginPage() {
       }
 
       // Store token in cookie for middleware
-      document.cookie = `__session=${idToken}; path=/; max-age=3600; SameSite=Lax`;
+      document.cookie = `__session=${idToken}; path=/; max-age=604800; SameSite=Lax`;
       router.push("/");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid email or password.";

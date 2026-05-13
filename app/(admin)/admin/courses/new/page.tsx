@@ -11,8 +11,10 @@ import Link from "next/link";
 import { QuizBuilder } from "@/components/admin/QuizBuilder";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { SortableDayItem } from "@/components/admin/SortableDayItem";
+import { ThreePanelCurriculumBuilder } from "@/components/admin/ThreePanelCurriculumBuilder"; // ADDED
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { toast } from "sonner";
 
 type CourseRow = {
   id: string; title: string; tagline: string; description: string;
@@ -85,6 +87,7 @@ export default function CourseNewPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [useThreePanel, setUseThreePanel] = useState(true); // ADDED
   const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
 
@@ -187,9 +190,11 @@ export default function CourseNewPage() {
         throw new Error(data.error || "Save failed");
       }
       
+      toast.success("Course created successfully!");
       setSuccess(true);
       setTimeout(() => { setSuccess(false); router.push("/admin/courses"); }, 1500);
     } catch (err: any) {
+      toast.error(err.message || "Failed to create course. Please try again.");
       setError(err.message || "Failed to create course. Please try again.");
     } finally {
       setSaving(false);
@@ -229,8 +234,7 @@ export default function CourseNewPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {activeTab === "settings" ? (
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* 1. Basic Info */}
             <div className={sectionClass}>
               <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
@@ -363,313 +367,30 @@ export default function CourseNewPage() {
               </label>
             </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">Course Curriculum</h2>
-                <p className="text-sm text-[#7a7a62]">Organize your content into weeks, days, and lessons.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!showJson || jsonMode !== "edit-weeks") {
-                      setJsonError("");
-                      setJsonMode("edit-weeks");
-                      setShowJson(true);
-                    } else {
-                      setShowJson(false);
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
-                >
-                  {showJson && jsonMode === "edit-weeks" ? "Visual Builder" : "Edit JSON by Week"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!showJson || jsonMode !== "week") {
-                      setJsonInput("");
-                      setJsonError("");
-                      setJsonMode("week");
-                      setShowJson(true);
-                    } else {
-                      setShowJson(false);
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
-                >
-                  {showJson && jsonMode === "week" ? "Cancel Import" : "Import Week JSON"}
-                </button>
-
-                {!showJson && (
-                  <button
-                    type="button"
-                    onClick={addWeek}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
-                  >
-                    <Plus className="size-4" /> Add Week
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {showJson ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-secondary">
-                    {jsonMode === "edit-weeks" 
-                      ? "Edit the JSON for each week individually below." 
-                      : "Paste a single week JSON object here. It will be appended to the curriculum."}
-                  </p>
-                  <div className="flex items-center gap-4">
-                    {jsonError && <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">{jsonError}</p>}
-                    <button
-                      type="button"
-                      onClick={() => setShowJsonHelp(!showJsonHelp)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-secondary hover:text-primary transition-colors"
-                    >
-                      <Info className="size-4" /> Structure Guide
-                    </button>
-                  </div>
-                </div>
-
-                {showJsonHelp && (
-                  <div className="bg-surface border border-default p-4 rounded-xl text-xs font-mono text-secondary overflow-x-auto max-h-[500px] overflow-y-auto">
-<pre>{`// COMPREHENSIVE WEEK JSON GUIDE
-
-{
-  "id": "week-1",
-  "title": "Week 1: Foundations",
-  "isLocked": false,
-  "days": [
-    {
-      "id": "course-w1-d1",
-      "label": "Day 1",
-      "title": "Core Concepts",
-      "subModules": [
-
-        // 1. VIDEO MODULE
-        {
-          "id": "mod-1",
-          "title": "1. Introduction Video",
-          "type": "video",
-          "duration": "5 min",
-          "videoUrl": "dQw4w9WgXcQ", // YouTube ID or full URL
-          "description": "Short summary text appearing below the video player."
-        },
-
-        // 2. DOCUMENT MODULE (HTML Rich Text)
-        {
-          "id": "mod-2",
-          "title": "2. Reading Materials",
-          "type": "doc",
-          "duration": "10 min",
-          "content": "<h2>Overview</h2><p>Here is some <span style=\\"color: #e60000;\\">colored text</span>.</p><br/><h3>Tables</h3><table><thead><tr><th>Topic</th><th>Details</th></tr></thead><tbody><tr><td>HTML</td><td>Structure</td></tr><tr><td>CSS</td><td>Style</td></tr></tbody></table>"
-        },
-
-        // 3. QUIZ MODULE
-        {
-          "id": "mod-3",
-          "title": "3. Knowledge Check",
-          "type": "quiz",
-          "duration": "15 min",
-          "quizData": {
-            "title": "Module 1 Quiz",
-            "description": "Test your knowledge of the core concepts.",
-            "questions": [
-              {
-                "id": "q1",
-                "type": "multiple-choice", // 'multiple-choice' or 'text-answer'
-                "text": "What does HTML stand for?",
-                "options": [
-                  "HyperText Markup Language",
-                  "High Text Machine Language",
-                  "HyperLoop Machine Logic"
-                ],
-                "correctAnswer": 0, // Index of the correct option
-                "explanation": "HTML stands for HyperText Markup Language."
-              },
-              {
-                "id": "q2",
-                "type": "text-answer",
-                "text": "What CSS property changes text color?",
-                "correctAnswer": "color", // Case-insensitive exact match
-                "explanation": "The 'color' property sets the text color in CSS."
-              }
-            ]
-          }
-        }
-
-      ]
-    }
-  ]
-}`}</pre>
-                  </div>
-                )}
-
-                {jsonMode === "edit-weeks" ? (
-                  <div className="space-y-4">
-                    {(form.curriculum ?? []).map((week: any, wIdx: number) => (
-                      <WeekJsonEditor
-                        key={week.id || wIdx}
-                        week={week}
-                        onSave={(parsed) => {
-                          const next = [...form.curriculum!];
-                          next[wIdx] = parsed;
-                          update("curriculum", next);
-                        }}
-                      />
-                    ))}
-                    {(form.curriculum ?? []).length === 0 && (
-                      <p className="text-sm text-muted text-center py-8">No weeks to edit. Add a week first.</p>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <textarea
-                      className="w-full h-[400px] font-mono text-sm p-4 rounded-xl border border-default bg-surface outline-none focus:border-primary shadow-inner"
-                      value={jsonInput}
-                      onChange={(e) => setJsonInput(e.target.value)}
-                      placeholder="Paste JSON here..."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        try {
-                          const parsed = JSON.parse(jsonInput);
-                          if (typeof parsed === "object" && !Array.isArray(parsed) && parsed !== null) {
-                            update("curriculum", [...(form.curriculum ?? []), parsed]);
-                            setJsonError("");
-                            setShowJson(false);
-                            setJsonInput(""); // clear for next import
-                          } else {
-                            setJsonError("JSON must be a single week object.");
-                          }
-                        } catch (err) {
-                          setJsonError("Invalid JSON format.");
-                        }
-                      }}
-                      className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
-                    >
-                      <CheckCircle2 className="size-4" /> Add Week from JSON
-                    </button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {(form.curriculum ?? []).map((week: any, wIdx: number) => {
-                  const isCollapsed = collapsedWeeks[wIdx];
-                  return (
-                    <div key={week.id} className="rounded-xl border border-[#e5e2da] bg-white overflow-hidden shadow-sm transition-all">
-                      <div className="flex items-center justify-between bg-[#f9f9f6] px-4 py-3 border-b border-[#e5e2da]">
-                        <div className="flex items-center gap-3 flex-1">
-                          <button
-                            type="button"
-                            onClick={() => setCollapsedWeeks(prev => ({ ...prev, [wIdx]: !prev[wIdx] }))}
-                            className="text-[#7a7a62] hover:text-[#1a4031] transition-colors p-1"
-                          >
-                            {isCollapsed ? <ChevronRight className="size-5" /> : <ChevronDown className="size-5" />}
-                          </button>
-                          <input
-                            value={week.title}
-                            onChange={(e) => {
-                              const next = [...form.curriculum!];
-                              next[wIdx].title = e.target.value;
-                              update("curriculum", next);
-                            }}
-                            className="bg-transparent font-bold text-[#1a4031] outline-none focus:underline flex-1"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => addDay(wIdx)}
-                            className="text-xs font-semibold text-[#1a4031] hover:underline"
-                          >
-                            + Add Day
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeWeek(wIdx)}
-                            className="text-[#7a7a62] hover:text-red-600 p-1"
-                          >
-                            <X className="size-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {!isCollapsed && (
-                        <div className="p-4 space-y-4">
-                          <DndContext
-                            collisionDetection={closestCenter}
-                            onDragEnd={(event) => {
-                              const { active, over } = event;
-                              if (over && active.id !== over.id) {
-                                const next = [...form.curriculum!];
-                                const oldIndex = next[wIdx].days.findIndex((d: any) => d.id === active.id);
-                                const newIndex = next[wIdx].days.findIndex((d: any) => d.id === over.id);
-                                next[wIdx].days = arrayMove(next[wIdx].days, oldIndex, newIndex);
-                                update("curriculum", next);
-                              }
-                            }}
-                          >
-                            <SortableContext items={week.days.map((d: any) => d.id)} strategy={verticalListSortingStrategy}>
-                              {week.days.map((day: any, dIdx: number) => (
-                                <SortableDayItem
-                                  key={day.id}
-                                  day={day}
-                                  wIdx={wIdx}
-                                  dIdx={dIdx}
-                                  form={form}
-                                  update={update}
-                                  isDayCollapsed={collapsedDays[day.id]}
-                                  setCollapsedDays={setCollapsedDays}
-                                  removeDay={removeDay}
-                                />
-                              ))}
-                            </SortableContext>
-                          </DndContext>
-                    {week.days.length === 0 && (
-                      <p className="text-sm text-center text-[#7a7a62] py-4 italic">This week is empty. Click "+ Add Day" to start.</p>
-                    )}
-                  </div>
-                 )}
-                </div>
-                );
-              })}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Error */}
         {error && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={saving || success}
-            className="flex items-center gap-2 rounded-lg bg-[#1a4031] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
-          >
-            {saving ? (
-              <><RoboLoader size="xs" className="text-current" />Creating...</>
-            ) : success ? (
-              <><CheckCircle2 className="size-4" />Created!</>
-            ) : (
-              <><Save className="size-4" />Create Course</>
-            )}
-          </button>
-          <Link href="/admin/courses" className="text-sm text-[#7a7a62] hover:text-[#1a4031]">
-            Cancel
-          </Link>
-        </div>
+          <div className="flex items-center gap-4">
+            <button
+              type="submit"
+              disabled={saving || success}
+              className="flex items-center gap-2 rounded-lg bg-[#1a4031] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
+            >
+              {saving ? (
+                <><RoboLoader size="xs" className="text-current" />Creating...</>
+              ) : success ? (
+                <><CheckCircle2 className="size-4" />Created!</>
+              ) : (
+                <><Save className="size-4" />Create Course</>
+              )}
+            </button>
+            <Link href="/admin/courses" className="text-sm text-[#7a7a62] hover:text-[#1a4031]">
+              Cancel
+            </Link>
+          </div>
       </form>
     </div>
   );

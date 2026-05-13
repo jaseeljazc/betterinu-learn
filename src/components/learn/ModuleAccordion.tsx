@@ -39,7 +39,9 @@ export function ModuleAccordion({ courseId, weekId, day, isLocked }: { courseId:
                 Locked
               </Badge>
             ) : (
-              <span className="mr-4"><CompletionBadge complete={isDayComplete(day.id)} /></span>
+              <span className="mr-4">
+                <CompletionBadge complete={isDayComplete(day.id) || (day.subModules.length > 0 && completeCount === day.subModules.length)} />
+              </span>
             )}
           </span>
         </AccordionTrigger>

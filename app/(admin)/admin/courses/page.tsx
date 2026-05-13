@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Plus, BookOpen } from "lucide-react";
+import { Pencil, Plus, BookOpen, Settings2 } from "lucide-react";
 import { sql } from "@/lib/db";
 
 async function getCourses() {
@@ -61,19 +61,28 @@ export default async function AdminCoursesPage() {
                   <td className="px-4 py-3">
                     <span className={[
                       "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-                      course.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600",
+                      course.is_active ? "bg-green-100 text-primary" : "bg-gray-100 text-gray-600",
                     ].join(" ")}>
                       {course.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/courses/${course.id}/edit`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e2da] px-3 py-1.5 text-xs font-semibold text-[#4a4a3a] transition-colors hover:border-[#1a4031] hover:text-[#1a4031]"
-                    >
-                      <Pencil className="size-3" />
-                      Edit
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/courses/${course.id}/edit`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e2da] bg-white px-3 py-1.5 text-xs font-semibold text-[#4a4a3a] transition-colors hover:border-primary hover:text-primary"
+                      >
+                        <Settings2 className="size-3" />
+                        Settings
+                      </Link>
+                      <Link
+                        href={`/admin/courses/${course.id}/curriculum`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e2da] bg-white px-3 py-1.5 text-xs font-semibold text-[#4a4a3a] transition-colors hover:border-primary hover:text-primary"
+                      >
+                        <BookOpen className="size-3" />
+                        Curriculum
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

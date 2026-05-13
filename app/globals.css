@@ -165,7 +165,7 @@
   --card-foreground:      oklch(0.13 0.013 260);
   --popover:              oklch(1 0 0);
   --popover-foreground:   oklch(0.13 0.013 260);
-  --primary:              oklch(0.44 0.14 145);  /* #15803d green-700 */
+  --primary:              oklch(62.794% 0.14633 157.337);  /* #15803d green-700 */
   --primary-foreground:   oklch(1 0 0);           /* white */
   --secondary:            oklch(0.96 0 0);        /* #f1f3f5 subtle */
   --secondary-foreground: oklch(0.13 0.013 260);
@@ -221,7 +221,7 @@
   --color-strong:       var(--border-strong);
   --color-focus:        var(--border-focus);
 
-  --color-primary:       var(--green-700);
+  --color-primary:       var(--primary);
   --color-primary-mid:   var(--green-600);
   --color-primary-light: var(--green-100);
   --color-primary-ghost: var(--green-50);
@@ -308,8 +308,6 @@ html { scroll-behavior: smooth; }
 body {
   min-height: 100vh;
   background-color: #f8fafc;
-  background-image: radial-gradient(#0000001a 1px, #f8fafc 1px);
-  background-size: 16px 16px;
   color: var(--text-primary);
   font-family: var(--ff-body);
   font: var(--type-body-lg);
@@ -470,15 +468,19 @@ button, a, input, textarea, select { font: inherit; }
 }
 
 /* === RICH CONTENT (Student Doc Viewer — renders Quill HTML output) === */
-.rich-content { line-height: 1.75; font-size: 1rem; }
-.rich-content p { margin-top: 0; margin-bottom: 0.85rem; line-height: 1.75; }
+.rich-content { line-height: 1.4; font-size: 1rem; white-space: pre-wrap; word-break: break-word; }
+.rich-content p { margin-top: 0; margin-bottom: 0; line-height: 1.4; min-height: 1.4em; }
 .rich-content p:last-child { margin-bottom: 0; }
 /* Blank lines: Quill emits <p><br></p>; we replace <br> with &nbsp; in preprocessHtml */
-.rich-content p.ql-blank { line-height: 1.75; min-height: 1.4em; }
+.rich-content p.ql-blank { line-height: 1.4; min-height: 1.4em; }
 
 .rich-content .ql-size-small  { font-size: 0.75em; }
 .rich-content .ql-size-large  { font-size: 1.5em; }
 .rich-content .ql-size-huge   { font-size: 2.5em; }
+
+.rich-content .ql-align-center { text-align: center !important; }
+.rich-content .ql-align-right { text-align: right !important; }
+.rich-content .ql-align-justify { text-align: justify !important; }
 
 .rich-content h1 { font-size: 2rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.75rem; line-height: 1.2; color: var(--text-primary); }
 .rich-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.6rem; line-height: 1.25; color: var(--text-primary); }
