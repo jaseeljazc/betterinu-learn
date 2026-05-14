@@ -62,17 +62,26 @@ export async function GET(req: NextRequest) {
   const assignmentId = searchParams.get("assignmentId");
   const courseId = searchParams.get("courseId");
 
-  if (!assignmentId || !courseId) {
-    return NextResponse.json({ error: "Missing assignmentId or courseId" }, { status: 400 });
+  if (assignmentId && courseId) {
+    const rows = await sql`
+      SELECT * FROM assignment_submissions
+      WHERE assignment_id = ${assignmentId}
+        AND student_id = ${student.studentId}
+        AND course_id = ${courseId}
+      LIMIT 1
+    `;
+    return NextResponse.json({ submission: rows[0] ?? null });
   }
 
+  // If no specific assignment is requested, return ALL submissions for this student
+  // Join with courses table to get the course title
   const rows = await sql`
-    SELECT * FROM assignment_submissions
-    WHERE assignment_id = ${assignmentId}
-      AND student_id = ${student.studentId}
-      AND course_id = ${courseId}
-    LIMIT 1
+    SELECT a.*, c.title as course_title 
+    FROM assignment_submissions a
+    LEFT JOIN courses c ON a.course_id = c.id
+    WHERE a.student_id = ${student.studentId}
+    ORDER BY a.submitted_at DESC
   `;
 
-  return NextResponse.json({ submission: rows[0] ?? null });
+  return NextResponse.json({ submissions: rows });
 }

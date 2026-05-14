@@ -15,7 +15,7 @@ export function EnrollButton({ courseId, size = "lg", className }: { courseId: C
 
   if (enrolled) {
     return (
-      <Link className={buttonVariants({ size: buttonSize, className: cn("w-full", className) })} href={`/course/${courseId}/learn`}>
+      <Link className={buttonVariants({ size: buttonSize, className: cn(" text-white", className) })} href={`/course/${courseId}/learn`}>
         Continue Learning
         <ArrowRight className="size-5" aria-hidden />
       </Link>

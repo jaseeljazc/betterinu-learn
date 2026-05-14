@@ -19,7 +19,7 @@ export function SyllabusList({ course }: { course: Course }) {
             value={week.id}
             key={week.id}
             className="border-b-0 border-t border-muted first:border-t-0 py-2"
-          >
+          >   
             <AccordionTrigger className="hover:no-underline py-4">
               <span className="flex flex-wrap items-center gap-3">
                 <span className="font-display text-lg font-bold">{week.title}</span>
@@ -36,7 +36,7 @@ export function SyllabusList({ course }: { course: Course }) {
               <div className={!unlocked && index > 0 ? "blur-[1px] opacity-60" : ""}>
                 {week.days.map((day) => (
                   <div className="border-t border-muted py-3 first:border-t-0" key={day.id}>
-                    <p className="text-sm font-bold text-foreground">{day.label}: {day.title}</p>
+                    <p className="text-sm font-bold text-foreground">{day.label}:</p>
                     <ul className="mt-2 grid gap-1 text-sm text-secondary">
                       {day.subModules.map((module) => (
                         <li key={module.id}>{module.title}</li>

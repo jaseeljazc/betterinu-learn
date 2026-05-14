@@ -322,7 +322,7 @@ export function LessonViewerClient({
       <div className="flex-1 min-w-0 h-full bg-white flex flex-col overflow-hidden">
         {/* Top breadcrumb bar — fixed relative to this column, never scrolls */}
         <div className="shrink-0 border-b border-default bg-background px-6 lg:px-10 py-3 z-10">
-          <div className="flex items-center gap-2 text-xs text-secondary"> 
+          <div className="flex items-center gap-2 text-xs text-secondary">
             <Link
               className="font-semibold transition-colors hover:text-primary"
               href={`/course/${course.id}`}
@@ -341,10 +341,12 @@ export function LessonViewerClient({
         {/* Scrollable content area — scrollbar hidden */}
         <div
           className="flex-1 overflow-y-auto"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          } as React.CSSProperties}
+          style={
+            {
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            } as React.CSSProperties
+          }
         >
           <style>{`
             .main-content-scroll::-webkit-scrollbar {
@@ -352,7 +354,7 @@ export function LessonViewerClient({
             }
           `}</style>
           <div className="flex flex-col min-h-full main-content-scroll">
-            {/* Content area */}  
+            {/* Content area */}
             <div className="px-6 lg:px-10 xl:px-14 pt-4 pb-40 max-w-4xl w-full">
               {/* Lesson header */}
               <div>
@@ -400,6 +402,7 @@ export function LessonViewerClient({
                       <LessonSectionViewer
                         sections={subModule.sections}
                         pagePadding={subModule.pagePadding}
+                        pageBgColor={subModule.pageBgColor}
                       />
                     ) : (
                       <DocViewer content={subModule.content ?? ""} />
@@ -511,8 +514,8 @@ export function LessonViewerClient({
         </div>
 
         {/* ─── FIXED FOOTER NAV ─── */}
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-default bg-white/95 px-6 py-3 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.06)]">
-          <div className="mx-auto grid max-w-5xl grid-cols-3 items-center gap-4">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-default bg-white/95 px-6 py-2 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.06)]">
+          <div className="mx-auto grid max-w-7xl grid-cols-3 items-center gap-4">
             {/* Left: Previous */}
             <div className="justify-self-start">
               {previous ? (
@@ -528,8 +531,7 @@ export function LessonViewerClient({
 
             {/* Center: Complete / Status */}
             <div className="justify-self-center">
-              {subModule.type !== "quiz" &&
-              subModule.type !== "assignment" ? (
+              {subModule.type !== "quiz" && subModule.type !== "assignment" ? (
                 <button
                   onClick={() =>
                     markSubModuleComplete(

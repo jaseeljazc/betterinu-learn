@@ -168,7 +168,7 @@ export function DashboardClient() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-xl font-bold">Your Assignments</h2>
           </div>
-          <AssignmentsList />
+          <AssignmentsList enrolledCourses={enrolled} />
         </section>
 
         {/* Sidebar */}

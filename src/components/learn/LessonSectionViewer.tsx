@@ -8,27 +8,226 @@ import {
   CheckSquare,
 } from "lucide-react";
 import type { LessonSection } from "@/types";
+import { useState } from "react";
 
 function preprocessHtml(html: string): string {
   return html;
 }
 
+// function getYouTubeId(url: string): string | null {
+//   const regexes = [
+//     /youtube\.com\/watch\?v=([^&]+)/,
+//     /youtu\.be\/([^?&]+)/,
+//     /youtube\.com\/embed\/([^?&]+)/,
+//   ];
+//   for (const re of regexes) {
+//     const match = url.match(re);
+//     if (match) return match[1];
+//   }
+//   return null;
+// }
+
+// function getVimeoId(url: string): string | null {
+//   const match = url.match(/vimeo\.com\/(\d+)/);
+//   return match ? match[1] : null;
+// }
+
+// function VideoRenderer({ url, title }: { url: string; title?: string }) {
+//   const ytId = getYouTubeId(url);
+//   const vimeoId = getVimeoId(url);
+
+//   if (ytId) {
+//     return (
+//       <div className="space-y-2 w-full">
+//         {title && (
+//           <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+//         )}
+//         <div
+//           className="relative overflow-hidden rounded-xl border border-default shadow-sm"
+//           style={{ paddingBottom: "56.25%" }}
+//         >
+//           <iframe
+//             src={`https://www.youtube.com/embed/${ytId}`}
+//             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+//             allowFullScreen
+//             className="absolute inset-0 size-full"
+//             title={title ?? "Video"}
+//           />
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (vimeoId) {
+//     return (
+//       <div className="space-y-2 w-full">
+//         {title && (
+//           <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+//         )}
+//         <div
+//           className="relative overflow-hidden rounded-xl border border-default shadow-sm"
+//           style={{ paddingBottom: "56.25%" }}
+//         >
+//           <iframe
+//             src={`https://player.vimeo.com/video/${vimeoId}`}
+//             allow="autoplay; fullscreen; picture-in-picture"
+//             allowFullScreen
+//             className="absolute inset-0 size-full"
+//             title={title ?? "Video"}
+//           />
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   // Direct video file
+//   return (
+//     <div className="space-y-2 w-full">
+//       {title && (
+//         <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+//       )}
+//       <video
+//         controls
+//         className="w-full rounded-xl border border-default shadow-sm"
+//         src={url}
+//       >
+//         Your browser does not support the video tag.
+//       </video>
+//     </div>
+//   );
+// }
+
+
+
 function getYouTubeId(url: string): string | null {
-  const regexes = [
-    /youtube\.com\/watch\?v=([^&]+)/,
-    /youtu\.be\/([^?&]+)/,
-    /youtube\.com\/embed\/([^?&]+)/,
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/v\/([^&\n?#]+)/,
   ];
-  for (const re of regexes) {
-    const match = url.match(re);
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
     if (match) return match[1];
   }
   return null;
 }
 
 function getVimeoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(\d+)/);
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   return match ? match[1] : null;
+}
+
+function PlayButton() {
+  return (
+    <div
+      style={{
+        width: 56,
+        height: 56,
+        borderRadius: "50%",
+        background: "rgba(0,0,0,0.75)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+        transition: "background 0.18s, transform 0.18s",
+        cursor: "pointer",
+      }}
+      className="play-btn-circle"
+    >
+      {/* Triangle play icon */}
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 22 22"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ marginLeft: 3 }}
+      >
+        <polygon points="5,3 19,11 5,19" fill="white" />
+      </svg>
+    </div>
+  );
+}
+
+function YouTubePlayer({ ytId, title }: { ytId: string; title?: string }) {
+  const [playing, setPlaying] = useState(false);
+  const thumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+
+  return (
+    <div className="space-y-2 w-full">
+      {title && (
+        <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+      )}
+      <div
+        className="relative overflow-hidden rounded-xl border border-default shadow-sm"
+        style={{ paddingBottom: "56.25%" }}
+      >
+        {!playing ? (
+          <button
+            onClick={() => setPlaying(true)}
+            aria-label={`Play ${title ?? "video"}`}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              padding: 0,
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Thumbnail */}
+            <img
+              src={thumbnail}
+              alt={title ?? "Video thumbnail"}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+            {/* Dark overlay on hover */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.15)",
+                transition: "background 0.18s",
+              }}
+              className="thumbnail-overlay"
+            />
+            {/* Custom play button */}
+            <div style={{ position: "relative", zIndex: 2 }}>
+              <PlayButton />
+            </div>
+          </button>
+        ) : (
+          <iframe
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 size-full"
+            title={title ?? "Video"}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          />
+        )}
+      </div>
+      <style>{`
+        button:hover .play-btn-circle {
+          background: rgba(0,0,0,0.92) !important;
+          transform: scale(1.08);
+        }
+        button:hover .thumbnail-overlay {
+          background: rgba(0,0,0,0.28) !important;
+        }
+      `}</style>
+    </div>
+  );
 }
 
 function VideoRenderer({ url, title }: { url: string; title?: string }) {
@@ -36,25 +235,7 @@ function VideoRenderer({ url, title }: { url: string; title?: string }) {
   const vimeoId = getVimeoId(url);
 
   if (ytId) {
-    return (
-      <div className="space-y-2 w-full">
-        {title && (
-          <h3 className="font-semibold text-foreground text-sm">{title}</h3>
-        )}
-        <div
-          className="relative overflow-hidden rounded-xl border border-default shadow-sm"
-          style={{ paddingBottom: "56.25%" }}
-        >
-          <iframe
-            src={`https://www.youtube.com/embed/${ytId}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 size-full"
-            title={title ?? "Video"}
-          />
-        </div>
-      </div>
-    );
+    return <YouTubePlayer ytId={ytId} title={title} />;
   }
 
   if (vimeoId) {
@@ -73,6 +254,7 @@ function VideoRenderer({ url, title }: { url: string; title?: string }) {
             allowFullScreen
             className="absolute inset-0 size-full"
             title={title ?? "Video"}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
           />
         </div>
       </div>
@@ -95,6 +277,8 @@ function VideoRenderer({ url, title }: { url: string; title?: string }) {
     </div>
   );
 }
+
+export default VideoRenderer;
 
 export function SectionBlock({ section }: { section: LessonSection }) {
   // Helpers to get align classes
@@ -249,7 +433,7 @@ export function SectionBlock({ section }: { section: LessonSection }) {
               ) : section.url ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
-                  src={`https://www.google.com/s2/favicons?domain=${new URL(section.url).hostname}&sz=128`} 
+                  src={`https://www.google.com/s2/favicons?domain=${new URL(section.url).hostname}&sz=256`} 
                   alt="" 
                   className="size-16 object-contain"
                 />
@@ -454,11 +638,14 @@ export function SectionBlock({ section }: { section: LessonSection }) {
 interface LessonSectionViewerProps {
   sections: LessonSection[];
   pagePadding?: "none" | "sm" | "md" | "lg" | "xl";
+  pageBgColor?: string;  // ADD THIS LINE
 }
+
 
 export function LessonSectionViewer({
   sections,
   pagePadding,
+  pageBgColor,
 }: LessonSectionViewerProps) {
   if (!sections || sections.length === 0) return null;
 
@@ -475,11 +662,15 @@ export function LessonSectionViewer({
 
   return (
     <div
-      className={`rounded-xl border border-default bg-surface overflow-hidden flex flex-col divide-y divide-default/30 ${paddingCls}`}
+      className={`rounded-xl border border-default overflow-hidden flex flex-col divide-y divide-default/30 ${paddingCls}`}
+      style={{ backgroundColor: pageBgColor || '#ffffff' }}
     >
       {sections.map((section) => (
-        <SectionBlock key={section.id} section={section} />
+        <div key={section.id} style={{ backgroundColor: section.bgColor || 'transparent' }}>
+          <SectionBlock section={section} />
+        </div>
       ))}
     </div>
   );
+
 }

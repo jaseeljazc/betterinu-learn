@@ -67,7 +67,7 @@ export function QuizClient({
         <div className="mt-8 flex flex-col items-center gap-4">
           {passed ? (
             <Link className={buttonVariants({ size: "lg", className: "w-full max-w-xs" })} href={`/course/${course.id}/learn`}>
-              Continue Learning
+              Continue Learning 
               <ArrowRight className="size-4 ml-2" aria-hidden />
             </Link>
           ) : (

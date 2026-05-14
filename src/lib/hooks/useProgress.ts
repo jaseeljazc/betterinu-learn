@@ -40,27 +40,70 @@ function updateStreak(progress: StudentProgress): StudentProgress {
   };
 }
 
+let globalSyncPromise: Promise<any> | null = null;
+
 export function useProgress() {
   const [progress, setProgress] = useState<StudentProgress>(initialProgress);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const raw = window.localStorage.getItem(storageKey);
-      if (raw) {
-        setProgress({ ...initialProgress, ...JSON.parse(raw) });
-      }
-      setIsHydrated(true);
-    }, 0);
+    let mounted = true;
 
-    return () => window.clearTimeout(timeout);
+    // Fast local hydration
+    const raw = window.localStorage.getItem(storageKey);
+    if (raw) {
+      try {
+        setProgress({ ...initialProgress, ...JSON.parse(raw) });
+      } catch (e) {}
+    }
+    setIsHydrated(true);
+
+    // Fetch from database to ensure cross-device sync
+    if (!globalSyncPromise) {
+      globalSyncPromise = fetch("/api/student/progress-sync", { credentials: "include" })
+        .then(res => res.json())
+        .catch(err => {
+          console.error("Failed to sync progress from db", err);
+          return null;
+        });
+    }
+
+    globalSyncPromise.then(data => {
+      if (mounted && data?.progress) {
+        const merged = { ...initialProgress, ...data.progress };
+        setProgress(merged);
+        window.localStorage.setItem(storageKey, JSON.stringify(merged));
+      }
+    });
+
+    const handleSync = (e: any) => {
+      if (e.detail && mounted) {
+        setProgress(e.detail);
+      }
+    };
+    window.addEventListener("betterinu-progress-sync", handleSync);
+    
+    return () => {
+      mounted = false;
+      window.removeEventListener("betterinu-progress-sync", handleSync);
+    };
   }, []);
 
   useEffect(() => {
     if (isHydrated) {
       window.localStorage.setItem(storageKey, JSON.stringify(progress));
+      window.dispatchEvent(new CustomEvent("betterinu-progress-sync", { detail: progress }));
     }
   }, [isHydrated, progress]);
+
+  const syncToDb = useCallback((newProgress: StudentProgress) => {
+    fetch("/api/student/progress-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress: newProgress }),
+      credentials: "include"
+    }).catch(err => console.error("Failed to save progress to db", err));
+  }, []);
 
   const enrollInCourse = useCallback((courseId: CourseId) => {
     let shouldNotify = false;
@@ -69,12 +112,14 @@ export function useProgress() {
         return current;
       }
       shouldNotify = true;
-      return { ...current, enrolledCourses: [...current.enrolledCourses, courseId] };
+      const next = { ...current, enrolledCourses: [...current.enrolledCourses, courseId] };
+      syncToDb(next);
+      return next;
     });
     if (shouldNotify) {
       notify("Course added to your dashboard.");
     }
-  }, []);
+  }, [syncToDb]);
 
   const markSubModuleComplete = useCallback((subModuleId: string, dayId?: string, daySubModulesIds?: string[]) => {
     let notifications: string[] = [];
@@ -120,10 +165,11 @@ export function useProgress() {
         }
       }
 
+      syncToDb(next);
       return next;
     });
     notifications.forEach(msg => notify(msg));
-  }, []);
+  }, [syncToDb]);
 
   const markDayComplete = useCallback((dayId: string) => {
     setProgress((current) => {
@@ -131,13 +177,15 @@ export function useProgress() {
         return current;
       }
 
-      return updateStreak({
+      const next = updateStreak({
         ...current,
         completedDays: [...current.completedDays, dayId],
         xp: current.xp + 25,
       });
+      syncToDb(next);
+      return next;
     });
-  }, []);
+  }, [syncToDb]);
 
   const saveQuizResult = useCallback((result: QuizResult) => {
     setProgress((current) => {
@@ -145,16 +193,18 @@ export function useProgress() {
       const completedWeeks = result.passed ? unique([...current.completedWeeks, `${result.courseId}:${result.weekId}`]) : current.completedWeeks;
       const xp = current.xp + (result.passed ? 150 : 30);
 
-      return updateStreak({
+      const next = updateStreak({
         ...current,
         quizResults: [...current.quizResults, result],
         completedWeeks,
         badges,
         xp,
       });
+      syncToDb(next);
+      return next;
     });
     notify(result.passed ? "Quiz passed. Next week unlocked." : "Attempt saved. Review and try again.");
-  }, []);
+  }, [syncToDb]);
 
   const isSubModuleComplete = useCallback(
     (id: string) => progress.completedSubModules.includes(id),

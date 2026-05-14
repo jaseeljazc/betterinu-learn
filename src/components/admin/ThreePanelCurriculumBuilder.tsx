@@ -53,8 +53,7 @@ const SECTION_TYPES: { type: LessonSectionType; label: string; Icon: any; color:
   { type: "pdf", label: "PDF", Icon: FileIcon, color: "bg-orange-100 text-orange-700" },
   { type: "link", label: "External Link", Icon: Link2, color: "bg-teal-100 text-teal-700" },
   { type: "task", label: "Task", Icon: CheckSquare, color: "bg-indigo-100 text-indigo-700" },
-    { type: "columns",   label: "Columns",    Icon: Columns2,  color: "bg-pink-100 text-pink-700" },
-
+  { type: "columns",   label: "Columns",    Icon: Columns2,  color: "bg-pink-100 text-pink-700" },
 ];
 
 function defaultSection(type: LessonSectionType): LessonSection {
@@ -66,17 +65,16 @@ function defaultSection(type: LessonSectionType): LessonSection {
     case "link": return { id: uid(), type, title: "", url: "", description: "", thumbnailUrl: "" };
     case "task": return { id: uid(), type, title: "", description: "", submissionType: "url", deadline: "" };
     case "columns": return {
-  id: uid(),
-  type,
-  columnCount: 2,
-  cols: [
-    { id: uid(), type: "rich_text", content: "" },
-    { id: uid(), type: "rich_text", content: "" },
-  ],
-};
+      id: uid(),
+      type,
+      columnCount: 2,
+      cols: [
+        { id: uid(), type: "rich_text", content: "" },
+        { id: uid(), type: "rich_text", content: "" },
+      ],
+    };
   }
 }
-
 
 // Default content for a single column cell
 function defaultColContent(type: string) {
@@ -406,16 +404,22 @@ function WeekSection({ week, wIdx, activeNode, onAddDay, onRenameWeek, onRemoveW
   );
 }
 
-function SortableSectionItem({ section, onClick, isActive, onRemove }: any) {
+function SortableSectionItem({ section, onClick, isActive, onRemove, pageBgColor }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const style = { 
+    transform: CSS.Transform.toString(transform), 
+    transition, 
+    opacity: isDragging ? 0.5 : 1,
+    // Prioritize section bg color, then page bg color, fallback to white
+    backgroundColor: section.bgColor || pageBgColor || '#ffffff'
+  };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       onClick={onClick}
-      className={`group relative rounded-xl border transition-all cursor-pointer bg-white ${
+      className={`group relative rounded-xl border transition-all cursor-pointer ${
         isActive ? "border-blue-500 ring-2 ring-blue-500/20 shadow-md" : "border-transparent hover:border-default hover:shadow-sm"
       }`}
     >
@@ -695,9 +699,16 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
               </button>
             </>
           )}
-          <button type="button" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-muted hover:text-foreground shrink-0">
-            {sidebarCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-muted hover:text-foreground shrink-0">
+                {sidebarCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            </TooltipContent>
+          </Tooltip>
         </div>
         
         <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-3">
@@ -735,10 +746,31 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
             </div>
           )}
         </div>
+
+        {/* BOTTOM SIDEBAR SECTION */}
+        <div className="p-3 border-t border-default bg-surface shrink-0 flex flex-col items-center gap-4">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className={`flex items-center justify-center p-2 rounded-lg text-muted hover:text-primary hover:bg-primary/10 transition-all ${sidebarCollapsed ? "w-10 h-10" : "w-full gap-2 text-xs font-semibold"}`}
+              >
+                <HelpCircle className="size-5" />
+                {!sidebarCollapsed && <span>Builder Help</span>}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              Learn how to use the curriculum builder
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       {/* CENTER PANEL */}
-      <div className="flex-1 flex flex-col bg-subtle overflow-hidden">
+      <div 
+        className="flex-1 flex flex-col overflow-hidden transition-colors" 
+        style={{ backgroundColor: activeModule?.pageBgColor || 'var(--bg-subtle, #f8fafc)' }}
+      >
         <div className="p-4 border-b border-default bg-surface flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             {activeModule && (() => { const m = getModuleTypeMeta(activeModule.type); return <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.bg} ${m.color}`}><m.Icon className="size-3" />{m.label}</span>; })()}
@@ -885,7 +917,7 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
               )}
             </div>
           ) : (
-            /* LESSON EDITOR (existing, unchanged) */
+            /* LESSON EDITOR */
             <div className={`max-w-3xl mx-auto space-y-6 pb-20 ${
               activeModule?.pagePadding === "sm" ? "px-4 sm:px-8" :
               activeModule?.pagePadding === "md" ? "px-6 sm:px-12" :
@@ -904,6 +936,7 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                           isActive={activeSectionId === section.id}
                           onClick={() => setActiveSectionId(section.id)}
                           onRemove={() => removeSection(section.id)}
+                          pageBgColor={activeModule?.pageBgColor}
                         />
                         {/* Add button between sections (hover on wrapper) */}
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover/wrapper:opacity-100 transition-opacity">
@@ -977,7 +1010,30 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted border-b border-default pb-2">
                   Page Settings
                 </h4>
-                <div className="space-y-1">
+                
+                {/* Page Background Color Picker */}
+                <div className="space-y-1 mt-4">
+                  <label className="block text-xs font-bold text-muted mb-1">Page Background Color</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative size-8 rounded-md overflow-hidden border border-default shadow-sm shrink-0">
+                      <input
+                        type="color"
+                        value={activeModule?.pageBgColor || "#f8fafc"}
+                        onChange={(e) => updateModule({ pageBgColor: e.target.value })}
+                        className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateModule({ pageBgColor: "" })}
+                      className="text-xs font-semibold text-muted hover:text-red-500"
+                    >
+                      Reset to Default
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-4">
                   <label className="block text-xs font-bold text-muted mb-1">Page Padding (Horizontal)</label>
                   <div className="flex bg-surface rounded-lg p-1 border border-default flex-wrap gap-1">
                     {["none", "sm", "md", "lg", "xl"].map((p) => (
@@ -1004,6 +1060,28 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                <h4 className="text-xs font-bold uppercase tracking-widest text-muted border-b border-default pb-2">
                  {SECTION_TYPES.find(t => t.type === activeSection.type)?.label || "Section"} Settings
                </h4>
+
+               {/* Section Background Color Picker */}
+               <div className="space-y-1 pb-4 border-b border-default">
+                 <label className="block text-xs font-bold text-muted mb-1">Section Background Color</label>
+                 <div className="flex items-center gap-3">
+                   <div className="relative size-8 rounded-md overflow-hidden border border-default shadow-sm shrink-0">
+                     <input
+                       type="color"
+                       value={activeSection.bgColor || "#ffffff"}
+                       onChange={(e) => updateSection({ bgColor: e.target.value })}
+                       className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                     />
+                   </div>
+                   <button
+                     type="button"
+                     onClick={() => updateSection({ bgColor: "" })}
+                     className="text-xs font-semibold text-muted hover:text-red-500"
+                   >
+                     Reset to Default
+                   </button>
+                 </div>
+               </div>
 
                {/* Global Alignment Setting */}
                <div className="space-y-1 pb-4 border-b border-default">
@@ -1135,7 +1213,7 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                          <button type="button"
                            key={s}
                            onClick={() => updateSection({ size: s as any })}
-                                                       className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                           className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                          >
                            {s.toUpperCase()}
                          </button>
