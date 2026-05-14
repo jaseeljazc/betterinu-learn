@@ -31,6 +31,7 @@ import {
   ClipboardList,
   ExternalLink,
   Lock,
+  Columns2,
 } from "lucide-react";
 import type { LessonSection, LessonSectionType } from "@/types";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
@@ -52,6 +53,8 @@ const SECTION_TYPES: { type: LessonSectionType; label: string; Icon: any; color:
   { type: "pdf", label: "PDF", Icon: FileIcon, color: "bg-orange-100 text-orange-700" },
   { type: "link", label: "External Link", Icon: Link2, color: "bg-teal-100 text-teal-700" },
   { type: "task", label: "Task", Icon: CheckSquare, color: "bg-indigo-100 text-indigo-700" },
+    { type: "columns",   label: "Columns",    Icon: Columns2,  color: "bg-pink-100 text-pink-700" },
+
 ];
 
 function defaultSection(type: LessonSectionType): LessonSection {
@@ -60,10 +63,40 @@ function defaultSection(type: LessonSectionType): LessonSection {
     case "image": return { id: uid(), type, url: "", caption: "", size: "full" };
     case "video": return { id: uid(), type, url: "", title: "" };
     case "pdf": return { id: uid(), type, url: "", filename: "" };
-    case "link": return { id: uid(), type, title: "", url: "", description: "" };
+    case "link": return { id: uid(), type, title: "", url: "", description: "", thumbnailUrl: "" };
     case "task": return { id: uid(), type, title: "", description: "", submissionType: "url", deadline: "" };
+    case "columns": return {
+  id: uid(),
+  type,
+  columnCount: 2,
+  cols: [
+    { id: uid(), type: "rich_text", content: "" },
+    { id: uid(), type: "rich_text", content: "" },
+  ],
+};
   }
 }
+
+
+// Default content for a single column cell
+function defaultColContent(type: string) {
+  switch (type) {
+    case "rich_text": return { content: "" };
+    case "image":     return { url: "", caption: "", size: "full" };
+    case "video":     return { url: "", title: "" };
+    case "pdf":       return { url: "", filename: "" };
+    case "link":      return { title: "", url: "", description: "", thumbnailUrl: "" };
+    default:          return {};
+  }
+}
+
+const COL_TYPES = [
+  { type: "rich_text", label: "Rich Text", Icon: FileText },
+  { type: "image",     label: "Image",     Icon: ImageIcon },
+  { type: "video",     label: "Video",     Icon: Video },
+  { type: "pdf",       label: "PDF",       Icon: FileIcon },
+  { type: "link",      label: "Link",      Icon: Link2 },
+];
 
 // Helper to get module type metadata
 function getModuleTypeMeta(type: string) {
@@ -414,6 +447,7 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeNode, setActiveNode] = useState<{wIdx: number, dIdx: number, mIdx?: number} | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [activeColTab, setActiveColTab] = useState(0);
 
   // Safely get current active day
   const activeDay = activeNode ? form.curriculum?.[activeNode.wIdx]?.days?.[activeNode.dIdx] : null;
@@ -990,6 +1024,19 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                  </div>
                </div>
 
+               {/* Section Horizontal Padding */}
+               <div className="space-y-1 pb-4 border-b border-default">
+                 <label className="block text-xs font-bold text-muted">Horizontal Padding</label>
+                 <div className="flex bg-surface rounded-lg p-1 border border-default overflow-x-auto">
+                   {(["none", "sm", "md", "lg", "xl"] as const).map(p => (
+                     <button key={p} type="button" 
+                       onClick={() => updateSection({ paddingX: p })}
+                       className={`flex-1 min-w-[45px] py-1.5 px-2 text-[10px] font-semibold rounded-md transition-colors ${activeSection.paddingX === p || (!activeSection.paddingX && p === "md") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                     >{p === "none" ? "None" : p.toUpperCase()}</button>
+                   ))}
+                 </div>
+               </div>
+
                {activeSection.type === "rich_text" && (
                  <div className="space-y-3">
                    <p className="text-sm text-muted">Use the rich text editor to format your content.</p>
@@ -1195,8 +1242,148 @@ export function ThreePanelCurriculumBuilder({ form, update, onSave, onCancel, sa
                  </div>
                )}
 
+                {(activeSection as any).type === "columns" && (() => {
+                  const s = activeSection as any;
+                  const colCount: 2 | 3 = s.columnCount || 2;
+                  const cols: any[] = s.cols || [];
+                  const inputCls = "w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary";
+                  const colTypes = [
+                    { type: "rich_text", label: "Rich Text" },
+                    { type: "image",     label: "Image" },
+                    { type: "video",     label: "Video" },
+                    { type: "pdf",       label: "PDF" },
+                    { type: "link",      label: "Link" },
+                  ];
+                  function mkCol(type: string) {
+                    const id = `c_${Math.random().toString(36).slice(2,8)}`;
+                    switch (type) {
+                      case "rich_text": return { id, type, content: "" };
+                      case "image":     return { id, type, url: "", caption: "", size: "full" };
+                      case "video":     return { id, type, url: "", title: "" };
+                      case "pdf":       return { id, type, url: "", filename: "" };
+                      case "link":      return { id, type, title: "", url: "", description: "", thumbnailUrl: "" };
+                      default:          return { id, type: "rich_text", content: "" };
+                    }
+                  }
+                  const setN = (n: 2|3) => {
+                    const next = [...cols];
+                    while (next.length < n) next.push(mkCol("rich_text"));
+                    updateSection({ columnCount: n, cols: next.slice(0, n) } as any);
+                  };
+                  const safeCols = [
+                    cols[0] || mkCol("rich_text"),
+                    cols[1] || mkCol("rich_text")
+                  ];
+                  const patchCol = (i: number, f: any) =>
+                    updateSection({ cols: safeCols.map((c: any, ci: number) => ci === i ? { ...c, ...f } : c) } as any);
+                  const changeType = (i: number, t: string) =>
+                    updateSection({ cols: safeCols.map((c: any, ci: number) => ci === i ? { ...mkCol(t), id: c.id } : c) } as any);
+                  
+                  const activeColIdx = activeColTab < 2 ? activeColTab : 0;
+                  const activeCol = safeCols[activeColIdx];
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex bg-surface rounded-lg p-1 border border-default">
+                        {[0, 1].map((idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveColTab(idx)}
+                            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                              activeColIdx === idx
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-muted hover:text-foreground hover:bg-black/5"
+                            }`}
+                          >
+                            Column {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="rounded-lg border border-default bg-white overflow-hidden">
+                        <div className="flex items-center gap-2 bg-surface px-3 py-2 border-b border-default">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Type</span>
+                          <select value={activeCol.type} onChange={(e: any) => changeType(activeColIdx, e.target.value)}
+                            className="ml-auto text-[10px] font-semibold border border-default rounded px-2 py-0.5 bg-white text-secondary focus:outline-none focus:border-primary"
+                          >
+                            {colTypes.map((t: any) => <option key={t.type} value={t.type}>{t.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="p-2.5 space-y-2">
+                          {activeCol.type === "rich_text" && (
+                            <div className="bg-white relative z-50">
+                              <RichTextEditor
+                                value={activeCol.content || ""}
+                                onChange={(v: string) => patchCol(activeColIdx, { content: v })}
+                                placeholder={`Column ${activeColIdx + 1}…`}
+                              />
+                            </div>
+                          )}
+                          {activeCol.type === "image" && (
+                            <>
+                              {activeCol.url && <img src={activeCol.url} alt="" className="max-h-28 w-full object-contain rounded border border-default" />}
+                              <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="Image URL…" className={inputCls} />
+                              <FileUploader
+                                folder={`lessons/${activeDay?.id}/images`}
+                                files={activeCol.url ? [{ url: activeCol.url, name: "image", type: "image/*" }] : []}
+                                onChange={(files: any[]) => { if (files.length) patchCol(activeColIdx, { url: files[0].url }); }}
+                                role="admin"
+                              />
+                              <input value={activeCol.caption || ""} onChange={(e: any) => patchCol(activeColIdx, { caption: e.target.value })} placeholder="Caption" className={inputCls} />
+                              <select value={activeCol.size || "full"} onChange={(e: any) => patchCol(activeColIdx, { size: e.target.value })} className={inputCls}>
+                                <option value="sm">Small</option><option value="md">Medium</option>
+                                <option value="lg">Large</option><option value="full">Full</option>
+                              </select>
+                            </>
+                          )}
+                          {activeCol.type === "video" && (
+                            <>
+                              <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="YouTube / Vimeo URL…" className={inputCls} />
+                              <input value={activeCol.title || ""} onChange={(e: any) => patchCol(activeColIdx, { title: e.target.value })} placeholder="Title (optional)" className={inputCls} />
+                            </>
+                          )}
+                          {activeCol.type === "pdf" && (
+                            <>
+                              <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="PDF URL…" className={inputCls} />
+                              <FileUploader
+                                folder={`lessons/${activeDay?.id}/pdfs`}
+                                files={activeCol.url ? [{ url: activeCol.url, name: activeCol.filename || "doc.pdf", type: "application/pdf" }] : []}
+                                onChange={(files: any[]) => { if (files.length) patchCol(activeColIdx, { url: files[0].url, filename: files[0].name }); }}
+                                role="admin"
+                              />
+                              <input value={activeCol.filename || ""} onChange={(e: any) => patchCol(activeColIdx, { filename: e.target.value })} placeholder="Filename" className={inputCls} />
+                            </>
+                          )}
+                          {activeCol.type === "link" && (
+                            <>
+                              <input value={activeCol.title || ""} onChange={(e: any) => patchCol(activeColIdx, { title: e.target.value })} placeholder="Link title…" className={inputCls} />
+                              <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="https://…" className={inputCls} />
+                              <input value={activeCol.description || ""} onChange={(e: any) => patchCol(activeColIdx, { description: e.target.value })} placeholder="Description (optional)" className={inputCls} />
+                              <div className="mt-2 space-y-1">
+                                <label className="text-[9px] font-bold uppercase text-muted">Icon / Thumbnail</label>
+                                <FileUploader 
+                                  folder={`lessons/${activeDay?.id}/links`}
+                                  files={activeCol.thumbnailUrl ? [{ url: activeCol.thumbnailUrl, name: "icon", type: "image/*" }] : []}
+                                  onChange={(files) => { 
+                                    if(files.length) {
+                                       patchCol(activeColIdx, { thumbnailUrl: files[0].url });
+                                    }
+                                  }}
+                                  role="admin"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
             </div>
           )}
+
         </div>
 
         {/* Sticky footer: Save + Cancel */}

@@ -10,7 +10,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
   const progress = getCourseProgress(course);
 
   return (
-    <aside className="sticky top-[84px] hidden h-[calc(100vh-84px)] w-100 shrink-0 overflow-y-auto overflow-x-hidden border-r border-default pr-6 lg:block">
+    <aside className="sticky top-[84px] hidden h-[calc(100vh-84px)] w-[320px] shrink-0 overflow-y-auto overflow-x-hidden border-r border-default pr-6 lg:block">
       {/* Course progress block */}
       <div className="mb-5 rounded-lg border border-default bg-white overflow-hidden">
         <div className="border-b border-primary bg-primary px-4 py-3">
@@ -64,10 +64,10 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
                 </div>
 
                 {active && unlocked ? (
-                  <div className="mt-2.5 grid gap-0.5 border-t border-default pt-2">
+                  <div className="mt-2.5 flex flex-col gap-0.5 border-t border-default pt-2">
                     {week.days.map((day) => (
                       <a
-                        className="group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[11px] text-secondary transition-colors hover:bg-subtle hover:text-foreground focus-ring"
+                        className="w-full group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[11px] text-secondary transition-colors hover:bg-subtle hover:text-foreground focus-ring"
                         href={`#${day.id}`}
                         key={day.id}
                       >

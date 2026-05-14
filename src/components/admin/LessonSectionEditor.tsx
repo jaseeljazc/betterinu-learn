@@ -17,8 +17,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  GripVertical, ChevronDown, ChevronRight, Plus, Trash2,
-  FileText, Image as ImageIcon, Video, FileIcon, Link2, Layers,
+  GripVertical, Plus, Trash2,
+  FileText, Image as ImageIcon, Video, FileIcon, Link2, Layers, Columns2,
 } from "lucide-react";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { FileUploader } from "@/components/ui/FileUploader";
@@ -29,6 +29,17 @@ function uid() {
   return `s_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function defaultColCell(type: string): any {
+  switch (type) {
+    case "rich_text": return { id: uid(), type, content: "" };
+    case "image":     return { id: uid(), type, url: "", caption: "", size: "full" };
+    case "video":     return { id: uid(), type, url: "", title: "" };
+    case "pdf":       return { id: uid(), type, url: "", filename: "" };
+    case "link":      return { id: uid(), type, title: "", url: "", description: "" };
+    default:          return { id: uid(), type: "rich_text", content: "" };
+  }
+}
+
 function defaultSection(type: LessonSectionType): LessonSection {
   switch (type) {
     case "rich_text": return { id: uid(), type, content: "" };
@@ -37,15 +48,29 @@ function defaultSection(type: LessonSectionType): LessonSection {
     case "pdf":       return { id: uid(), type, url: "", filename: "" };
     case "link":      return { id: uid(), type, title: "", url: "", description: "" };
     case "task":      return { id: uid(), type, title: "", description: "", submissionType: "url", deadline: "" };
+    case "columns":   return {
+      id: uid(), type,
+      columnCount: 2,
+      cols: [defaultColCell("rich_text"), defaultColCell("rich_text")],
+    } as any;
   }
 }
 
 const SECTION_TYPES: { type: LessonSectionType; label: string; Icon: any; color: string }[] = [
-  { type: "rich_text", label: "Rich Text",      Icon: FileText,   color: "bg-purple-100 text-purple-700" },
-  { type: "image",     label: "Image",           Icon: ImageIcon,  color: "bg-blue-100   text-blue-700"   },
-  { type: "video",     label: "Video Link",      Icon: Video,      color: "bg-red-100    text-red-700"    },
-  { type: "pdf",       label: "PDF",             Icon: FileIcon,   color: "bg-orange-100 text-orange-700" },
-  { type: "link",      label: "External Link",   Icon: Link2,      color: "bg-teal-100   text-teal-700"   },
+  { type: "rich_text", label: "Rich Text",    Icon: FileText,   color: "bg-purple-100 text-purple-700" },
+  { type: "image",     label: "Image",         Icon: ImageIcon,  color: "bg-blue-100 text-blue-700"   },
+  { type: "video",     label: "Video Link",    Icon: Video,      color: "bg-red-100 text-red-700"    },
+  { type: "pdf",       label: "PDF",           Icon: FileIcon,   color: "bg-orange-100 text-orange-700" },
+  { type: "link",      label: "External Link", Icon: Link2,      color: "bg-teal-100 text-teal-700"   },
+  { type: "columns",   label: "Columns",       Icon: Columns2,   color: "bg-pink-100 text-pink-700"   },
+];
+
+const COL_TYPES = [
+  { type: "rich_text", label: "Rich Text", Icon: FileText },
+  { type: "image",     label: "Image",     Icon: ImageIcon },
+  { type: "video",     label: "Video",     Icon: Video },
+  { type: "pdf",       label: "PDF",       Icon: FileIcon },
+  { type: "link",      label: "Link",      Icon: Link2 },
 ];
 
 // ── Section content editors ──────────────────────────────────────
@@ -223,16 +248,176 @@ function SectionEditor({
               className={inputCls + " resize-none"}
             />
           </div>
+          <div>
+            <label className={labelCls}>Icon / Preview Image</label>
+            <FileUploader
+              folder={`lessons/${moduleId}/links`}
+              files={section.thumbnailUrl ? [{ url: section.thumbnailUrl, name: "icon", type: "image/*" }] : []}
+              onChange={(files) => {
+                if (files.length) patch({ thumbnailUrl: files[0].url });
+              }}
+              role="admin"
+            />
+          </div>
         </div>
       );
+
+    case "columns": {
+      const s = section as any;
+      return <ColumnsEditor section={s} moduleId={moduleId} onChange={patch} />;
+    }
 
     default:
       return (
         <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
-          <strong>Unsupported Section Type:</strong> This section uses a legacy type ("{(section as any).type}") that has been deprecated. Please delete this section and recreate it.
+          <strong>Unsupported Section Type:</strong> "{(section as any).type}" — delete and recreate.
         </div>
       );
   }
+}
+
+// ── Columns Editor ─────────────────────────────────────────────────
+function ColumnsEditor({
+  section, moduleId, onChange,
+}: {
+  section: any;
+  moduleId: string;
+  onChange: (fields: Partial<any>) => void;
+}) {
+  const inputCls = "w-full rounded-lg border border-default bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/10";
+  const labelCls = "block text-[10px] font-bold uppercase tracking-widest text-muted mb-1";
+
+  const count: 2 | 3 = section.columnCount || 2;
+  const cols: any[] = section.cols || [];
+
+  function setCount(n: 2 | 3) {
+    let next = [...cols];
+    if (n > next.length) {
+      while (next.length < n) next.push(defaultColCell("rich_text"));
+    } else {
+      next = next.slice(0, n);
+    }
+    onChange({ columnCount: n, cols: next });
+  }
+
+  function updateCol(i: number, fields: Partial<any>) {
+    const next = cols.map((c, idx) => idx === i ? { ...c, ...fields } : c);
+    onChange({ cols: next });
+  }
+
+  function changeColType(i: number, type: string) {
+    const next = cols.map((c, idx) => idx === i ? { ...defaultColCell(type), id: c.id } : c);
+    onChange({ cols: next });
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Column count toggle */}
+      <div>
+        <label className={labelCls}>Layout</label>
+        <div className="flex gap-2">
+          {([2, 3] as const).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setCount(n)}
+              className={`flex items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-semibold transition-colors ${
+                count === n ? "bg-primary text-white border-primary" : "border-default bg-surface text-muted hover:text-primary"
+              }`}
+            >
+              <Columns2 className="size-4" />
+              {n} Columns
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Column editors */}
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${count}, 1fr)` }}
+      >
+        {Array.from({ length: count }).map((_, i) => {
+          const col = cols[i] || defaultColCell("rich_text");
+          const meta = COL_TYPES.find((t) => t.type === col.type) || COL_TYPES[0];
+          return (
+            <div key={col.id || i} className="rounded-xl border border-default bg-white overflow-hidden">
+              {/* Col header */}
+              <div className="flex items-center gap-2 bg-surface px-3 py-2 border-b border-default">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Column {i + 1}</span>
+                <select
+                  value={col.type}
+                  onChange={(e) => changeColType(i, e.target.value)}
+                  className="ml-auto text-[10px] font-semibold border border-default rounded-md px-2 py-0.5 bg-white text-secondary focus:outline-none focus:border-primary"
+                >
+                  {COL_TYPES.map((t) => (
+                    <option key={t.type} value={t.type}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Col content editor */}
+              <div className="p-3">
+                {col.type === "rich_text" && (
+                  <RichTextEditor
+                    value={col.content || ""}
+                    onChange={(v) => updateCol(i, { content: v })}
+                    placeholder="Type column content…"
+                  />
+                )}
+                {col.type === "image" && (
+                  <div className="space-y-2">
+                    {col.url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={col.url} alt="preview" className="max-h-36 w-full object-contain rounded border border-default" />
+                    )}
+                    <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="Image URL…" className={inputCls} />
+                    <input value={col.caption || ""} onChange={(e) => updateCol(i, { caption: e.target.value })} placeholder="Caption (optional)" className={inputCls} />
+                    <select value={col.size || "full"} onChange={(e) => updateCol(i, { size: e.target.value })} className={inputCls}>
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                      <option value="full">Full</option>
+                    </select>
+                  </div>
+                )}
+                {col.type === "video" && (
+                  <div className="space-y-2">
+                    <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="YouTube / Vimeo / mp4 URL…" className={inputCls} />
+                    <input value={col.title || ""} onChange={(e) => updateCol(i, { title: e.target.value })} placeholder="Title (optional)" className={inputCls} />
+                  </div>
+                )}
+                {col.type === "pdf" && (
+                  <div className="space-y-2">
+                    <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="PDF URL…" className={inputCls} />
+                    <input value={col.filename || ""} onChange={(e) => updateCol(i, { filename: e.target.value })} placeholder="Filename" className={inputCls} />
+                  </div>
+                )}
+                {col.type === "link" && (
+                  <div className="space-y-2">
+                    <input value={col.title || ""} onChange={(e) => updateCol(i, { title: e.target.value })} placeholder="Link title…" className={inputCls} />
+                    <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="https://…" className={inputCls} />
+                    <input value={col.description || ""} onChange={(e) => updateCol(i, { description: e.target.value })} placeholder="Description (optional)" className={inputCls} />
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase text-muted">Icon / Thumbnail</label>
+                      <FileUploader
+                        folder={`lessons/${moduleId}/links`}
+                        files={col.thumbnailUrl ? [{ url: col.thumbnailUrl, name: "icon", type: "image/*" }] : []}
+                        onChange={(files) => {
+                          if (files.length) updateCol(i, { thumbnailUrl: files[0].url });
+                        }}
+                        role="admin"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ── Section Preview ────────────────────────────────────────────────
@@ -285,6 +470,29 @@ function SectionPreview({ section }: { section: LessonSection }) {
           <a href={section.url} target="_blank" rel="noreferrer" className="text-[10px] text-teal-600 hover:underline break-all">{section.url || "No URL"}</a>
         </div>
       );
+    case "columns": {
+      const s = section as any;
+      const cols = s.cols || [];
+      return (
+        <div
+          className="grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${s.columnCount || 2}, 1fr)` }}
+        >
+          {cols.map((col: any, i: number) => (
+            <div key={col.id || i} className="rounded-lg border border-dashed border-default bg-subtle p-2 text-[10px] text-muted text-center">
+              <span className="font-semibold uppercase tracking-wider block mb-0.5">{col.type?.replace("_", " ")}</span>
+              {col.content ? (
+                <div className="text-left text-xs line-clamp-2 text-foreground" dangerouslySetInnerHTML={{ __html: col.content }} />
+              ) : col.url ? (
+                <span className="truncate block">{col.url}</span>
+              ) : (
+                <span className="italic">Empty</span>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
     default:
       return <div className="text-xs text-muted">Unknown section type</div>;
   }

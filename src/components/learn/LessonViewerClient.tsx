@@ -353,9 +353,9 @@ export function LessonViewerClient({
           `}</style>
           <div className="flex flex-col min-h-full main-content-scroll">
             {/* Content area */}  
-            <div className="px-6 lg:px-10 xl:px-14 py-10 pb-28 max-w-4xl w-full">
+            <div className="px-6 lg:px-10 xl:px-14 pt-4 pb-40 max-w-4xl w-full">
               {/* Lesson header */}
-              <div className="mb-10">
+              <div>
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-surface border border-default px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-secondary">
                     <ContentIcon className="size-3" aria-hidden />
@@ -379,11 +379,11 @@ export function LessonViewerClient({
                   </p>
                 )}
 
-                <div className="mt-6 h-px bg-gradient-to-r from-border via-border/50 to-transparent" />
+                <div className="mt-6 mb-2 h-px bg-gradient-to-r from-border via-border/50 to-transparent" />
               </div>
 
               {/* Content renderer */}
-              <div className="space-y-8">
+              <div className="flex-1 flex flex-col pb-10">
                 {subModule.type === "video" ? (
                   <div className="space-y-6">
                     <VideoPlayer module={subModule} />

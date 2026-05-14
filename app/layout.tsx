@@ -9,6 +9,22 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: "BetterInU LMS",
   description: "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "BetterInU LMS",
+    description: "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 600,
+        alt: "BetterInU LMS",
+      },
+    ],
+  },
 };
 
 /**
