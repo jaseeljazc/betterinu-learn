@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { Award, BarChart3, Clock, UserRound } from "lucide-react";
+import Link from "next/link";
+import { Award, BarChart3, Clock, UserRound, ChevronRight } from "lucide-react";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { CourseHero } from "@/components/course/CourseHero";
 import { SyllabusList } from "@/components/course/SyllabusList";
@@ -50,7 +51,13 @@ export default async function CourseDetailPage({
 
   return (
     <PageWrapper>
-      <div className="mx-auto max-w-7xl space-y-10">
+      <div className="mx-auto max-w-7xl space-y-6 pt-2">
+        <nav className="flex items-center gap-2 text-xs font-semibold text-muted mb-2" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          <ChevronRight size={12} className="opacity-50" />
+          <span className="text-foreground">{course.title}</span>
+        </nav>
+        
         <CourseHero course={course} />
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section>
@@ -64,39 +71,47 @@ export default async function CourseDetailPage({
             </div>
             <SyllabusList course={course} />
           </section>
-          <aside className="space-y-5 lg:sticky lg:top-24 lg:h-fit">
-            <Card className="p-5">
-              <h2 className="font-display text-xl font-bold">Course Stats</h2>
-              <div className="mt-4 grid gap-3">
-                {stats.map(({ Icon, label, value }) => (
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-lg bg-subtle p-3"
-                    key={label}
-                  >
-                    <span className="flex items-center gap-2 text-sm text-secondary">
-                      <Icon className="size-4 text-primary" aria-hidden />
-                      {label}
-                    </span>
-                    <span className="font-bold">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-            <Card className="p-5">
-              <h2 className="font-display text-xl font-bold">Instructor</h2>
-              <div className="mt-4 flex items-center gap-3">
-                <span className="grid size-12 place-items-center rounded-full bg-elevated font-bold">
-                  {course.instructor[0]}
-                </span>
-                <div>
-                  <p className="font-bold">{course.instructor}</p>
-                  <p className="text-sm text-secondary">
-                    {course.instructorBio}
-                  </p>
+          <aside className="relative">
+            {/* Invisible spacer to perfectly align the card with the Syllabus accordion */}
+            <div className="mb-4 hidden lg:block invisible" aria-hidden="true">
+              <p className="text-sm font-bold uppercase text-muted">Spacer</p>
+              <h2 className="font-display text-3xl font-bold">Spacer</h2>
+            </div>
+            
+            <div className="space-y-5 lg:sticky lg:top-24">
+              <Card className="p-5">
+                <h2 className="font-display text-xl font-bold">Course Stats</h2>
+                <div className="mt-4 grid gap-3">
+                  {stats.map(({ Icon, label, value }) => (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg bg-subtle p-3"
+                      key={label}
+                    >
+                      <span className="flex items-center gap-2 text-sm text-secondary">
+                        <Icon className="size-4 text-primary" aria-hidden />
+                        {label}
+                      </span>
+                      <span className="font-bold">{value}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </Card>
-            <EnrollButton courseId={course.id} />
+              </Card>
+              <Card className="p-5">
+                <h2 className="font-display text-xl font-bold">Instructor</h2>
+                <div className="mt- flex items-center gap-3">
+                  <span className="grid size-12 place-items-center rounded-full bg-elevated font-bold">
+                    {course.instructor[0]}
+                  </span>
+                  <div>
+                    <p className="font-bold">{course.instructor}</p>
+                    <p className="text-sm text-secondary">
+                      {course.instructorBio}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+              <EnrollButton courseId={course.id}  className="w-full"/>
+            </div>
           </aside>
         </div>
       </div>

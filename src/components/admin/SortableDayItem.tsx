@@ -159,7 +159,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           <option value="doc">Doc / Sections</option>
           <option value="video">Video</option>
           <option value="mixed">Mixed</option>
-          <option value="quiz">Quiz</option>
+          {/* <option value="quiz">Quiz</option> */}
           <option value="assignment">Assignment</option>
         </select>
         <input

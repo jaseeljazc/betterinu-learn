@@ -9,6 +9,7 @@ import {
   XCircle,
   ClipboardList,
   Send,
+  BookOpen,
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import { FileViewer } from "@/components/ui/FileViewer";
@@ -22,6 +23,7 @@ interface Submission {
   course_id: string;
   course_title: string;
   assignment_title?: string;
+  assignment_data?: any;
   week_id: string;
   day_id: string;
   submitted_text: string;
@@ -191,7 +193,7 @@ export default function SubmissionsPage() {
 
       {/* Review Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-default">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-default">
@@ -210,7 +212,7 @@ export default function SubmissionsPage() {
 
             <div className="p-6 space-y-5">
               {/* Current Status */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${STATUS_BADGE[selected.status]?.cls}`}>
                   {selected.status}
                 </span>
@@ -219,13 +221,35 @@ export default function SubmissionsPage() {
                 </span>
               </div>
 
+              {/* Assignment Prompt/Details */}
+              {selected.assignment_data && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <BookOpen className="size-4 text-primary" />
+                    Assignment Details
+                  </h3>
+                  {selected.assignment_data.description && (
+                    <div className="rounded-xl border border-default bg-subtle p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {selected.assignment_data.description}
+                    </div>
+                  )}
+                  {selected.assignment_data.files?.length > 0 && (
+                    <FileViewer
+                      files={selected.assignment_data.files}
+                      title="Reference Materials (Admin)"
+                    />
+                  )}
+                </div>
+              )}
+
               {/* Student's Answer */}
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-muted mb-2">Student's Answer</p>
                 <div className="rounded-xl border border-default bg-surface p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {selected.submitted_text}
+                  {selected.submitted_text || <span className="italic text-muted">No text provided.</span>}
                 </div>
               </div>
+
 
               {/* Student's Uploaded Files */}
               {selected.submitted_files?.length ? (

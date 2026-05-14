@@ -5,12 +5,11 @@ import Link from "next/link";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import {
   AlertCircle, BookOpenCheck, CheckCircle2, ChevronRight,
-  ClipboardCheck, Clock, GraduationCap, LayoutDashboard,
-  LogOut, User2, XCircle,
+  ClipboardCheck, Clock, GraduationCap,
+  User2, XCircle, Flame, TrendingUp, Star, ArrowRight,
 } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
 import { useProgress } from "@/lib/hooks/useProgress";
-import RoboLoader from "@/components/loading/robo-loader";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,22 +48,26 @@ const STATUS_CONFIG = {
   todo: {
     Icon: AlertCircle,
     label: "To Do",
-    cls: "bg-info-50 border-info-100 text-info-600",
+    cls: "bg-blue-50 border-blue-100 text-blue-600",
+    dot: "bg-blue-400",
   },
   pending: {
     Icon: Clock,
     label: "Under Review",
     cls: "bg-amber-50 border-amber-200 text-amber-600",
+    dot: "bg-amber-400",
   },
   approved: {
     Icon: CheckCircle2,
     label: "Approved",
-    cls: "bg-success-50 border-success-100 text-success-600",
+    cls: "bg-green-50 border-green-100 text-green-700",
+    dot: "bg-green-500",
   },
   rejected: {
     Icon: XCircle,
     label: "Revise",
-    cls: "bg-danger-50 border-danger-100 text-danger-600",
+    cls: "bg-red-50 border-red-100 text-red-600",
+    dot: "bg-red-400",
   },
 };
 
@@ -81,6 +84,13 @@ function fmtDate(iso: string | undefined) {
   return new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 function buildAssignments(courses: Course[], submissions: Submission[]): FlatAssignment[] {
@@ -112,80 +122,6 @@ function buildAssignments(courses: Course[], submissions: Submission[]): FlatAss
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ProfileCard({ user }: { user: User | null }) {
-  async function handleSignOut() {
-    await clientAuth.signOut();
-    document.cookie = "__session=; path=/; max-age=0";
-    window.location.href = "/login";
-  }
-
-  return (
-    <div className="rounded-xl border border-default bg-white p-5 shadow-sm">
-      {/* Header row */}
-      <div className="mb-4 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-green-700">
-          <User2 size={11} />
-          Student Profile
-        </span>
-        <Button
-          onClick={handleSignOut}
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 px-2 text-[11px] text-text-muted hover:bg-red-100 hover:text-red-600 focus-ring"
-        >
-          <LogOut size={12} />
-          Sign out
-        </Button>
-      </div>
-
-      {user ? (
-        <div className="flex items-center gap-3">
-          <Avatar className="size-14 border-2 border-green-100">
-            <AvatarFallback className="bg-green-50 font-mono text-base font-extrabold text-green-700">
-              {getInitials(user.displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-text-primary">
-              {user.displayName || "Student"}
-            </p>
-            <p className="truncate font-mono text-[11px] text-text-muted">
-              {user.email}
-            </p>
-            <p className="mt-1 text-[10px] text-text-disabled">
-              Member since {fmtDate(user.metadata.creationTime)}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-14 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-3 w-48" />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatPill({
-  icon: Icon, value, label,
-}: { icon: React.ElementType; value: string | number; label: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-default bg-white px-3.5 py-3 shadow-sm">
-      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-green-50 text-green-700">
-        <Icon size={14} />
-      </span>
-      <span className="font-mono text-sm font-extrabold text-text-primary">
-        {value}
-      </span>
-      <span className="text-xs text-text-muted">{label}</span>
-    </div>
-  );
-}
-
 function AssignmentRow({ item }: { item: FlatAssignment }) {
   const cfg = STATUS_CONFIG[item.status];
   const href = `/course/${item.course_id}/learn/${item.week_id}/${item.assignment_id}`;
@@ -193,31 +129,88 @@ function AssignmentRow({ item }: { item: FlatAssignment }) {
   return (
     <Link
       href={href}
-      className="transition-all duration-200 focus-ring flex flex-col gap-1.5 rounded-lg border border-border-muted bg-white p-3.5 hover:border-green-300 hover:shadow-md"
+      className="group flex items-center gap-3 rounded-xl border border-default bg-white p-3.5 transition-all duration-200 hover:border-primary/30 hover:shadow-md focus-ring"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-text-primary">
-            {item.assignment_title}
-          </p>
-          <p className="flex items-center gap-1 font-mono text-[10px] text-text-muted">
-            {item.course_title}
-            {item.submitted_at && (
-              <><span className="opacity-40">·</span><Clock size={9} />Due {fmtDate(item.submitted_at)}</>
-            )}
-          </p>
-        </div>
-        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide ${cfg.cls}`}>
-          <cfg.Icon size={10} />
-          {cfg.label}
+      <span className={`size-2 shrink-0 rounded-full ${cfg.dot}`} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-foreground">{item.assignment_title}</p>
+        <p className="truncate text-[11px] text-muted">{item.course_title}</p>
+      </div>
+      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cfg.cls}`}>
+        <cfg.Icon size={10} />
+        {cfg.label}
+      </span>
+      <ChevronRight size={13} className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+    </Link>
+  );
+}
+
+function CourseCard({ course, assignments }: { course: Course; assignments: FlatAssignment[] }) {
+  const courseAssignments = assignments.filter((a) => a.course_id === course.id);
+  const approvedCount = courseAssignments.filter((a) => a.status === "approved").length;
+  const pct = courseAssignments.length
+    ? Math.round((approvedCount / courseAssignments.length) * 100)
+    : 0;
+
+  return (
+    <Link
+      href={`/course/${course.id}`}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-default bg-white shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg focus-ring"
+    >
+      {/* Course image / fallback */}
+      <div className="relative aspect-[16/7] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
+        {course.image ? (
+          <img
+            src={course.image}
+            alt={course.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <GraduationCap className="size-10 text-primary/30" />
+          </div>
+        )}
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary shadow-sm backdrop-blur-sm">
+          Course
         </span>
       </div>
-      {item.feedback && (
-        <p className="rounded-md border border-border-muted bg-bg-elevated px-2.5 py-1.5 text-[11px] text-text-secondary">
-          <span className="font-semibold text-text-muted">Feedback: </span>
-          {item.feedback}
-        </p>
-      )}
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div>
+          <h3 className="text-sm font-bold leading-snug text-foreground group-hover:text-primary transition-colors">
+            {course.title}
+          </h3>
+          {course.description && (
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">
+              {course.description}
+            </p>
+          )}
+        </div>
+
+        {courseAssignments.length > 0 && (
+          <div className="mt-auto flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-primary">
+              {approvedCount}/{courseAssignments.length}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-muted">
+            {courseAssignments.length} assignment{courseAssignments.length !== 1 ? "s" : ""}
+          </span>
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+            Continue <ArrowRight size={11} />
+          </span>
+        </div>
+      </div>
     </Link>
   );
 }
@@ -246,162 +239,181 @@ export default function Home() {
       .catch(() => setSubmissions([]));
   }, []);
 
-  const isLoading  = courses === null || submissions === null;
+  const isLoading   = courses === null || submissions === null;
   const assignments = isLoading ? [] : buildAssignments(courses, submissions);
-  const pending    = assignments.filter((a) => a.status === "todo" || a.status === "rejected");
-  const reviewed   = assignments.filter((a) => a.status === "pending" || a.status === "approved");
+  // Only show assignments the student has actually submitted (exclude "todo")
+  const submitted   = assignments.filter((a) => a.status !== "todo");
+  const pending     = assignments.filter((a) => a.status === "rejected");  // needs revision
+  const reviewed    = assignments.filter((a) => a.status === "pending" || a.status === "approved");
+  const approvedAll = assignments.filter((a) => a.status === "approved").length;
 
   return (
     <PageWrapper>
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-6 px-4 py-8 lg:grid-cols-[1fr_280px]">
+      <div className="mx-auto max-w-7xl pt-5">
 
-        {/* ── Main ────────────────────────────────────────────── */}
-        <main className="flex min-w-0 flex-col gap-5">
+        {/* --- Hero / Greeting Banner --- */}
+        <div className="mb-8 overflow-hidden rounded-2xl border border-default bg-white shadow-xs relative">
+          {isLoading ? (
+            <>
+              <div className="px-6 py-7 sm:p-8">
+                <Skeleton className="mb-4 h-3 w-32" />
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-3">
+                    <Skeleton className="h-9 w-64 sm:w-80" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 border-t border-default px-6 py-3 sm:px-8">
+                <Skeleton className="size-6 rounded-full" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="px-6 py-7 sm:p-8">
+                {/* Eyebrow — date */}
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted">
+                  {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+                </p>
 
-          {/* Greeting header */}
-          <header className="hero-surface rounded-2xl px-7 py-6 relative bg-primary">
-            {/* Top accent bar */}
+                {/* Main greeting + stats row */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl leading-tight">
+                      {getGreeting()}{user?.displayName ? `, ${user.displayName.split(" ")[0]}` : ""}.
+                    </h1>
+                    <p className="mt-1.5 text-sm text-secondary">
+                      Here&apos;s your learning snapshot for today.
+                    </p>
+                  </div>
 
-            <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-widest text-black ">
-              {new Date().toLocaleDateString("en-IN", {
-                weekday: "long", day: "numeric", month: "long",
-              })}
-            </p>
-            <h1 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-white">
-              {user?.displayName
-                ? `Good to see you, ${user.displayName}.`
-                : "Welcome back."}
-            </h1>
-            <p className="mt-1 text-sm text-white">
-              Here's what's on your plate today.
-            </p>
-          </header>
+                  {/* Inline stat chips */}
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    {[
+                      { Icon: BookOpenCheck, value: courses?.length ?? "—", label: "Courses", accent: "bg-primary/8 text-primary border-primary/15" },
+                      { Icon: CheckCircle2, value: progress.completedSubModules.length, label: "Completed", accent: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+                      { Icon: ClipboardCheck, value: pending.length, label: "Pending", accent: "bg-amber-50 text-amber-700 border-amber-100" },
+                    ].map(({ Icon, value, label, accent }) => (
+                      <div key={label} className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 ${accent}`}>
+                        <Icon size={14} className="shrink-0 opacity-80" />
+                        <span className="text-lg font-extrabold leading-none">{value}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-          {/* ── Courses ── */}
-          <section className="rounded-2xl border border-default bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-display text-base font-bold tracking-tight text-text-primary">
-              My Courses
-            </h2>
+          {/* User footer */}
+          <div className="flex items-center gap-3 border-t border-default px-6 py-3 sm:px-8">
+            <Avatar className="size-6 border border-default">
+              <AvatarFallback className="bg-primary/10 text-[9px] font-extrabold text-primary">
+                {user ? getInitials(user.displayName) : "S"}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs font-semibold text-secondary flex-1 truncate">
+              {user?.email ?? "Loading..."}
+            </span>
+          </div>
+            </>
+          )}
+        </div>
+
+        {/* --- Three-column layout --- */}
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+
+          {/* --- Courses column --- */}
+          <section className="flex flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-base font-bold text-foreground">My Courses</h2>
+              {courses && courses.length > 0 && (
+                <span className="text-[11px] text-muted">{courses.length} enrolled</span>
+              )}
+            </div>
 
             {courses === null ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 {[1, 2].map((i) => (
-                  <div key={i} className="rounded-lg border border-border-muted p-4">
-                    <Skeleton className="mb-3 h-4 w-2/3" />
-                    <Skeleton className="mb-1.5 h-3 w-full" />
-                    <Skeleton className="h-3 w-4/5" />
+                  <div key={i} className="flex flex-col rounded-2xl border border-default bg-white overflow-hidden shadow-sm">
+                    <Skeleton className="aspect-[16/7] w-full rounded-none" />
+                    <div className="flex flex-1 flex-col gap-3 p-4">
+                      <div>
+                        <Skeleton className="mb-2 h-4 w-3/4" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="mt-1 h-3 w-5/6" />
+                      </div>
+                      <div className="mt-auto flex items-center gap-2">
+                        <Skeleton className="h-1.5 flex-1 rounded-full" />
+                        <Skeleton className="h-3 w-6" />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : courses.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-sm text-text-muted">
-                <BookOpenCheck size={28} className="text-text-disabled" />
-                No courses assigned yet. Contact your admin.
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+                <GraduationCap size={36} className="text-muted" />
+                <div>
+                  <p className="font-semibold text-foreground">No courses yet</p>
+                  <p className="mt-0.5 text-sm text-muted">Contact your admin to get enrolled.</p>
+                </div>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {courses.map((course) => {
-                  const courseAssignments = assignments.filter((a) => a.course_id === course.id);
-                  const approvedCount = courseAssignments.filter((a) => a.status === "approved").length;
-                  const pct = courseAssignments.length
-                    ? Math.round((approvedCount / courseAssignments.length) * 100)
-                    : 0;
-
-                  return (
-                    <Link
-                      key={course.id}
-                      href={`/course/${course.id}`}
-                      className="transition-all duration-200 focus-ring group flex flex-col gap-2 rounded-xl border border-default bg-white p-4 hover:border-green-300 hover:shadow-md"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="rounded-sm border border-green-200 bg-green-50 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide text-green-700">
-                          Course
-                        </span>
-                        <ChevronRight
-                          size={13}
-                          className="text-text-disabled transition-colors duration-150 group-hover:text-green-700"
-                        />
-                      </div>
-                      {course.image && (
-                        <div className="aspect-video w-full overflow-hidden rounded-lg border border-border-muted bg-bg-subtle">
-                          <img
-                            src={course.image}
-                            alt={course.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                      )}
-                      <h3 className="text-sm font-bold leading-snug text-text-primary">
-                        {course.title}
-                      </h3>
-                      {course.description && (
-                        <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">
-                          {course.description}
-                        </p>
-                      )}
-                      {courseAssignments.length > 0 && (
-                        <div className="mt-1 flex items-center gap-2">
-                          <div className="h-1 flex-1 overflow-hidden rounded-full bg-bg-subtle">
-                            <div
-                              className="progress-fill h-full rounded-full"
-                              style={{ "--progress-value": `${pct}%` } as React.CSSProperties}
-                            />
-                          </div>
-                          <span className="font-mono text-[10px] font-bold text-green-700">
-                            {approvedCount}/{courseAssignments.length}
-                          </span>
-                        </div>
-                      )}
-                    </Link>
-                  );
-                })}
+              <div className="flex flex-col gap-4">
+                {courses.map((course) => (
+                  <CourseCard key={course.id} course={course} assignments={assignments} />
+                ))}
               </div>
             )}
           </section>
-                
-          {/* ── Assignments ── */}
-          <section className="rounded-2xl border border-default bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base font-bold tracking-tight text-text-primary">
-                Assignments
-              </h2>
-              {!isLoading && assignments.length > 0 && (
-                <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 font-mono text-[10px] font-bold text-green-700">
-                  {assignments.filter((a) => a.status === "approved").length}
-                  /{assignments.length} approved
+
+          {/* --- Assignments column --- */}
+          <section className="flex flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-base font-bold text-foreground">Assignments</h2>
+              {!isLoading && submitted.length > 0 && (
+                <span className="rounded-full bg-green-50 border border-green-100 px-3 py-0.5 text-[10px] font-bold text-green-700">
+                  {approvedAll}/{submitted.length} approved
                 </span>
               )}
             </div>
 
             {isLoading ? (
               <div className="flex flex-col gap-2">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-[60px] w-full rounded-lg" />
-                ))}
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
               </div>
-            ) : assignments.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-sm text-text-muted">
-                <ClipboardCheck size={28} className="text-text-disabled" />
-                No assignments in your courses yet.
+            ) : submitted.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+                <ClipboardCheck size={36} className="text-muted" />
+                <div>
+                  <p className="font-semibold text-foreground">No submissions yet</p>
+                  <p className="mt-0.5 text-sm text-muted">Your submitted assignments will appear here.</p>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-5">
                 {pending.length > 0 && (
                   <div>
-                    <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-widest text-text-disabled">
-                      Action needed
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted">
+                      Needs Revision · {pending.length}
                     </p>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                       {pending.map((a) => <AssignmentRow key={a.id} item={a} />)}
                     </div>
                   </div>
                 )}
                 {reviewed.length > 0 && (
                   <div>
-                    <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-widest text-text-disabled">
-                      Submitted
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted">
+                      Submitted · {reviewed.length}
                     </p>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                       {reviewed.map((a) => <AssignmentRow key={a.id} item={a} />)}
                     </div>
                   </div>
@@ -409,43 +421,103 @@ export default function Home() {
               </div>
             )}
           </section>
-        </main>
 
-        {/* ── Sidebar ─────────────────────────────────────────── */}
-        <aside className="flex flex-col gap-3 lg:sticky lg:top-6">
+          {/* --- Sidebar column --- */}
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
 
-          <ProfileCard user={user} />
+            {/* Progress Section */}
+            <section className="flex flex-col flex-1">
+              <div className="mb-3">
+                <h2 className="font-display text-base font-bold text-foreground">Overall Progress</h2>
+              </div>
+              <div className="flex flex-1 flex-col rounded-2xl border border-default bg-white p-5 shadow-sm">
+                
+                {/* Top: Progress Bars */}
+                <div className="flex flex-col justify-center flex-1">
+                  {isLoading ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-1.5 w-full rounded-full" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  ) : assignments.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[14px]">
+                          <span className="text-muted">Assignments approved</span>
+                          <span className="font-bold text-primary">{Math.round((approvedAll / assignments.length) * 100)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-700"
+                            style={{ width: `${Math.round((approvedAll / assignments.length) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[14px]">
+                          <span className="text-muted">Lessons completed</span>
+                          <span className="font-bold text-primary">{progress.completedSubModules.length}</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle">
+                          <div
+                            className="h-full rounded-full bg-green-400 transition-all duration-700"
+                            style={{ width: progress.completedSubModules.length > 0 ? "100%" : "0%" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted text-center">Start a course to track your progress.</p>
+                  )}
+                </div>
 
-          {/* Stats */}
-          <div className="flex flex-col gap-2">
-            <StatPill
-              icon={BookOpenCheck}
-              value={courses?.length ?? "—"}
-              label="Enrolled courses"
-            />
-            <StatPill
-              icon={CheckCircle2}
-              value={progress.completedSubModules.length}
-              label="Lessons done"
-            />
-            <StatPill
-              icon={ClipboardCheck}
-              value={isLoading ? "—" : pending.length}
-              label="Pending tasks"
-            />
-          </div>
+                <hr className="my-5 border-default" />
 
-          {/* Dashboard link */}
-          {/* <Link
-            href="/dashboard"
-            className="transition-all duration-200 focus-ring flex items-center gap-2 rounded-lg border border-default bg-white px-3.5 py-3 text-[13px] font-semibold text-text-secondary shadow-sm hover:border-green-300 hover:bg-green-50 hover:text-green-700"
-          >
-            <LayoutDashboard size={15} />
-            Full Dashboard
-            <ChevronRight size={13} className="ml-auto opacity-40" />
-          </Link> */}
-        </aside>
+                {/* Bottom: Stats pills */}
+                <div className="grid grid-cols-3 gap-2 shrink-0">
+                  {[
+                    { Icon: BookOpenCheck, value: courses?.length ?? "—", label: "Courses", color: "text-blue-600 bg-blue-50" },
+                    { Icon: Star, value: approvedAll, label: "Approved", color: "text-green-700 bg-green-50" },
+                    { Icon: Flame, value: isLoading ? "—" : reviewed.filter(a => a.status === "pending").length, label: "Under Review", color: "text-amber-600 bg-amber-50" },
+                  ].map(({ Icon, value, label, color }) => (
+                    <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl bg-subtle/50 px-2 py-3">
+                      <span className={`grid size-7 place-items-center rounded-lg ${color}`}>
+                        <Icon size={13} />
+                      </span>
+                      <span className="text-lg font-extrabold text-foreground leading-none">{value}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted">{label}</span>
+                    </div>
+                  ))}
+                </div>
 
+              </div>
+            </section>
+
+            {/* Quick links to courses */}
+            {/* {courses && courses.length > 0 && (
+              <div className="rounded-2xl border border-default bg-white p-4 shadow-sm">
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted">Quick Access</h3>
+                <div className="flex flex-col gap-1">
+                  {courses.slice(0, 4).map((course) => (
+                    <Link
+                      key={course.id}
+                      href={`/course/${course.id}`}
+                      className="group flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-subtle"
+                    >
+                      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                        <GraduationCap size={12} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate font-medium text-foreground group-hover:text-primary text-xs">
+                        {course.title}
+                      </span>
+                      <ChevronRight size={11} className="shrink-0 text-muted opacity-0 group-hover:opacity-100" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )} */}
+          </aside>
+        </div>
       </div>
     </PageWrapper>
   );

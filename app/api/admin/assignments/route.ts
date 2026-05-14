@@ -72,23 +72,30 @@ export async function GET(req: NextRequest) {
 
   // Extract assignment titles from the curriculum JSON
   const mappedRows = rows.map((row) => {
-    let assignmentTitle = row.assignment_id;
+    let assignmentTitle = "";
+    let assignmentData = null;
     if (row.course_curriculum && Array.isArray(row.course_curriculum)) {
-      for (const week of row.course_curriculum) {
+      outer: for (const week of row.course_curriculum) {
         if (!week.days) continue;
         for (const day of week.days) {
           if (!day.subModules) continue;
           for (const mod of day.subModules) {
             if (mod.id === row.assignment_id) {
-              assignmentTitle = mod.title || mod.assignmentData?.title || row.assignment_id;
-              break;
+              assignmentData = mod.assignmentData;
+              assignmentTitle =
+                mod.assignmentData?.title ||
+                mod.title ||
+                row.assignment_id;
+              break outer;
             }
           }
         }
       }
     }
+    // If not found in curriculum at all, fall back to raw ID
+    if (!assignmentTitle) assignmentTitle = row.assignment_id;
     const { course_curriculum, ...rest } = row;
-    return { ...rest, assignment_title: assignmentTitle };
+    return { ...rest, assignment_title: assignmentTitle, assignment_data: assignmentData };
   });
 
   return NextResponse.json({ submissions: mappedRows });

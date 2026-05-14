@@ -4,24 +4,26 @@ import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "BetterInU LMS",
-  description: "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
+  title: "Betterinu LMS",
+  description:
+    "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
   },
   openGraph: {
-    title: "BetterInU LMS",
-    description: "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
+    title: "Betterinu LMS",
+    description:
+      "A weekly skill-building LMS — courses, quizzes, progress, XP, and streaks.",
     images: [
       {
         url: "/logo.png",
         width: 800,
         height: 600,
-        alt: "BetterInU LMS",
+        alt: "Betterinu LMS",
       },
     ],
   },
@@ -32,7 +34,9 @@ export const metadata: Metadata = {
  *   (student)/layout.tsx → Navbar + ToastHost
  *   (admin)/layout.tsx   → AdminSidebar + header
  */
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body>

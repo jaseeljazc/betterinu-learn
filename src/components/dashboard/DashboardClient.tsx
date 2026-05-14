@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpenCheck, CheckCircle2, Flame, BookLock, LogOut, Sparkles, TrendingUp } from "lucide-react";
+import {
+  BookOpenCheck,
+  CheckCircle2,
+  Flame,
+  BookLock,
+  LogOut,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { useProgress } from "@/lib/hooks/useProgress";
 import { clientAuth } from "@/lib/firebase-client";
 import { EnrolledCourseCard } from "./EnrolledCourseCard";
@@ -22,7 +30,9 @@ export function DashboardClient() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = clientAuth.onAuthStateChanged((u) => { setUser(u); });
+    const unsubscribe = clientAuth.onAuthStateChanged((u) => {
+      setUser(u);
+    });
     return () => unsubscribe();
   }, []);
 
@@ -43,16 +53,24 @@ export function DashboardClient() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-
       {/* Page Header */}
       <header className="flex items-end justify-between border-b border-border pb-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Student Portal</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+            Student Portal
+          </p>
           <h1 className="mt-1 font-display text-4xl font-extrabold tracking-tight">
-            {user?.displayName ? `Welcome, ${user.displayName.split(" ")[0]}` : "Your Dashboard"}
+            {user?.displayName
+              ? `Welcome, ${user.displayName.split(" ")[0]}`
+              : "Your Dashboard"}
           </h1>
         </div>
-        <Button onClick={handleSignOut} variant="outline" size="sm" className="gap-2">
+        <Button
+          onClick={handleSignOut}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
           <LogOut className="size-3.5" />
           Sign Out
         </Button>
@@ -64,19 +82,25 @@ export function DashboardClient() {
         <Card className="col-span-2 lg:col-span-1 border-primary bg-primary text-primary-foreground shadow-md">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-green-200">Total XP</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-green-200">
+                Total XP
+              </CardTitle>
               <Sparkles className="size-4 text-green-300" aria-hidden />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">{progress.xp}</p>
+            <p className="font-display text-4xl font-extrabold">
+              {progress.xp}
+            </p>
             <div className="mt-3 h-1.5 rounded-full bg-white/20">
               <div
                 className="h-full rounded-full bg-white transition-all duration-700"
                 style={{ width: `${((progress.xp % 500) / 500) * 100}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-green-200">{xpToNextLevel} XP to next level</p>
+            <p className="mt-1.5 text-[11px] text-green-200">
+              {xpToNextLevel} XP to next level
+            </p>
           </CardContent>
         </Card>
 
@@ -84,12 +108,16 @@ export function DashboardClient() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Streak</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Streak
+              </CardTitle>
               <Flame className="size-4 text-orange-500" aria-hidden />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">{progress.streak}</p>
+            <p className="font-display text-4xl font-extrabold">
+              {progress.streak}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">Days in a row</p>
           </CardContent>
         </Card>
@@ -98,12 +126,16 @@ export function DashboardClient() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Enrolled</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Enrolled
+              </CardTitle>
               <BookOpenCheck className="size-4 text-primary" aria-hidden />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">{enrolled?.length ?? "—"}</p>
+            <p className="font-display text-4xl font-extrabold">
+              {enrolled?.length ?? "—"}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">Active courses</p>
           </CardContent>
         </Card>
@@ -112,12 +144,16 @@ export function DashboardClient() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completed</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Completed
+              </CardTitle>
               <CheckCircle2 className="size-4 text-green-600" aria-hidden />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">{progress.completedSubModules.length}</p>
+            <p className="font-display text-4xl font-extrabold">
+              {progress.completedSubModules.length}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">Lessons done</p>
           </CardContent>
         </Card>
@@ -128,7 +164,6 @@ export function DashboardClient() {
 
       {/* Main grid */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-
         {/* Courses section */}
         <section>
           <div className="mb-4 flex items-center justify-between">
@@ -137,7 +172,7 @@ export function DashboardClient() {
           </div>
           {enrolled === null ? (
             <div className="grid gap-4">
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Card key={i}>
                   <CardContent className="pt-4">
                     <Skeleton className="h-5 w-2/3 mb-2" />
@@ -150,8 +185,12 @@ export function DashboardClient() {
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center py-12 text-center">
                 <BookLock className="mb-3 size-10 text-muted-foreground" />
-                <h3 className="font-display text-lg font-bold">No courses assigned</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Contact your admin to get enrolled in a course.</p>
+                <h3 className="font-display text-lg font-bold">
+                  No courses assigned
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Contact your admin to get enrolled in a course.
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -176,7 +215,9 @@ export function DashboardClient() {
           {/* Profile card */}
           <Card>
             <CardHeader className="border-b border-border pb-3">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-primary">Profile</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-primary">
+                Profile
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {user ? (
@@ -188,8 +229,12 @@ export function DashboardClient() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-sm">{user.displayName || "BetterInU Student"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                      <p className="truncate font-bold text-sm">
+                        {user.displayName || "Betterinu Student"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </p>
                     </div>
                   </div>
                   <Separator />
@@ -204,7 +249,13 @@ export function DashboardClient() {
                     </div>
                   </div>
                   <p className="text-center text-[10px] text-muted-foreground">
-                    Member since {new Date(user.metadata.creationTime || Date.now()).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                    Member since{" "}
+                    {new Date(
+                      user.metadata.creationTime || Date.now(),
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </p>
                 </div>
               ) : (

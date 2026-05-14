@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { Course } from "@/types";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useProgress } from "@/lib/hooks/useProgress";
@@ -33,11 +33,14 @@ export function LearnClient({ course }: { course: Course }) {
         {/* Course header */}
         <header className="rounded-lg border border-default bg-white overflow-hidden">
           <div className="p-6">
-            <Link href="/dashboard" className="inline-flex items-center gap-1 text-xs font-bold text-secondary hover:text-primary transition-colors mb-4 focus-ring rounded-sm">
-              <ChevronLeft className="size-3.5" aria-hidden />
-              Back to Dashboard
-            </Link>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{course.title}</p>
+            <nav className="flex items-center gap-2 text-xs font-semibold text-muted mb-4" aria-label="Breadcrumb">
+              <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+              <ChevronRight size={12} className="opacity-50" />
+              <Link href={`/course/${course.id}`} className="hover:text-primary transition-colors">{course.title}</Link>
+              <ChevronRight size={12} className="opacity-50" />
+              <span className="text-foreground">Learn</span>
+            </nav>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Course material</p>
             <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-foreground">
               {activeWeek.title.replace(":", " —")}
             </h1>

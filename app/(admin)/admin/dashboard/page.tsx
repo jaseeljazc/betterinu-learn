@@ -1,4 +1,4 @@
-import { BookOpen, TrendingUp, Users } from "lucide-react";
+import { LayoutDashboard, BookOpen, TrendingUp, Users } from "lucide-react";
 import { sql } from "@/lib/db";
 
 async function getStats() {
@@ -33,53 +33,58 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-[#7a7a62]">Overview of your LMS activity.</p>
+        <div className="flex items-center gap-3 mb-1">
+          <LayoutDashboard className="size-6 text-primary" />
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            Dashboard
+          </h1>
+        </div>
+        <p className="text-sm text-secondary">Overview of your LMS activity.</p>
       </div>
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {cards.map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-xl border border-[#e5e2da] bg-white p-5">
+          <div key={label} className="rounded-2xl border border-default bg-white p-5 shadow-sm">
             <div className={`inline-flex size-10 items-center justify-center rounded-lg ${color}`}>
               <Icon className="size-5" />
             </div>
-            <p className="mt-3 text-3xl font-bold">{value}</p>
-            <p className="mt-1 text-sm text-[#7a7a62]">{label}</p>
+            <p className="mt-4 text-3xl font-bold text-foreground">{value}</p>
+            <p className="mt-1 text-sm font-semibold text-secondary">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Recent assignments */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold">Recent Assignments</h2>
-        <div className="overflow-hidden rounded-xl border border-[#e5e2da] bg-white">
+      <div className="mt-10">
+        <h2 className="mb-4 text-lg font-bold text-foreground">Recent Assignments</h2>
+        <div className="overflow-hidden rounded-2xl border border-default bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead className="border-b border-[#e5e2da] bg-[#f9f9f6]">
+            <thead className="border-b border-default bg-subtle">
               <tr>
                 {["Student", "Email", "Course", "Assigned"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#7a7a62]">
+                  <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f0ede6]">
+            <tbody className="divide-y divide-default">
               {stats.recent.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[#7a7a62]">
+                  <td colSpan={4} className="px-5 py-8 text-center text-muted font-medium">
                     No assignments yet.
                   </td>
                 </tr>
               ) : (
                 stats.recent.map((row, i) => (
-                  <tr key={i} className="hover:bg-[#fafaf8]">
-                    <td className="px-4 py-3 font-medium">{row.name as string}</td>
-                    <td className="px-4 py-3 text-[#7a7a62]">{row.email as string}</td>
-                    <td className="px-4 py-3">{row.course_title as string}</td>
-                    <td className="px-4 py-3 text-[#7a7a62]">
+                  <tr key={i} className="hover:bg-subtle/50 transition-colors">
+                    <td className="px-5 py-3 font-semibold text-foreground">{row.name as string}</td>
+                    <td className="px-5 py-3 text-secondary">{row.email as string}</td>
+                    <td className="px-5 py-3 text-foreground font-medium">{row.course_title as string}</td>
+                    <td className="px-5 py-3 text-secondary">
                       {new Date(row.assigned_at as string).toLocaleDateString("en-GB", {
                         day: "numeric", month: "short", year: "numeric",
                       })}

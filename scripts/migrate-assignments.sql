@@ -20,3 +20,10 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
   reviewed_by     UUID        REFERENCES admins(id),
   UNIQUE(assignment_id, student_id)
 );
+
+-- Add submitted_files column if it doesn't exist (added later)
+ALTER TABLE assignment_submissions ADD COLUMN IF NOT EXISTS submitted_files JSONB;
+
+-- Add progress_state column to students if it doesn't exist
+ALTER TABLE students ADD COLUMN IF NOT EXISTS progress_state JSONB;
+

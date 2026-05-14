@@ -5,8 +5,12 @@
  */
 import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
 
-export const metadata = { title: "BetterInU Admin" };
+export const metadata = { title: "Betterinu Admin" };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }

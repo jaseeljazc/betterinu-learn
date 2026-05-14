@@ -237,7 +237,7 @@ function AddModuleDropdown({
           >
             <FileText className="size-3.5 text-green-600" /> Lesson
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => {
               onAddQuiz();
@@ -246,7 +246,7 @@ function AddModuleDropdown({
             className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-subtle transition-colors text-left"
           >
             <HelpCircle className="size-3.5 text-purple-500" /> Quiz
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={() => {
@@ -1321,7 +1321,7 @@ export function ThreePanelCurriculumBuilder({
               </div>
             ) : activeModule?.type === "assignment" ? (
               /* ASSIGNMENT STUDENT PREVIEW in center */
-              <div className="max-w-3xl mx-auto pb-20 space-y-5">
+              <div className="max-w-4xl mx-auto pb-20 space-y-5">
                 {/* Preview header */}
                 <div className="flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5">
                   <ClipboardList className="size-4 text-orange-600 shrink-0" />

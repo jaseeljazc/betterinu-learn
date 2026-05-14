@@ -6,7 +6,7 @@ const sql = neon(process.env.NEON_DATABASE_URL!);
 async function createAdmin() {
   const email = "admin@betterinu.app";
   const password = "BetterinuAdmin123!"; // You can change this
-  const name = "BetterInU Admin";
+  const name = "Betterinu Admin";
 
   console.log(`Creating admin user: ${email}...`);
 
@@ -46,7 +46,6 @@ async function createAdmin() {
     console.log(`Email:    ${email}`);
     console.log(`Password: ${password}`);
     console.log("=================================\n");
-
   } catch (error) {
     console.error("Failed to create admin:", error);
   }

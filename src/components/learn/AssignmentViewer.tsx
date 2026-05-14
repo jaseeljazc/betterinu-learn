@@ -167,7 +167,7 @@ export function AssignmentViewer({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full space-y-6">
       {/* Assignment Header Card */}
       <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">

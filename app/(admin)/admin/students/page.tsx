@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { Plus, Trash2, Eye, Users } from "lucide-react";
 import { sql } from "@/lib/db";
 
 async function getStudents() {
@@ -18,64 +18,70 @@ export default async function AdminStudentsPage() {
   const students = await getStudents();
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-10">
+      <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Students</h1>
-          <p className="mt-1 text-sm text-[#7a7a62]">{students.length} student{students.length !== 1 ? "s" : ""} registered.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <Users className="size-6 text-primary" />
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+              Students
+            </h1>
+          </div>
+          <p className="text-sm text-secondary">
+            {students.length} student{students.length !== 1 ? "s" : ""} registered.
+          </p>
         </div>
         <Link
           href="/admin/students/new"
-          className="flex items-center gap-2 rounded-lg bg-[#1a4031] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm hover:shadow-md"
         >
-          <Plus className="size-4" />
-          Add Student
+          <Plus className="size-4" /> Add Student
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#e5e2da] bg-white">
+      <div className="overflow-hidden rounded-2xl border border-default bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="border-b border-[#e5e2da] bg-[#f9f9f6]">
+          <thead className="border-b border-default bg-subtle">
             <tr>
               {["Name", "Email", "Courses", "Joined", "Actions"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#7a7a62]">
+                <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#f0ede6]">
+          <tbody className="divide-y divide-default">
             {students.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-[#7a7a62]">
+                <td colSpan={5} className="px-5 py-10 text-center text-muted font-medium">
                   No students yet.{" "}
-                  <Link href="/admin/students/new" className="font-semibold text-[#1a4031] underline">
+                  <Link href="/admin/students/new" className="font-semibold text-primary hover:underline">
                     Add the first one →
                   </Link>
                 </td>
               </tr>
             ) : (
               students.map((s) => (
-                <tr key={s.id as string} className="hover:bg-[#fafaf8]">
-                  <td className="px-4 py-3 font-medium">{s.name as string}</td>
-                  <td className="px-4 py-3 text-[#7a7a62]">{s.email as string}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#e8f0ec] text-xs font-bold text-[#1a4031]">
+                <tr key={s.id as string} className="hover:bg-subtle/50 transition-colors">
+                  <td className="px-5 py-3 font-semibold text-foreground">{s.name as string}</td>
+                  <td className="px-5 py-3 text-secondary">{s.email as string}</td>
+                  <td className="px-5 py-3">
+                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
                       {s.course_count as number}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-[#7a7a62]">
+                  <td className="px-5 py-3 text-secondary">
                     {new Date(s.created_at as string).toLocaleDateString("en-GB", {
                       day: "numeric", month: "short", year: "numeric",
                     })}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                  <td className="px-5 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
                       <Link
                         href={`/admin/students/${s.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e2da] px-3 py-1.5 text-xs font-semibold text-[#4a4a3a] hover:border-[#1a4031] hover:text-[#1a4031]"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-default bg-white px-3 py-1.5 text-xs font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
                       >
-                        <Eye className="size-3" />
+                        <Eye className="size-3.5" />
                         View
                       </Link>
                     </div>

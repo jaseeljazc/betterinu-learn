@@ -45,7 +45,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
             const active = activeWeekId === week.id;
             return (
               <section
-                className={`rounded-sm border transition-all ${active ? "border-primary bg-primary/5" : "border-default bg-white hover:border-strong"}`}
+                className={`rounded-lg border transition-all ${active ? "border-primary bg-primary/5" : "border-default bg-white hover:border-strong"}`}
                 key={week.id}
               >
                 <div className="p-3">
