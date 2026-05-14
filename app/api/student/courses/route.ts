@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const rows = await sql`
     SELECT 
       c.id, c.title, c.tagline, c.description, c.instructor, c.instructor_bio,
-      c.duration, c.total_modules, c.level, c.color, c.icon, c.outcomes, c.is_active, c.curriculum
+      c.duration, c.total_modules, c.level, c.color, c.icon, c.outcomes, c.is_active, c.curriculum, c.image
     FROM student_courses sc
     JOIN courses c ON c.id = sc.course_id
     WHERE sc.student_id = ${student.studentId} AND c.is_active = true
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     icon: r.icon,
     outcomes: r.outcomes || [],
     weeks: r.curriculum || [],
+    image: r.image,
   }));
 
   return NextResponse.json({

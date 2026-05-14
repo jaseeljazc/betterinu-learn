@@ -13,6 +13,7 @@ import {
   AlignLeft,
   CalendarClock,
   Trophy,
+  Plus,
 } from "lucide-react";
 import type { CourseId, SubModule } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export function AssignmentViewer({
 }: AssignmentViewerProps) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [text, setText] = useState("");
-  const [url, setUrl] = useState("");
+  const [links, setLinks] = useState<string[]>([]);
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -104,22 +105,23 @@ export function AssignmentViewer({
           }
           setText(submission.submitted_text || "");
           setFiles(submission.submitted_files ?? []);
-          // try to extract url from submitted_text if it looks like a URL
-          if (
-            allowedTypes.includes("url") &&
-            submission.submitted_text?.startsWith("http")
-          ) {
-            setUrl(submission.submitted_text);
-          }
+          // try to extract links if they were previously appended
+          const textContent = submission.submitted_text || "";
+          setText(textContent);
         }
       })
       .finally(() => setLoading(false));
   }, [module.id, courseId]);
 
   async function handleSubmit() {
-    // Build the submitted text: url takes precedence if that's what they filled
-    const finalText =
-      allowedTypes.includes("url") && url.trim() ? url.trim() : text.trim();
+    let finalText = text.trim();
+    const validLinks = links.filter(l => l.trim() !== "");
+    
+    if (allowedTypes.includes("url") && validLinks.length > 0) {
+      const linksText = validLinks.map(l => l).join("\n");
+      finalText = finalText ? `${finalText}\n\nLinks:\n${linksText}` : linksText;
+    }
+
     if (!finalText && files.length === 0) {
       setError("Please provide a response before submitting.");
       return;
@@ -318,18 +320,51 @@ export function AssignmentViewer({
 
           {/* URL submission */}
           {allowedTypes.includes("url") && (
-            <div>
-              <label className="block text-xs font-bold text-muted mb-1 uppercase tracking-widest">
-                URL / Link
-              </label>
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={!canEdit || submitting}
-                placeholder="https://github.com/your-repo"
-                className="w-full rounded-xl border border-default bg-surface px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-60"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-muted uppercase tracking-widest">
+                  Links / URLs
+                </label>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setLinks([...links, ""])}
+                    className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="size-3" /> Add Link
+                  </button>
+                )}
+              </div>
+              
+              {links.length === 0 && canEdit && (
+                <p className="text-xs text-muted italic">Click "Add Link" to submit URLs.</p>
+              )}
+
+              {links.map((link, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={link}
+                    onChange={(e) => {
+                      const newLinks = [...links];
+                      newLinks[idx] = e.target.value;
+                      setLinks(newLinks);
+                    }}
+                    disabled={!canEdit || submitting}
+                    placeholder="https://..."
+                    className="flex-1 rounded-xl border border-default bg-surface px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-60"
+                  />
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => setLinks(links.filter((_, i) => i !== idx))}
+                      className="shrink-0 text-muted hover:text-red-500 transition-colors p-2"
+                    >
+                      <XCircle className="size-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
@@ -347,6 +382,7 @@ export function AssignmentViewer({
                   files={files}
                   onChange={setFiles}
                   role="student"
+                  accept={allowedTypes.includes("image") && !allowedTypes.includes("file") ? "image/*" : undefined}
                 />
               ) : (
                 <FileViewer files={files} title="Your Submitted Files" />

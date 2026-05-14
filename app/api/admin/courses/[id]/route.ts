@@ -20,6 +20,7 @@ export async function PUT(
   const {
     title, tagline, description, instructor, instructor_bio,
     duration, total_modules, level, color, icon, outcomes, is_active, curriculum,
+    image
   } = body;
 
   await sql`
@@ -34,6 +35,8 @@ export async function PUT(
       level          = COALESCE(${level},          level),
       color          = COALESCE(${color},          color),
       icon           = COALESCE(${icon},           icon),
+      image          = COALESCE(${image ?? null},  image),
+
       outcomes       = COALESCE(${outcomes != null ? JSON.stringify(outcomes) : null}, outcomes::text)::jsonb,
       is_active      = COALESCE(${is_active},      is_active),
       curriculum     = COALESCE(${curriculum != null ? JSON.stringify(curriculum) : null}, curriculum::text)::jsonb

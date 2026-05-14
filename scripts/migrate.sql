@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS courses (
   instructor_bio TEXT,
   duration       TEXT,
   total_modules  INT,
+  image          TEXT,
   level          TEXT,
   color          TEXT,                      -- CSS variable e.g. '--course-mern'
   icon           TEXT,                      -- Lucide icon name e.g. 'Code2'

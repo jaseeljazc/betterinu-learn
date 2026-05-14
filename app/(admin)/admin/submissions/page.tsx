@@ -21,6 +21,7 @@ interface Submission {
   student_id: string;
   course_id: string;
   course_title: string;
+  assignment_title?: string;
   week_id: string;
   day_id: string;
   submitted_text: string;
@@ -85,7 +86,7 @@ export default function SubmissionsPage() {
   const filtered = submissions.filter((s) => filter === "all" || s.status === filter);
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="w-full px-6 lg:px-10 py-10">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
@@ -96,7 +97,7 @@ export default function SubmissionsPage() {
         </div>
         <p className="text-sm text-secondary">
           Review and approve or reject student assignment submissions.
-        </p>
+        </p> 
       </div>
 
       {/* Filter Tabs */}
@@ -153,9 +154,12 @@ export default function SubmissionsPage() {
                     </td>
                     <td className="px-4 py-3 text-secondary">{sub.course_title}</td>
                     <td className="px-4 py-3">
-                      <code className="text-[11px] bg-subtle border border-default rounded px-1.5 py-0.5 text-secondary">
+                      <p className="font-semibold text-foreground text-sm">
+                        {sub.assignment_title || "Unknown Assignment"}
+                      </p>
+                      <p className="text-[10px] text-muted font-mono mt-0.5 truncate max-w-[150px]" title={sub.assignment_id}>
                         {sub.assignment_id}
-                      </code>
+                      </p>
                     </td>
                     <td className="px-4 py-3 text-secondary text-xs">
                       {new Date(sub.submitted_at).toLocaleString()}

@@ -20,6 +20,7 @@ interface FileUploaderProps {
   /** "admin" | "student" — determines which auth check the API uses */
   role?: "admin" | "student";
   multiple?: boolean;
+  accept?: string;
 }
 
 const ACCEPTED = ".jpg,.jpeg,.png,.gif,.webp,.pdf,.docx,.pptx,.xlsx,.txt";
@@ -37,6 +38,7 @@ export function FileUploader({
   onChange,
   role = "admin",
   multiple = true,
+  accept,
 }: FileUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -97,7 +99,9 @@ export function FileUploader({
             <p className="text-sm font-semibold text-secondary">
               Drag &amp; drop files, or <span className="text-primary underline">browse</span>
             </p>
-            <p className="text-[11px] text-muted">Images, PDFs, DOCX, PPTX, XLSX, TXT</p>
+            <p className="text-[11px] text-muted">
+              {accept === "image/*" ? "Images only (PNG, JPG, WEBP, GIF)" : "Images, PDFs, DOCX, PPTX, XLSX, TXT"}
+            </p>
           </>
         )}
       </div>
@@ -106,7 +110,7 @@ export function FileUploader({
         ref={inputRef}
         type="file"
         multiple={multiple}
-        accept={ACCEPTED}
+        accept={accept || ACCEPTED}
         className="hidden"
         onChange={(e) => e.target.files && uploadFiles(e.target.files)}
       />

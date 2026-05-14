@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
         st.name       AS student_name,
         st.email      AS student_email,
         st.id         AS student_id,
-        c.title       AS course_title
+        c.title       AS course_title,
+        c.curriculum  AS course_curriculum
       FROM assignment_submissions s
       JOIN students st ON st.id = s.student_id
       JOIN courses  c  ON c.id  = s.course_id
@@ -60,7 +61,8 @@ export async function GET(req: NextRequest) {
         st.name       AS student_name,
         st.email      AS student_email,
         st.id         AS student_id,
-        c.title       AS course_title
+        c.title       AS course_title,
+        c.curriculum  AS course_curriculum
       FROM assignment_submissions s
       JOIN students st ON st.id = s.student_id
       JOIN courses  c  ON c.id  = s.course_id
@@ -68,5 +70,26 @@ export async function GET(req: NextRequest) {
     `;
   }
 
-  return NextResponse.json({ submissions: rows });
+  // Extract assignment titles from the curriculum JSON
+  const mappedRows = rows.map((row) => {
+    let assignmentTitle = row.assignment_id;
+    if (row.course_curriculum && Array.isArray(row.course_curriculum)) {
+      for (const week of row.course_curriculum) {
+        if (!week.days) continue;
+        for (const day of week.days) {
+          if (!day.subModules) continue;
+          for (const mod of day.subModules) {
+            if (mod.id === row.assignment_id) {
+              assignmentTitle = mod.title || mod.assignmentData?.title || row.assignment_id;
+              break;
+            }
+          }
+        }
+      }
+    }
+    const { course_curriculum, ...rest } = row;
+    return { ...rest, assignment_title: assignmentTitle };
+  });
+
+  return NextResponse.json({ submissions: mappedRows });
 }

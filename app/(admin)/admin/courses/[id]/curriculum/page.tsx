@@ -27,6 +27,8 @@ type CourseRow = {
   instructor: string; instructor_bio: string; duration: string;
   total_modules: number; level: string; color: string; icon: string;
   outcomes: string[]; is_active: boolean;
+  image: string;
+
 };
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "All Levels"];

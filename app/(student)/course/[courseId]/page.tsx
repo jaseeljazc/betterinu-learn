@@ -38,6 +38,7 @@ export default async function CourseDetailPage({
     icon: dbCourse.icon as string,
     outcomes: (dbCourse.outcomes as string[]) || [],
     weeks: (dbCourse.curriculum as any[]) || [],
+    image: dbCourse.image as string,
   };
 
   const stats = [

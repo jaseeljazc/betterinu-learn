@@ -13,6 +13,7 @@ import {
   PanelLeftOpen
 } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const nav = [
   { href: "/admin/dashboard",   label: "Dashboard",   Icon: LayoutDashboard },
@@ -32,6 +33,7 @@ export function AdminSidebar({ collapsed, onToggle, isMobile }: { collapsed: boo
   }
 
   return (
+    <TooltipProvider delayDuration={0}>
     <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen flex-col border-r border-default bg-white transition-all duration-300 ${collapsed ? "w-16" : "w-60"}`}>
       {/* Header */}
       <div className={`flex h-16 items-center border-b border-default ${collapsed ? "justify-center px-0" : "px-5 gap-3"}`}>
@@ -55,11 +57,10 @@ export function AdminSidebar({ collapsed, onToggle, isMobile }: { collapsed: boo
       <nav className={`flex-1 space-y-1 py-4 ${collapsed ? "px-2" : "px-3"}`}>
         {nav.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href);
-          return (
+          const content = (
             <Link
               key={href}
               href={href}
-              title={collapsed ? label : undefined}
               className={[
                 "flex items-center rounded-lg transition-colors",
                 collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
@@ -72,29 +73,49 @@ export function AdminSidebar({ collapsed, onToggle, isMobile }: { collapsed: boo
               {!collapsed && <span className="text-sm">{label}</span>}
             </Link>
           );
+
+          if (!collapsed) return content;
+
+          return (
+            <Tooltip key={href}>
+              <TooltipTrigger asChild>
+                {content}
+              </TooltipTrigger>
+              <TooltipContent side="right">{label}</TooltipContent>
+            </Tooltip>
+          );
         })}
       </nav>
 
       {/* Bottom controls */}
       <div className={`border-t border-default py-4 space-y-2 ${collapsed ? "px-2" : "px-3"}`}>
-        <button
-          onClick={onToggle}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={`flex w-full items-center rounded-lg text-secondary transition-colors hover:bg-subtle hover:text-primary ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5 text-sm font-medium"}`}
-        >
-          {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5 shrink-0" />}
-          {!collapsed && <span>Collapse Sidebar</span>}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onToggle}
+              className={`flex w-full items-center rounded-lg text-secondary transition-colors hover:bg-subtle hover:text-primary ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5 text-sm font-medium"}`}
+            >
+              {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5 shrink-0" />}
+              {!collapsed && <span>Collapse Sidebar</span>}
+            </button>
+          </TooltipTrigger>
+          {collapsed && <TooltipContent side="right">Expand Sidebar</TooltipContent>}
+        </Tooltip>
 
-        <button
-          onClick={handleLogout}
-          title={collapsed ? "Sign out" : undefined}
-          className={`flex w-full items-center rounded-lg text-secondary transition-colors hover:bg-red-50 hover:text-red-600 ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5 text-sm font-medium"}`}
-        >
-          <LogOut className="size-5 shrink-0" />
-          {!collapsed && <span>Sign out</span>}
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleLogout}
+              className={`flex w-full items-center rounded-lg text-secondary transition-colors hover:bg-red-50 hover:text-red-600 ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5 text-sm font-medium"}`}
+            >
+              <LogOut className="size-5 shrink-0" />
+              {!collapsed && <span>Sign out</span>}
+            </button>
+          </TooltipTrigger>
+          {collapsed && <TooltipContent side="right">Sign out</TooltipContent>}
+        </Tooltip>
       </div>
     </aside>
+    </TooltipProvider>
   );
 }

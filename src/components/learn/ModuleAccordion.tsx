@@ -29,7 +29,7 @@ export function ModuleAccordion({ courseId, weekId, day, isLocked }: { courseId:
           <span className="flex w-full flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between text-left">
             <span className="flex items-center gap-3">
               <span>
-                <span className="block text-[11px] font-bold uppercase tracking-widest text-primary">{day.label}</span>
+                {/* <span className="block text-[11px] font-bold uppercase tracking-widest text-primary">{day.label}</span> */}
                 <span className="font-display text-xl font-bold tracking-tight text-foreground">{day.title}</span>
               </span>
             </span>

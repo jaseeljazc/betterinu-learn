@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeft, ChevronDown, ChevronRight, Plus, X, Save, CheckCircle2,
-  Info, BookOpen, User, Settings2, Target, ArrowUp, ArrowDown
+  Info, BookOpen, User, Settings2, Target, ArrowUp, ArrowDown, ImageIcon
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import Link from "next/link";
@@ -21,12 +21,13 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { CourseImageUploader } from "@/components/admin/CourseImageUploader";
 
 type CourseRow = {
   id: string; title: string; tagline: string; description: string;
   instructor: string; instructor_bio: string; duration: string;
   total_modules: number; level: string; color: string; icon: string;
-  outcomes: string[]; is_active: boolean;
+  outcomes: string[]; is_active: boolean; image: string;
 };
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
@@ -261,6 +262,21 @@ export default function CourseEditPage() {
                   <label className="block text-sm font-semibold mb-1.5">Description</label>
                   <textarea rows={4} value={form.description ?? ""} onChange={(e) => update("description", e.target.value)} className={inputClass} placeholder="Full course description..." />
                 </div>
+              </div>
+
+              {/* Course Thumbnail */}
+              <div className="pt-4 border-t border-muted">
+                <div className="flex items-center gap-2 mb-3">
+                  <ImageIcon className="size-4 text-primary" />
+                  <h3 className="text-sm font-bold uppercase tracking-wide text-primary">Course Thumbnail</h3>
+                </div>
+                <CourseImageUploader 
+                  value={form.image ?? ""} 
+                  onChange={(url) => update("image", url)} 
+                />
+                <p className="text-xs text-muted mt-2">
+                  Displayed on the course card and detail page. Recommended: 1280×720px (16:9).
+                </p>
               </div>
             </div>
 

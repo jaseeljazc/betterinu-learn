@@ -14,6 +14,7 @@ export interface Course {
   weeks: Week[];
   outcomes: string[];
   instructorBio: string;
+  image:string
 }
 
 export interface Week {

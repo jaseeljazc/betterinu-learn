@@ -125,8 +125,8 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange }: A
 
       {/* Admin File Attachments */}
       <div className={sectionCls}>
-        <label className={labelCls}>Reference Materials for Students</label>
-        <p className="text-[10px] text-muted mb-2">Upload PDFs, images, or other files students can download.</p>
+        <label className={labelCls}>Reference Files & Images</label>
+        <p className="text-[10px] text-muted mb-2">Upload multiple PDFs, images, or other files students can download or view.</p>
         <FileUploader
           folder={`assignments/${moduleId}/resources`}
           files={attachedFiles}
