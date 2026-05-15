@@ -11,7 +11,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
   const progress = getCourseProgress(course);
 
   return (
-    <aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-[380px] shrink-0 border-r border-default lg:block">
+    <aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-[430px] shrink-0 border-r border-default lg:block">
       <ScrollArea className="h-full pr-8">
         {/* Course progress block */}
         <div className="mb-5 rounded-lg border border-default bg-white overflow-hidden">
@@ -45,7 +45,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
             const active = activeWeekId === week.id;
             return (
               <section
-                className={`rounded-lg border transition-all ${active ? "border-primary bg-primary/5" : "border-default bg-white hover:border-strong"}`}
+                className={`rounded-lg border transition-all ${active ? "border-primary bg-white" : "border-default bg-white hover:border-strong"}`}
                 key={week.id}
               >
                 <div className="p-3">

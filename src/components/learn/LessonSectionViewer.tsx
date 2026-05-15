@@ -664,7 +664,7 @@ export function LessonSectionViewer({
 
   return (
     <div
-      className={`rounded-xl border border-default overflow-hidden flex flex-col divide-y divide-default/30 ${paddingCls}`}
+      className={`overflow-hidden flex flex-col ${paddingCls}`}
       style={{ backgroundColor: pageBgColor || '#ffffff' }}
     >
       {sections.map((section) => (

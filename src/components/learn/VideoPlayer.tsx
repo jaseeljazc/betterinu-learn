@@ -53,7 +53,7 @@ export function VideoPlayer({ module }: { module: SubModule }) {
 
       {/* Summary always below the video */}
       {module.description && (
-        <figcaption className="mx-auto max-w-5xl rounded-xl bg-surface border border-default p-5">
+        <figcaption className="mx-auto max-w-5xl py-5">
           <h3 className="font-bold text-sm uppercase tracking-widest text-muted mb-2">Lesson Summary</h3>
           <p className="text-secondary leading-relaxed">{module.description}</p>
         </figcaption>

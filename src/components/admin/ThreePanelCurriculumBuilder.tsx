@@ -305,10 +305,10 @@ function SortableLessonItem({ mod, isActive, onClick, onRename, onRemove }: any)
         type="button"
         {...attributes}
         {...listeners}
-        className="shrink-0 text-muted hover:text-primary cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover/lesson:opacity-100 transition-opacity"
+        className="shrink-0 text-muted hover:text-primary cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover/lesson:opacity-100 transition-all max-w-0 group-hover/lesson:max-w-[20px] overflow-hidden flex items-center justify-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <GripVertical className="size-3" />
+        <GripVertical className="size-3 shrink-0" />
       </button>
       <meta.Icon className={`size-3 shrink-0 ${meta.color}`} />
       {editing ? (
@@ -342,7 +342,7 @@ function SortableLessonItem({ mod, isActive, onClick, onRename, onRemove }: any)
       )}
 
       <div
-        className={`flex items-center gap-0.5 ${editing ? "flex" : "opacity-0 group-hover/lesson:opacity-100"} transition-opacity`}
+        className={`flex items-center gap-0.5 justify-end ${editing ? "flex" : "opacity-0 group-hover/lesson:opacity-100 max-w-0 group-hover/lesson:max-w-[50px] overflow-hidden"} transition-all`}
       >
         {editing ? (
           <>
@@ -576,7 +576,7 @@ function SortableDayItem({
       </div>
 
       {expanded && (
-        <div className="pl-6 pr-1 py-1 space-y-0.5 border-l border-default ml-2.5">
+        <div className="pl-2 pr-1 py-1 space-y-0.5 border-l border-default ml-2.5">
           <DndContext 
             collisionDetection={closestCenter} 
             onDragEnd={(e) => onDragEndLessons(e, dIdx)}

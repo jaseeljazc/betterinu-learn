@@ -30,7 +30,7 @@ export function DocViewer({ content }: { content: any }) {
     return (
       <div className="w-full">
         <article className="doc-content space-y-8">
-          <section className="rounded-xl border border-default bg-surface p-5">
+          <section className="">
             <div
               className="rich-content text-secondary"
               dangerouslySetInnerHTML={{ __html: preprocessHtml(content) }}
@@ -50,7 +50,7 @@ export function DocViewer({ content }: { content: any }) {
           const id = slugify(section.heading);
           return (
             <section
-              className="scroll-mt-24 rounded-xl border border-default bg-surface p-5"
+              className="scroll-mt-24"
               id={id}
               key={section.heading}
             >

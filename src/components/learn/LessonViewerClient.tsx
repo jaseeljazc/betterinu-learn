@@ -339,7 +339,7 @@ export function LessonViewerClient({
           `}</style>
           <div className="flex flex-col min-h-full main-content-scroll">
             {/* Content area */}
-            <div className="px-6 lg:px-10 xl:px-14 pt-4 pb-40 max-w-4xl w-full">
+            <div className="px-6 lg:px-10 xl:px-14 pt-4 pb-10 max-w-4xl w-full">
               {/* Lesson header */}
               <div>
                 <div className="mb-4 flex flex-wrap items-center gap-2">
