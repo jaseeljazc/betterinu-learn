@@ -39,6 +39,7 @@ export default async function QuizPage({
     icon: dbCourse.icon as string,
     outcomes: (dbCourse.outcomes as string[]) || [],
     weeks: (dbCourse.curriculum as Week[]) || [],
+    image: (dbCourse.image as string) || "",
   };
 
   const week = course.weeks.find((w) => w.id === weekId);

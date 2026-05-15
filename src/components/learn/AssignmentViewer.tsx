@@ -72,6 +72,7 @@ export function AssignmentViewer({
   courseId,
   weekId,
   dayId,
+  onApprovedComplete,
 }: AssignmentViewerProps) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [text, setText] = useState("");

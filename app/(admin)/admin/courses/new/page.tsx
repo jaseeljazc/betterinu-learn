@@ -46,6 +46,7 @@ type CourseRow = {
   icon: string;
   outcomes: string[];
   is_active: boolean;
+  image: string;
   curriculum: any[];
 };
 

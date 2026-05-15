@@ -29,6 +29,7 @@ export default async function CourseLearnPage({ params }: { params: Promise<{ co
     icon: dbCourse.icon as string,
     outcomes: (dbCourse.outcomes as string[]) || [],
     weeks: (dbCourse.curriculum as any[]) || [],
+    image: (dbCourse.image as string) || "",
   };
 
   return (

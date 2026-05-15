@@ -278,6 +278,7 @@ export const courses: Course[] = [
       placeholderWeek("mern", 7, "Full-Stack Project"),
       placeholderWeek("mern", 8, "Deployment and Portfolio"),
     ],
+    image: "",
   },
   {
     id: "python",
@@ -303,6 +304,7 @@ export const courses: Course[] = [
       placeholderWeek("python", 7, "Automation"),
       placeholderWeek("python", 8, "Capstone Project"),
     ],
+    image: "",
   },
   {
     id: "hr",
@@ -326,6 +328,7 @@ export const courses: Course[] = [
       placeholderWeek("hr", 5, "Policy and Compliance"),
       placeholderWeek("hr", 6, "HR Analytics"),
     ].map((week, index) => ({ ...week, isLocked: index !== 0 })),
+    image: "",
   },
   {
     id: "marketing",
@@ -349,6 +352,7 @@ export const courses: Course[] = [
       placeholderWeek("marketing", 5, "Paid Campaigns"),
       placeholderWeek("marketing", 6, "Analytics and Reporting"),
     ].map((week, index) => ({ ...week, isLocked: index !== 0 })),
+    image: "",
   },
 ];
 

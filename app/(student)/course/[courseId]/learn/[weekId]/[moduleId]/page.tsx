@@ -32,6 +32,7 @@ export default async function ModuleViewerPage({
     icon: dbCourse.icon as string,
     outcomes: (dbCourse.outcomes as string[]) || [],
     weeks: (dbCourse.curriculum as any[]) || [],
+    image: (dbCourse.image as string) || "",
   };
 
   // Find the specific module

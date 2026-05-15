@@ -380,8 +380,8 @@ export default function AdminStudentDetailPage() {
                             <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-1">Currently on</p>
                             <p className="text-sm font-bold text-primary">{currentWeek.title}</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
-                              {currentWeek.days.map((day) => {
-                                const dayDone  = day.lessons.filter((l) => l.done).length;
+                              {currentWeek.days.map((day: any) => {
+                                const dayDone = day.lessons.filter((l: any) => l.done).length;
                                 const dayTotal = day.lessons.length;
                                 const isDayComplete = dayDone === dayTotal && dayTotal > 0;
                                 return (
@@ -426,11 +426,11 @@ export default function AdminStudentDetailPage() {
                                   </AccordionTrigger>
                                   <AccordionContent>
                                     <div className="px-5 pb-5 space-y-5 pt-1">
-                                      {week.days.map((day) => (
+                                      {week.days.map((day:any) => (
                                         <div key={day.id}>
                                           <p className="text-xs font-bold text-muted mb-2.5 uppercase tracking-wider">{day.label}</p>
                                           <div className="flex flex-col gap-1.5 pl-1">
-                                            {day.lessons.map((lesson) => (
+                                            {day.lessons.map((lesson:any) => (
                                               <div
                                                 key={lesson.id}
                                                 className={`flex items-start gap-2.5 rounded-lg p-2 transition-colors ${
@@ -648,7 +648,7 @@ export default function AdminStudentDetailPage() {
                     </div>
                   )}
                   {/* Admin-uploaded resources */}
-                  {selectedSubmission.assignment_data.files?.length > 0 && (
+                  {selectedSubmission.assignment_data.files && selectedSubmission.assignment_data.files.length > 0 && (
                     <FileViewer
                       files={selectedSubmission.assignment_data.files}
                       title="Reference Materials (Admin)"
@@ -667,7 +667,7 @@ export default function AdminStudentDetailPage() {
                   {selectedSubmission.submitted_text || <span className="italic text-muted">No text provided.</span>}
                 </div>
                 {/* Student-submitted files */}
-                {selectedSubmission.submitted_files?.length > 0 && (
+                {selectedSubmission.submitted_files && selectedSubmission.submitted_files.length > 0 && (
                   <div className="mt-3">
                     <FileViewer
                       files={selectedSubmission.submitted_files}

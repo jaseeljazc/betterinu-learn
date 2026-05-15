@@ -79,7 +79,7 @@ export default function CourseCurriculumPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [form, setForm] = useState<Partial<CourseRow> & { curriculum?: any[] } | null>(null);
-  const activeTab = "curriculum";
+  const activeTab = "curriculum" as string;
   const [showJson, setShowJson] = useState(false);
   const [showJsonHelp, setShowJsonHelp] = useState(false);
   const [jsonMode, setJsonMode] = useState<"full" | "week" | "edit-weeks">("full");

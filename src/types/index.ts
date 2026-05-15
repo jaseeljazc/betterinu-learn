@@ -55,6 +55,7 @@ export type LessonSection =
       content: string;
       align?: "left" | "center" | "right";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -65,6 +66,7 @@ export type LessonSection =
       align?: "left" | "center" | "right";
       captionAlign?: "left" | "center" | "right";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -74,6 +76,7 @@ export type LessonSection =
       align?: "left" | "center" | "right";
       size?: "sm" | "md" | "lg" | "full";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -82,6 +85,7 @@ export type LessonSection =
       filename?: string;
       align?: "left" | "center" | "right";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -92,6 +96,7 @@ export type LessonSection =
       thumbnailUrl?: string;
       align?: "left" | "center" | "right";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -102,6 +107,7 @@ export type LessonSection =
       deadline?: string;
       align?: "left" | "center" | "right";
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     }
   | {
       id: string;
@@ -122,6 +128,7 @@ export type LessonSection =
       }>;
       align?: string;
       paddingX?: "none" | "sm" | "md" | "lg" | "xl";
+      bgColor?: string;
     };
 
 // ── Quiz SubModule types ──────────────────────────────────────
@@ -180,6 +187,7 @@ export interface SubModule {
   attachedFiles?: { url: string; name: string; type: string }[];
   sections?: LessonSection[]; // new multi-section content
   pagePadding?: "none" | "sm" | "md" | "lg" | "xl";
+  pageBgColor?: string;
 }
 
 export interface DocContent {
