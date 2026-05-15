@@ -5,10 +5,13 @@
  */
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastHost } from "@/components/ui/toast";
+import { StudentTokenRefresher } from "@/components/layout/StudentTokenRefresher";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      {/* Keeps the httpOnly __session cookie alive as Firebase rotates ID tokens */}
+      <StudentTokenRefresher />
       <div className="fixed inset-0 z-0 h-full w-full bg-[#f8fafc]" />
       <Navbar />
       <div className="relative z-10">

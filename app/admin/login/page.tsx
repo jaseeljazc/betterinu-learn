@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      document.cookie = `__session=${idToken}; path=/; max-age=604800; SameSite=Lax`;
+      // Session cookie set by /api/admin/auth/verify (httpOnly, 7 days)
       router.push("/admin/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials.";

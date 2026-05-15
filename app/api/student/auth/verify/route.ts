@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   response.cookies.set("__session", idToken, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 60 * 60,
+    maxAge: 60 * 60 * 24 * 7,  // 7 days — refresh-session keeps it alive
     path: "/",
   });
   return response;

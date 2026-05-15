@@ -518,7 +518,7 @@ button, a, input, textarea, select { font: inherit; }
 }
 
 /* === RICH CONTENT (Student Doc Viewer — renders Quill HTML output) === */
-.rich-content { line-height: 1.4; font-size: 1rem; white-space: pre-wrap; word-break: break-word; }
+.rich-content { line-height: 1.4; font-size: 1rem; word-break: break-word; overflow-wrap: break-word; }
 .rich-content p { margin-top: 0; margin-bottom: 0; line-height: 1.4; min-height: 1.4em; }
 .rich-content p:last-child { margin-bottom: 0; }
 /* Blank lines: Quill emits <p><br></p>; we replace <br> with &nbsp; in preprocessHtml */
@@ -670,3 +670,49 @@ button, a, input, textarea, select { font: inherit; }
 }
 .ql-tooltip { z-index: 99999 !important; }
 
+/* === QUILL EDITOR FIXES === */
+
+/* Long text overflow fix */
+.ql-editor {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-x: hidden;
+}
+
+/* Table rendering fix — ensure columns do NOT collapse into first cell */
+.ql-editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  display: table;
+}
+.ql-editor thead,
+.ql-editor tbody,
+.ql-editor tfoot {
+  display: table-row-group;
+}
+.ql-editor thead { display: table-header-group; }
+.ql-editor tr { display: table-row; }
+.ql-editor th,
+.ql-editor td {
+  display: table-cell;
+  border: 1px solid #dee2e6;
+  padding: 0.5rem 0.75rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  vertical-align: top;
+  min-width: 60px;
+}
+.ql-editor th {
+  background: #f1f3f5;
+  font-weight: 700;
+  text-align: left;
+}
+.ql-editor tr:nth-child(even) td { background: #f8f9fa; }
+
+/* Prevent pre-wrap from breaking table cells in student view */
+.rich-content table { white-space: normal; }
+.rich-content th,
+.rich-content td { white-space: normal; word-break: break-word; overflow-wrap: break-word; }

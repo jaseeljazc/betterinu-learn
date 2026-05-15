@@ -10,13 +10,21 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Silently refresh the __session cookie whenever Firebase auto-rotates the ID token.
-    // Firebase rotates tokens every ~55 minutes; without this the cookie would hold
-    // an expired token even though the cookie itself is still alive.
+    // Refresh the httpOnly __session cookie whenever Firebase auto-rotates the ID token.
+    // Firebase rotates tokens every ~55 minutes. Without this the cookie would hold
+    // an expired token even though Firebase still considers the user signed in.
     const unsubscribeToken = onIdTokenChanged(clientAuth, async (user) => {
       if (user) {
-        const freshToken = await user.getIdToken();
-        document.cookie = `__session=${freshToken}; path=/; max-age=604800; SameSite=Lax`;
+        try {
+          const freshToken = await user.getIdToken();
+          await fetch("/api/auth/refresh-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken: freshToken }),
+          });
+        } catch {
+          // Network error — non-fatal, will retry on next rotation
+        }
       } else {
         // Signed out — clear the session cookie.
         document.cookie = `__session=; path=/; max-age=0; SameSite=Lax`;

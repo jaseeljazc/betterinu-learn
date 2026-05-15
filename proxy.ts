@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   "/admin/login",
   "/api/student/auth/verify",
   "/api/admin/auth/verify",
+  "/api/auth/refresh-session",
 ];
 
 export function proxy(req: NextRequest) {

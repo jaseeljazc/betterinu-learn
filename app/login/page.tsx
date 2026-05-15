@@ -45,8 +45,7 @@ export default function StudentLoginPage() {
         return;
       }
 
-      // Store token in cookie for middleware
-      document.cookie = `__session=${idToken}; path=/; max-age=604800; SameSite=Lax`;
+      // Session cookie set by /api/student/auth/verify (httpOnly, 7 days)
       router.push("/");
     } catch (err: unknown) {
       const msg =
