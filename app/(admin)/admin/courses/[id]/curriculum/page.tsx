@@ -96,16 +96,24 @@ export default function CourseCurriculumPage() {
 
   useEffect(() => {
     fetch("/api/admin/courses", { credentials: "include" })
-      .then((r) => r.json())
-      .then(({ courses }) => {
-        const course = courses.find((c: any) => c.id === id);
+      .then(async (r) => {
+        if (!r.ok) {
+          if (r.status === 401) router.push("/login");
+          throw new Error("Failed to fetch courses");
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (!data || !data.courses) return;
+        const course = data.courses.find((c: any) => c.id === id);
         if (course) setForm({ 
           ...course, 
           outcomes: course.outcomes ?? [], 
           curriculum: course.curriculum ?? [] 
         });
-      });
-  }, [id]);
+      })
+      .catch((err) => console.error(err));
+  }, [id, router]);
 
   function update(field: keyof CourseRow | "curriculum", value: unknown) {
     setForm((prev: any) => prev ? { ...prev, [field]: value } : prev);

@@ -230,96 +230,80 @@ export function LessonViewerClient({
   const ContentIcon = typeIcons[subModule.type] || HelpCircle;
 
   return (
-    <div className="flex h-full flex-col lg:flex-row overflow-hidden">
-      {/* ─── DARK SIDEBAR ─── */}
-      <aside className="hidden lg:flex lg:w-72 xl:w-96 shrink-0 flex-col h-full overflow-hidden bg-background border-r border-default">
-        <div className="flex h-full flex-col overflow-hidden">
-          {/* Sidebar header */}
-          <div className="border-b border-default p-5">
-            <Link
-              href={`/course/${course.id}/learn`}
-              className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted transition-colors hover:text-primary"
-            >
-              <ArrowLeft className="size-3.5" />
-              Curriculum
-            </Link>
+    <div className="flex flex-1 min-h-0 lg:flex-row overflow-hidden w-full">
+      {/* ─── LEFT SIDEBAR ─── */}
+<aside className="hidden lg:flex lg:w-72 xl:w-96 shrink-0 flex-col bg-background border-r border-default overflow-hidden">
+  {/* Header Section (Fixed at top) */}
+  <div className="shrink-0 border-b border-default p-5">
+    <Link
+      href={`/course/${course.id}/learn`}
+      className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted transition-colors hover:text-primary"
+    >
+      <ArrowLeft className="size-3.5" />
+      Curriculum
+    </Link>
 
-            <div className="mb-1 flex items-center gap-2">
-              <span className="rounded-md bg-surface border border-default px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
-                {week.title}
-              </span>
-            </div>
-            <h3 className="text-base font-bold leading-snug text-foreground">
-              {day.title}
-            </h3>
-            <p className="mt-0.5 text-xs text-muted">{day.label}</p>
+    <div className="mb-1 flex items-center gap-2">
+      <span className="rounded-md bg-surface border border-default px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
+        {week.title}
+      </span>
+    </div>
+    <h3 className="text-base font-bold leading-snug text-foreground">
+      {day.title}
+    </h3>
+    <p className="mt-0.5 text-xs text-muted">{day.label}</p>
 
-            {/* Progress bar */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
-                  Progress
-                </span>
-                <span className="text-[10px] font-bold text-secondary">
-                  {completeCount}/{modules.length}
-                </span>
-              </div>
-              <div className="h-1 w-full rounded-full bg-border overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-700"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
+    {/* Progress bar */}
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
+          Progress
+        </span>
+        <span className="text-[10px] font-bold text-secondary">
+          {completeCount}/{modules.length}
+        </span>
+      </div>
+      <div className="h-1 w-full rounded-full bg-border overflow-hidden">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-700"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+    </div>
+  </div>
 
-          {/* Module list — scrollbar on LEFT side via direction:rtl trick */}
-          <div
-            className="flex-1 overflow-y-auto sidebar-left-scroll"
-            style={{ direction: "rtl" }}
-          >
-            <div style={{ direction: "ltr" }}>
-              <div className="p-3 space-y-0.5">
-                {day.subModules.map((mod, idx) => (
-                  <SidebarSubModuleItem
-                    key={mod.id}
-                    module={mod}
-                    courseId={course.id}
-                    weekId={week.id}
-                    isActive={mod.id === subModule.id}
-                    isComplete={isSubModuleComplete(mod.id)}
-                    index={idx}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* Module list — Dedicated scroll container */}
+  <style>{`
+    .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 9999px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+    .sidebar-scroll { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
+  `}</style>
+  <div className="sidebar-scroll flex-1 overflow-y-auto">
+    <div className="p-3 space-y-0.5">
+      {day.subModules.map((mod, idx) => (
+        <SidebarSubModuleItem
+          key={mod.id}
+          module={mod}
+          courseId={course.id}
+          weekId={week.id}
+          isActive={mod.id === subModule.id}
+          isComplete={isSubModuleComplete(mod.id)}
+          index={idx}
+        />
+      ))}
+    </div>
+  </div>
 
-        {/* Sidebar scrollbar styles */}
-        <style>{`
-          .sidebar-left-scroll::-webkit-scrollbar {
-            width: 3px;
-          }
-          .sidebar-left-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .sidebar-left-scroll::-webkit-scrollbar-thumb {
-            background-color: var(--color-border-primary, #d1d5db);
-            border-radius: 9999px;
-          }
-          .sidebar-left-scroll::-webkit-scrollbar-thumb:hover {
-            background-color: var(--color-text-tertiary, #9ca3af);
-          }
-          .sidebar-left-scroll {
-            scrollbar-width: thin;
-            scrollbar-color: var(--color-border-primary, #d1d5db) transparent;
-          }
-        `}</style>
-      </aside>
+  {/* Decorative footer to align with right side and prevent cut-off illusion */}
+  <div className="shrink-0 border-t border-default bg-surface px-5 py-4">
+    <div className="min-h-[40px]"></div>
+  </div>
+</aside>
 
       {/* ─── MAIN CONTENT ─── */}
-      <div className="flex-1 min-w-0 h-full bg-white flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 bg-white flex flex-col overflow-hidden">
         {/* Top breadcrumb bar — fixed relative to this column, never scrolls */}
         <div className="shrink-0 border-b border-default bg-background px-6 lg:px-10 py-3 z-10">
           <div className="flex items-center gap-2 text-xs text-secondary">
@@ -371,7 +355,7 @@ export function LessonViewerClient({
                   )}
                 </div>
 
-                <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl leading-tight">
+                <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl leading-tight">
                   {subModule.title}
                 </h1>
 

@@ -9,7 +9,7 @@ export default async function ModuleViewerPage({
   params: Promise<{ courseId: string; weekId: string; moduleId: string }>;
 }) {
   const { courseId, weekId, moduleId } = await params;
-  
+
   const rows = await sql`SELECT * FROM courses WHERE id = ${courseId}`;
   const dbCourse = rows[0];
 
@@ -39,7 +39,9 @@ export default async function ModuleViewerPage({
   let match: any = null;
   for (const week of course.weeks) {
     for (const day of week.days) {
-      const subModule = day.subModules.find((item: any) => item.id === moduleId);
+      const subModule = day.subModules.find(
+        (item: any) => item.id === moduleId,
+      );
       if (subModule) {
         match = { week, day, subModule };
         break;
@@ -54,8 +56,13 @@ export default async function ModuleViewerPage({
 
   return (
     <div className="pt-[72px] h-screen overflow-hidden flex flex-col">
-      <div className="mx-auto w-full max-w-7xl h-full">
-        <LessonViewerClient course={course} day={match.day} subModule={match.subModule} week={match.week} />
+      <div className="mx-auto w-full max-w-7xl flex-1 min-h-0 flex flex-col">
+        <LessonViewerClient
+          course={course}
+          day={match.day}
+          subModule={match.subModule}
+          week={match.week}
+        />
       </div>
     </div>
   );

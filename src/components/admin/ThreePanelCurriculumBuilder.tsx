@@ -265,7 +265,20 @@ function AddModuleDropdown({
 }
 
 // --- DND SORTABLE ITEMS ---
-function LessonItem({ mod, isActive, onClick, onRename, onRemove }: any) {
+function SortableLessonItem({ mod, isActive, onClick, onRename, onRemove }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: mod.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(mod.title || "");
   const meta = getModuleTypeMeta(mod.type);
@@ -277,15 +290,26 @@ function LessonItem({ mod, isActive, onClick, onRename, onRemove }: any) {
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       onClick={() => {
         if (!editing) onClick();
       }}
-      className={`group/lesson flex items-center gap-1.5 px-1.5 py-1 rounded-md cursor-pointer transition-colors ${
+      className={`group/lesson flex items-center gap-1.5 px-1 py-1 rounded-md cursor-pointer transition-colors ${
         isActive
           ? "bg-primary/10 text-primary font-medium"
           : "hover:bg-subtle text-muted-foreground hover:text-foreground"
       }`}
     >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="shrink-0 text-muted hover:text-primary cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover/lesson:opacity-100 transition-opacity"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="size-3" />
+      </button>
       <meta.Icon className={`size-3 shrink-0 ${meta.color}`} />
       {editing ? (
         <input
@@ -387,6 +411,7 @@ function SortableDayItem({
   onSelectLesson,
   onRenameLesson,
   onRemoveLesson,
+  onDragEndLessons,
 }: any) {
   const {
     attributes,
@@ -552,20 +577,30 @@ function SortableDayItem({
 
       {expanded && (
         <div className="pl-6 pr-1 py-1 space-y-0.5 border-l border-default ml-2.5">
-          {day.subModules?.map((mod: any, mIdx: number) => (
-            <LessonItem
-              key={mod.id}
-              mod={mod}
-              isActive={
-                activeNode?.wIdx === wIdx &&
-                activeNode?.dIdx === dIdx &&
-                activeNode?.mIdx === mIdx
-              }
-              onClick={() => onSelectLesson(mIdx)}
-              onRename={(title: string) => onRenameLesson(mIdx, title)}
-              onRemove={() => onRemoveLesson(mIdx)}
-            />
-          ))}
+          <DndContext 
+            collisionDetection={closestCenter} 
+            onDragEnd={(e) => onDragEndLessons(e, dIdx)}
+          >
+            <SortableContext
+              items={(day.subModules || []).map((m: any) => m.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {day.subModules?.map((mod: any, mIdx: number) => (
+                <SortableLessonItem
+                  key={mod.id}
+                  mod={mod}
+                  isActive={
+                    activeNode?.wIdx === wIdx &&
+                    activeNode?.dIdx === dIdx &&
+                    activeNode?.mIdx === mIdx
+                  }
+                  onClick={() => onSelectLesson(mIdx)}
+                  onRename={(title: string) => onRenameLesson(mIdx, title)}
+                  onRemove={() => onRemoveLesson(mIdx)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
           {(!day.subModules || day.subModules.length === 0) && (
             <p className="text-[10px] text-muted italic ml-1.5 mt-1">
               No lessons
@@ -594,11 +629,13 @@ function WeekSection({
   onSelectLesson,
   onRenameLesson,
   onRemoveLesson,
+  onDragEndLessons,
 }: any) {
   const [editingWeek, setEditingWeek] = React.useState(false);
   const [weekDraft, setWeekDraft] = React.useState(
     week.title || `Week ${wIdx + 1}`,
   );
+  const [expanded, setExpanded] = React.useState(true);
 
   function commitWeekRename() {
     if (weekDraft.trim()) onRenameWeek(weekDraft.trim());
@@ -608,7 +645,21 @@ function WeekSection({
   return (
     <div className="space-y-0.5">
       {/* Week header */}
-      <div className="group/week flex items-center gap-1 px-1 py-1 rounded">
+      <div className="group/week flex items-center gap-1 px-1 py-1 rounded transition-colors hover:bg-subtle">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+          className="text-muted hover:text-foreground shrink-0 p-0.5"
+        >
+          {expanded ? (
+            <ChevronDown className="size-3.5" />
+          ) : (
+            <ChevronRight className="size-3.5" />
+          )}
+        </button>
         {editingWeek ? (
           <>
             <input
@@ -692,37 +743,42 @@ function WeekSection({
       </div>
 
       {/* Days */}
-      <DndContext collisionDetection={closestCenter} onDragEnd={onDragEndDays}>
-        <SortableContext
-          items={week.days.map((d: any) => d.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {week.days.map((day: any, dIdx: number) => (
-            <SortableDayItem
-              key={day.id}
-              day={day}
-              wIdx={wIdx}
-              dIdx={dIdx}
-              activeNode={activeNode}
-              onRenameDay={(title: string) => onRenameDay(dIdx, title)}
-              onRemoveDay={() => onRemoveDay(dIdx)}
-              onAddLesson={() => onAddLesson(dIdx)}
-              onAddQuiz={() => onAddQuiz(dIdx)}
-              onAddAssignment={() => onAddAssignment(dIdx)}
-              onSelectLesson={(mIdx: number) => onSelectLesson(dIdx, mIdx)}
-              onRenameLesson={(mIdx: number, title: string) =>
-                onRenameLesson(dIdx, mIdx, title)
-              }
-              onRemoveLesson={(mIdx: number) => onRemoveLesson(dIdx, mIdx)}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      {expanded && (
+        <div className="pl-4 ml-1.5 border-l border-default space-y-2 py-1">
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEndDays}>
+            <SortableContext
+              items={week.days.map((d: any) => d.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {week.days.map((day: any, dIdx: number) => (
+                <SortableDayItem
+                  key={day.id}
+                  day={day}
+                  wIdx={wIdx}
+                  dIdx={dIdx}
+                  activeNode={activeNode}
+                  onRenameDay={(title: string) => onRenameDay(dIdx, title)}
+                  onRemoveDay={() => onRemoveDay(dIdx)}
+                  onAddLesson={() => onAddLesson(dIdx)}
+                  onAddQuiz={() => onAddQuiz(dIdx)}
+                  onAddAssignment={() => onAddAssignment(dIdx)}
+                  onSelectLesson={(mIdx: number) => onSelectLesson(dIdx, mIdx)}
+                  onRenameLesson={(mIdx: number, title: string) =>
+                    onRenameLesson(dIdx, mIdx, title)
+                  }
+                  onRemoveLesson={(mIdx: number) => onRemoveLesson(dIdx, mIdx)}
+                  onDragEndLessons={onDragEndLessons}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
-      {week.days.length === 0 && (
-        <p className="text-xs text-muted text-center py-2 italic">
-          No days yet
-        </p>
+          {week.days.length === 0 && (
+            <p className="text-[10px] text-muted italic ml-1.5 mt-1">
+              No days yet
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1107,6 +1163,28 @@ export function ThreePanelCurriculumBuilder({
     }
   };
 
+  const handleDragEndLessons = (e: DragEndEvent, wIdx: number, dIdx: number) => {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      const next = [...form.curriculum];
+      const lessons = next[wIdx].days[dIdx].subModules;
+      const oldIdx = lessons.findIndex((m: any) => m.id === active.id);
+      const newIdx = lessons.findIndex((m: any) => m.id === over.id);
+      next[wIdx].days[dIdx].subModules = arrayMove(lessons, oldIdx, newIdx);
+      update("curriculum", next);
+
+      // Update activeNode to follow the dragged lesson
+      if (
+        activeNode &&
+        activeNode.wIdx === wIdx &&
+        activeNode.dIdx === dIdx &&
+        activeNode.mIdx === oldIdx
+      ) {
+        setActiveNode({ ...activeNode, mIdx: newIdx });
+      }
+    }
+  };
+
   const handleDragEndSections = (e: DragEndEvent) => {
     const { active, over } = e;
     if (over && active.id !== over.id && activeNode) {
@@ -1207,6 +1285,9 @@ export function ThreePanelCurriculumBuilder({
                     }
                     onDragEndDays={(e: DragEndEvent) =>
                       handleDragEndDays(e, wIdx)
+                    }
+                    onDragEndLessons={(e: DragEndEvent, dIdx: number) =>
+                      handleDragEndLessons(e, wIdx, dIdx)
                     }
                   />
                 );
@@ -1767,6 +1848,7 @@ export function ThreePanelCurriculumBuilder({
                     </p>
                     <div className="bg-white relative z-50">
                       <RichTextEditor
+                        key={activeSection.id}
                         value={activeSection.content}
                         onChange={(v) => updateSection({ content: v })}
                       />
@@ -2177,6 +2259,7 @@ export function ThreePanelCurriculumBuilder({
                             {activeCol.type === "rich_text" && (
                               <div className="bg-white relative z-50">
                                 <RichTextEditor
+                                  key={`${activeSection.id}-col-${activeColIdx}`}
                                   value={activeCol.content || ""}
                                   onChange={(v: string) =>
                                     patchCol(activeColIdx, { content: v })
