@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   ExternalLink,
   FileText,
@@ -180,16 +181,11 @@ function YouTubePlayer({ ytId, title }: { ytId: string; title?: string }) {
             }}
           >
             {/* Thumbnail */}
-            <img
+            <Image
               src={thumbnail}
               alt={title ?? "Video thumbnail"}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
+              fill
+              className="object-cover"
             />
             {/* Dark overlay on hover */}
             <div
@@ -343,10 +339,11 @@ export function SectionBlock({ section }: { section: LessonSection }) {
           className={`py-4 flex flex-col ${getPaddingClass(section.paddingX)} ${getFlexItemAlign(section.align)}`}
         >
           {section.url ? (
-            <img
+            <Image
               src={section.url}
               alt={section.caption ?? "Lesson image"}
-              crossOrigin="anonymous"
+              width={1200}
+              height={800}
               className={`${currentSizeCls} ${getAlignClass(section.align)} max-h-[75vh] object-contain rounded-xl border border-default bg-checkerboard`}
               loading="lazy"
             />
@@ -429,12 +426,14 @@ export function SectionBlock({ section }: { section: LessonSection }) {
           >
             <div className="flex size-20 items-center justify-center rounded-md bg-teal-50 border border-teal-100 shrink-0  overflow-hidden">
               {section.thumbnailUrl ? (
-                <img src={section.thumbnailUrl} alt="" className="size-full object-cover" />
+                <Image src={section.thumbnailUrl} alt="" width={80} height={80} className="size-full object-cover" />
               ) : section.url ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img 
-                  src={`https://www.google.com/s2/favicons?domain=${new URL(section.url).hostname}&sz=256`} 
-                  alt="" 
+                <Image
+                  src={`https://www.google.com/s2/favicons?domain=${new URL(section.url).hostname}&sz=256`}
+                  alt=""
+                  width={64}
+                  height={64}
+                  unoptimized
                   className="size-16 object-contain"
                 />
               ) : (
@@ -523,10 +522,11 @@ export function SectionBlock({ section }: { section: LessonSection }) {
               )}
               {col.type === "image" && col.url && (
                 <figure className="flex flex-col items-center p- gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={col.url}
                     alt={col.caption ?? ""}
+                    width={600}
+                    height={400}
                     className="w-full max-h-64 object-contain rounded-lg"
                     loading="lazy"
                   />
@@ -585,12 +585,14 @@ export function SectionBlock({ section }: { section: LessonSection }) {
                   >
                     <div className="flex size-12 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 shrink-0 mt-0.5 overflow-hidden p-1.5">
                       {col.thumbnailUrl ? (
-                        <img src={col.thumbnailUrl} alt="" className="size-full object-cover" />
+                        <Image src={col.thumbnailUrl} alt="" width={48} height={48} className="size-full object-cover" />
                       ) : col.url ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img 
+                        <Image 
                           src={`https://www.google.com/s2/favicons?domain=${new URL(col.url).hostname}&sz=128`} 
                           alt="" 
+                          width={48}
+                          height={48}
+                          unoptimized
                           className="size-full object-contain"
                         />
                       ) : (

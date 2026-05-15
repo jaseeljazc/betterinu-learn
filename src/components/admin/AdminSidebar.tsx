@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
@@ -56,9 +57,12 @@ export function AdminSidebar({
         >
           {!collapsed && (
             <Link href="/admin/dashboard" className="flex items-center h-8">
-              <img
+              <Image
                 src="/new-logo.svg"
                 alt="Betterinu Logo"
+                width={100}
+                height={32}
+                unoptimized
                 className="h-full w-auto object-contain"
               />
             </Link>

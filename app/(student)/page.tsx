@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import {
   AlertCircle, BookOpenCheck, CheckCircle2, ChevronRight,
@@ -160,10 +161,11 @@ function CourseCard({ course, assignments }: { course: Course; assignments: Flat
       {/* Course image / fallback */}
       <div className="relative aspect-[16/7] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
         {course.image ? (
-          <img
+        <Image
             src={course.image}
             alt={course.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-102"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

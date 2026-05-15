@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { Clock, UserRound } from "lucide-react";
 import type { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -40,10 +41,12 @@ export function CourseHero({ course }: { course: Course }) {
           {/* Right: Thumbnail */}
           {course.image && (
             <div className="hidden lg:block shrink-0">
-              <img
+              <Image
                 src={course.image}
                 alt={course.title}
-                className="h-64 w-96 rounded-2xl object-cover "
+                width={384}
+                height={256}
+                className="h-64 w-96 rounded-2xl object-cover"
               />
             </div>
           )}

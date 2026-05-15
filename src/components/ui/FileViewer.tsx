@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Download, FileSpreadsheet, FileText, ImageIcon, Paperclip } from "lucide-react";
 
 export interface AttachedFile {
@@ -38,10 +39,12 @@ function FileCard({ file }: { file: AttachedFile }) {
     return (
       <div className="rounded-xl border border-default overflow-hidden bg-surface">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={file.url}
           alt={file.name}
-          crossOrigin="anonymous"
+          width={800}
+          height={600}
+          unoptimized
           referrerPolicy="no-referrer"
           className="w-full max-h-96 object-contain bg-checkerboard"
           loading="lazy"

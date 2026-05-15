@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -2187,9 +2188,12 @@ export function ThreePanelCurriculumBuilder({
                             {activeCol.type === "image" && (
                               <>
                                 {activeCol.url && (
-                                  <img
+                                  <Image
                                     src={activeCol.url}
                                     alt=""
+                                    width={400}
+                                    height={112}
+                                    unoptimized
                                     className="max-h-28 w-full object-contain rounded border border-default"
                                   />
                                 )}

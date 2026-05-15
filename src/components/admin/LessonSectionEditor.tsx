@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import {
   DndContext,
   closestCenter,
@@ -105,8 +106,7 @@ function SectionEditor({
         <div className="space-y-3">
           {section.url && (
             <div className="rounded-lg border border-default bg-surface p-2 flex justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={section.url} crossOrigin="anonymous" alt="Preview" className="max-h-48 object-contain rounded" />
+              <Image src={section.url} alt="Preview" width={400} height={192} unoptimized className="max-h-48 object-contain rounded" />
             </div>
           )}
           <div>
@@ -368,8 +368,7 @@ function ColumnsEditor({
                 {col.type === "image" && (
                   <div className="space-y-2">
                     {col.url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={col.url} alt="preview" className="max-h-36 w-full object-contain rounded border border-default" />
+                      <Image src={col.url} alt="preview" width={400} height={144} unoptimized className="max-h-36 w-full object-contain rounded border border-default" />
                     )}
                     <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="Image URL…" className={inputCls} />
                     <input value={col.caption || ""} onChange={(e) => updateCol(i, { caption: e.target.value })} placeholder="Caption (optional)" className={inputCls} />
@@ -434,7 +433,7 @@ function SectionPreview({ section }: { section: LessonSection }) {
       return (
         <div className="flex flex-col items-center gap-2">
           {section.url ? (
-            <img src={section.url} alt={section.caption || "Preview"} className="max-h-32 object-contain rounded-md border border-default" />
+            <Image src={section.url} alt={section.caption || "Preview"} width={400} height={128} unoptimized className="max-h-32 object-contain rounded-md border border-default" />
           ) : (
             <div className="h-24 w-40 bg-subtle border border-dashed rounded flex items-center justify-center text-muted text-xs">No image URL</div>
           )}

@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Flame,
-  GraduationCap,
-  LayoutDashboard,
-  Sparkles,
-  UserRound,
-  LogOut,
-} from "lucide-react";
-import { useProgress } from "@/lib/hooks/useProgress";
+import Image from "next/image";
+import { useState } from "react";
+import { LogOut, Menu, X } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
 
 export function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   async function handleSignOut() {
     await clientAuth.signOut();
     document.cookie = "__session=; path=/; max-age=0";
@@ -30,24 +26,21 @@ export function Navbar() {
           href="/"
           className="flex items-center focus-ring rounded group h-9"
         >
-          <img
+          <Image
             src="/new-logo.svg"
             alt="Betterinu Logo"
+            width={120}
+            height={36}
+            unoptimized
             className="h-full w-auto object-contain transition-transform group-hover:scale-105"
           />
         </Link>
 
-        {/* Absolute Center Navigation */}
-        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-8 font-medium text-[13px] text-secondary">
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-8 font-medium text-[13px] text-secondary">
           <Link href="/" className="transition-colors hover:text-primary">
             Home
           </Link>
-          {/* <Link
-            href="/dashboard"
-            className="transition-colors hover:text-primary"
-          >
-            Dashboard
-          </Link> */}
           <Link href="/about" className="transition-colors hover:text-primary">
             About
           </Link>
@@ -64,7 +57,7 @@ export function Navbar() {
           {/* Sign out button */}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 rounded-sm border border-default bg-white py-1.5 pl-2 pr-3.5 text-xs font-bold text-foreground transition-all hover:bg-subtle focus-ring"
+            className="hidden md:flex items-center gap-2 rounded-sm border border-default bg-white py-1.5 pl-2 pr-3.5 text-xs font-bold text-foreground transition-all hover:bg-subtle focus-ring"
             aria-label="Sign out"
           >
             <span className="grid size-6 place-items-center rounded-sm bg-subtle">
@@ -72,8 +65,58 @@ export function Navbar() {
             </span>
             <span className="hidden sm:inline text-muted">Sign out</span>
           </button>
+          
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden flex items-center justify-center p-2 ml-1 rounded-md text-secondary hover:text-primary hover:bg-subtle transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-[64px] left-0 right-0 border-b border-default bg-white shadow-lg shadow-black/5 animate-in slide-in-from-top-2">
+          <div className="flex flex-col px-4 py-4 space-y-4 font-medium text-[15px] text-secondary">
+            <Link 
+              href="/" 
+              className="block w-full transition-colors hover:text-primary"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link 
+              href="/about" 
+              className="block w-full transition-colors hover:text-primary"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              About
+            </Link>
+            <Link 
+              href="/support" 
+              className="block w-full transition-colors hover:text-primary"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Support
+            </Link>
+            <div className="pt-2 mt-2 border-t border-default">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+                className="flex w-full items-center gap-2 py-2 text-foreground transition-colors hover:text-red-600 font-bold"
+              >
+                <LogOut className="size-4" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -107,7 +107,7 @@ export function RoboLoader({
     return (
       <div
         className={cn(
-          "flex min-h-[min(60vh,28rem)] w-full flex-1 flex-col items-center justify-center gap-3 p-6",
+          "flex min-h-[80vh] w-full flex-1 flex-col items-center justify-center gap-3 p-6",
           className
         )}
         role="status"
