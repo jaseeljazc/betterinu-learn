@@ -29,10 +29,10 @@ export function LearnClient({ course }: { course: Course }) {
   return (
     <div className="flex gap-10">
       <Sidebar activeWeekId={activeWeek.id} course={paddedCourse} />
-      <div className="min-w-0 flex-1 space-y-6">
+      <div className="min-w-0 flex-1 space-y-4">
         {/* Course header */}
-        <header className="rounded-lg border border-default bg-white overflow-hidden">
-          <div className="p-6">
+        <div className="rounded-lg border border-default bg-white overflow-hidden">
+          <div className="p-6 ">
             <nav className="flex items-center gap-2 text-xs font-semibold text-muted mb-4" aria-label="Breadcrumb">
               <Link href="/" className="hover:text-primary transition-colors">Home</Link>
               <ChevronRight size={12} className="opacity-50" />
@@ -40,15 +40,13 @@ export function LearnClient({ course }: { course: Course }) {
               <ChevronRight size={12} className="opacity-50" />
               <span className="text-foreground">Learn</span>
             </nav>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Course material</p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <p className="text-[16px] font-bold uppercase tracking-widest text-primary">Course material</p>
+            {/* <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-foreground">
               {activeWeek.title.replace(":", " —")}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-secondary">
-              Complete daily lessons, then pass the weekly quiz to unlock the next week. Keep up your streak for bonus XP!
-            </p>
+            </h1> */}
+
           </div>
-        </header>
+        </div>
 
         {paddedCourse.weeks.map((week: any, index: number) =>
           isWeekUnlocked(paddedCourse, week.id) && !week.id.startsWith("dummy") ? (

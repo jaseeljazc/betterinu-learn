@@ -74,7 +74,7 @@ export function Sidebar({ course, activeWeekId }: { course: Course; activeWeekId
                           key={day.id}
                         >
                           {isDayComplete(day.id) ? (
-                            <CheckCircle2 className="size-3.5 shrink-0 text-success" aria-hidden />
+                            <CheckCircle2 className="size-3.5 text-green-500  shrink-0 text-success" aria-hidden />
                           ) : (
                             <span className="size-3.5 shrink-0 rounded-full border border-strong bg-white transition-colors group-hover:border-primary" />
                           )}

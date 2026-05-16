@@ -7,7 +7,7 @@ import {
   ChevronLeft, Trash2, X, Clock, CheckCircle2, XCircle,
   BookOpen, BarChart2, ClipboardList, User, Calendar,
   Mail, PlusCircle, AlertCircle, TrendingUp, Award,
-  Eye, Send
+  Eye, Send, MoreVertical
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import { FileViewer } from "@/components/ui/FileViewer";
@@ -105,6 +105,8 @@ export default function AdminStudentDetailPage() {
   const [feedback, setFeedback] = useState("");
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRemoveCourseOpen, setIsRemoveCourseOpen] = useState(false);
 
   async function load() {
     try {
@@ -276,16 +278,46 @@ export default function AdminStudentDetailPage() {
                 ))}
               </div>
 
-              {/* Delete button to the right of details */}
-              <div className="shrink-0 pt-2 md:pt-0">
+              {/* Three dots menu to the right of details */}
+              <div className="shrink-0 pt-2 md:pt-0 relative">
                 <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60 transition-all shadow-sm"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 rounded-xl border border-default bg-white hover:bg-subtle text-muted hover:text-foreground transition-colors shadow-sm"
                 >
-                  {deleting ? <RoboLoader size="xs" className="text-current" /> : <Trash2 className="size-4" />}
-                  Delete Student
+                  <MoreVertical className="size-5" />
                 </button>
+
+                {isMenuOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-default bg-white shadow-lg z-50 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsRemoveCourseOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-subtle transition-colors"
+                      >
+                        <BookOpen className="size-4" />
+                        Remove Course
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          handleDelete();
+                        }}
+                        disabled={deleting}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        {deleting ? <RoboLoader size="xs" className="text-current" /> : <Trash2 className="size-4" />}
+                        Remove Student
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -739,6 +771,48 @@ export default function AdminStudentDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Remove Course Modal ──────────────────────────────────────────────────────── */}
+      {isRemoveCourseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-default overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-default">
+              <h2 className="font-display text-lg font-bold text-foreground">Remove Course</h2>
+              <button
+                onClick={() => setIsRemoveCourseOpen(false)}
+                className="rounded-full p-2 text-muted hover:bg-subtle hover:text-foreground transition-colors"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {assigned.length === 0 ? (
+                <p className="text-sm text-muted">This student is not assigned to any courses.</p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-foreground">Select a course to remove from this student:</p>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {assigned.map((c) => (
+                      <div key={c.course_id} className="flex items-center justify-between p-3 rounded-xl border border-default bg-subtle">
+                        <span className="text-sm font-medium text-foreground">{c.title}</span>
+                        <button
+                          onClick={() => {
+                            setIsRemoveCourseOpen(false);
+                            handleUnassign(c.course_id);
+                          }}
+                          className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

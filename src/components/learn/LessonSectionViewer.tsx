@@ -367,9 +367,9 @@ export function SectionBlock({ section }: { section: LessonSection }) {
 
     case "video": {
       const sizeMap = {
-        sm: "w-[40%] min-w-[280px]",
-        md: "w-[60%] min-w-[400px]",
-        lg: "w-[80%] min-w-[600px]",
+        sm: "w-[40%] min-w-[140px]",
+        md: "w-[60%] min-w-[200px]",
+        lg: "w-[80%] min-w-[260px]",
         full: "w-full",
       };
       const currentSizeCls =
