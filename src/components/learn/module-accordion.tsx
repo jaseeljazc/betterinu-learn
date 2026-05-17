@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import type { CourseId, Day } from "@/types";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useProgress } from "@/lib/hooks/useProgress";
-import { ProgressBar } from "./ProgressBar";
-import { SubModuleItem } from "./SubModuleItem";
-import { CompletionBadge } from "./CompletionBadge";
+import { ProgressBar } from "./progress-bar";
+import { SubModuleItem } from "./sub-module-item";
+import { CompletionBadge } from "./completion-badge";
 
 import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

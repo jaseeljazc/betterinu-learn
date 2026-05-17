@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { onIdTokenChanged } from "firebase/auth";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { clientAuth } from "@/lib/firebase-client";
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {

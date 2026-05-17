@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Award, BarChart3, Clock, UserRound, ChevronRight } from "lucide-react";
-import { PageWrapper } from "@/components/layout/PageWrapper";
-import { CourseHero } from "@/components/course/CourseHero";
-import { SyllabusList } from "@/components/course/SyllabusList";
-import { EnrollButton } from "@/components/course/EnrollButton";
+import { PageWrapper } from "@/components/layout/page-wrapper";
+import { CourseHero } from "@/components/course/course-hero";
+import { SyllabusList } from "@/components/course/syllabus-list";
+import { EnrollButton } from "@/components/course/enroll-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { sql } from "@/lib/db";
@@ -52,12 +52,17 @@ export default async function CourseDetailPage({
   return (
     <PageWrapper>
       <div className="mx-auto max-w-7xl space-y-6 pt-2">
-        <nav className="flex items-center gap-2 text-xs font-semibold text-muted mb-2" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+        <nav
+          className="flex items-center gap-2 text-xs font-semibold text-muted mb-2"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:text-primary transition-colors">
+            Home
+          </Link>
           <ChevronRight size={12} className="opacity-50" />
           <span className="text-foreground">{course.title}</span>
         </nav>
-        
+
         <CourseHero course={course} />
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <section>
@@ -77,7 +82,7 @@ export default async function CourseDetailPage({
               <p className="text-sm font-bold uppercase text-muted">Spacer</p>
               <h2 className="font-display text-3xl font-bold">Spacer</h2>
             </div>
-            
+
             <div className="space-y-5 lg:sticky lg:top-24">
               <Card className="p-5">
                 <h2 className="font-display text-xl font-bold">Course Stats</h2>
@@ -110,7 +115,7 @@ export default async function CourseDetailPage({
                   </div>
                 </div>
               </Card> */}
-              <EnrollButton courseId={course.id}  className="w-full"/>
+              <EnrollButton courseId={course.id} className="w-full" />
             </div>
           </aside>
         </div>

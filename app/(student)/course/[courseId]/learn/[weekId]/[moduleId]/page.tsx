@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { LessonViewerClient } from "@/components/learn/LessonViewerClient";
+import { LessonViewerClient } from "@/components/learn/lesson-viewer-client";
 import { sql } from "@/lib/db";
 import type { Course } from "@/types";
 

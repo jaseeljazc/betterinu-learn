@@ -35,18 +35,18 @@ import {
   Columns2,
 } from "lucide-react";
 import type { LessonSection, LessonSectionType } from "@/types";
-import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { FileUploader } from "@/components/ui/FileUploader";
-import { SectionBlock } from "@/components/learn/LessonSectionViewer";
+import { SectionBlock } from "@/components/learn/lesson-section-viewer";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { QuizModuleEditor } from "@/components/admin/QuizModuleEditor";
-import { AssignmentModuleEditor } from "@/components/admin/AssignmentModuleEditor";
-import { TruncatedText } from "@/components/TruncatedText";
+import { QuizModuleEditor } from "@/components/admin/quiz-module-editor";
+import { AssignmentModuleEditor } from "@/components/admin/assignment-module-editor";
+import { TruncatedText } from "@/components/truncated-text";
 
 // --- HELPERS ---
 function uid() {
@@ -265,7 +265,13 @@ function AddModuleDropdown({
 }
 
 // --- DND SORTABLE ITEMS ---
-function SortableLessonItem({ mod, isActive, onClick, onRename, onRemove }: any) {
+function SortableLessonItem({
+  mod,
+  isActive,
+  onClick,
+  onRename,
+  onRemove,
+}: any) {
   const {
     attributes,
     listeners,
@@ -577,8 +583,8 @@ function SortableDayItem({
 
       {expanded && (
         <div className="pl-2 pr-1 py-1 space-y-0.5 border-l border-default ml-2.5">
-          <DndContext 
-            collisionDetection={closestCenter} 
+          <DndContext
+            collisionDetection={closestCenter}
             onDragEnd={(e) => onDragEndLessons(e, dIdx)}
           >
             <SortableContext
@@ -745,7 +751,10 @@ function WeekSection({
       {/* Days */}
       {expanded && (
         <div className="pl-4 ml-1.5 border-l border-default space-y-2 py-1">
-          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEndDays}>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEndDays}
+          >
             <SortableContext
               items={week.days.map((d: any) => d.id)}
               strategy={verticalListSortingStrategy}
@@ -1163,7 +1172,11 @@ export function ThreePanelCurriculumBuilder({
     }
   };
 
-  const handleDragEndLessons = (e: DragEndEvent, wIdx: number, dIdx: number) => {
+  const handleDragEndLessons = (
+    e: DragEndEvent,
+    wIdx: number,
+    dIdx: number,
+  ) => {
     const { active, over } = e;
     if (over && active.id !== over.id) {
       const next = [...form.curriculum];

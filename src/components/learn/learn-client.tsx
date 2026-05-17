@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Course } from "@/types";
-import { Sidebar } from "@/components/layout/Sidebar";
 import { useProgress } from "@/lib/hooks/useProgress";
-import { LockedWeekCard } from "./LockedWeekCard";
-import { WeekCard } from "./WeekCard";
+import { LockedWeekCard } from "./locked-week-card";
+import { WeekCard } from "./week-card";
+import { Sidebar } from "../layout/main-sidebar";
 
 export function LearnClient({ course }: { course: Course }) {
   const { isWeekUnlocked } = useProgress();

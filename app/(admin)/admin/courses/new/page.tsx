@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import Link from "next/link";
-import { QuizBuilder } from "@/components/admin/QuizBuilder";
-import { RichTextEditor } from "@/components/admin/RichTextEditor";
-import { SortableDayItem } from "@/components/admin/SortableDayItem";
-import { ThreePanelCurriculumBuilder } from "@/components/admin/ThreePanelCurriculumBuilder"; // ADDED
+import { QuizBuilder } from "@/components/admin/quiz-builder";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { SortableDayItem } from "@/components/admin/sortable-day-item";
+import { ThreePanelCurriculumBuilder } from "@/components/admin/three-panel-curriculum-builder"; // ADDED
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -31,7 +31,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
-import { CourseImageUploader } from "@/components/admin/CourseImageUploader";
+import { CourseImageUploader } from "@/components/admin/course-image-uploader";
 import {
   Select,
   SelectContent,

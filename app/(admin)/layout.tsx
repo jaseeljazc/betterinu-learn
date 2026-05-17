@@ -3,7 +3,7 @@
  * Admin portal layout — sidebar navigation + main content area.
  * Applied to all /admin/* pages.
  */
-import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
+import { AdminLayoutClient } from "@/components/admin/admin-layout-client";
 
 export const metadata = { title: "Betterinu Admin" };
 

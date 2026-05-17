@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useProgress } from "@/lib/hooks/useProgress";
 import { clientAuth } from "@/lib/firebase-client";
-import { EnrolledCourseCard } from "./EnrolledCourseCard";
-import { AssignmentsList } from "./AssignmentsList";
-import { StreakBanner } from "./StreakBanner";
+import { EnrolledCourseCard } from "./enrolled-course-card";
+import { AssignmentsList } from "./assignments-list";
+import { StreakBanner } from "./streak-banner";
 import RoboLoader from "@/components/loading/robo-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

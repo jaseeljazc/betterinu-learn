@@ -1,9 +1,14 @@
-import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import {
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { GripVertical, ChevronDown, ChevronRight, X } from "lucide-react";
-import { LessonSectionEditor } from "./LessonSectionEditor";
-import { QuizBuilder } from "./QuizBuilder";
+import { LessonSectionEditor } from "./lesson-section-editor";
+import { QuizBuilder } from "./quiz-builder";
 import { FileUploader } from "@/components/ui/FileUploader";
 import {
   Select,
@@ -14,10 +19,29 @@ import {
 } from "@/components/ui/select";
 
 export function SortableDayItem({
-  day, wIdx, dIdx, form, update, isDayCollapsed, setCollapsedDays, removeDay
+  day,
+  wIdx,
+  dIdx,
+  form,
+  update,
+  isDayCollapsed,
+  setCollapsedDays,
+  removeDay,
 }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: day.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 50 : 1 };
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: day.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 1,
+  };
 
   function addModule() {
     const next = [...form.curriculum!];
@@ -27,36 +51,58 @@ export function SortableDayItem({
       type: "doc",
       duration: "0",
       isCompleted: false,
-      sections: []
+      sections: [],
     });
     update("curriculum", next);
   }
 
   function removeModule(mIdx: number) {
     const next = [...form.curriculum!];
-    next[wIdx].days[dIdx].subModules = next[wIdx].days[dIdx].subModules.filter((_: any, i: number) => i !== mIdx);
+    next[wIdx].days[dIdx].subModules = next[wIdx].days[dIdx].subModules.filter(
+      (_: any, i: number) => i !== mIdx,
+    );
     update("curriculum", next);
   }
 
   // Count sections inside 'doc' subModules
-  const sectionsCount = day.subModules?.reduce((acc: number, mod: any) => acc + (mod.type === 'doc' ? (mod.sections?.length || 0) : 0), 0) || 0;
+  const sectionsCount =
+    day.subModules?.reduce(
+      (acc: number, mod: any) =>
+        acc + (mod.type === "doc" ? mod.sections?.length || 0 : 0),
+      0,
+    ) || 0;
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border border-default bg-subtle p-3 relative shadow-sm">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="rounded-lg border border-default bg-subtle p-3 relative shadow-sm"
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 mr-4">
-          <button type="button"
+          <button
+            type="button"
             {...attributes}
             {...listeners}
             className="cursor-grab active:cursor-grabbing text-muted hover:text-primary touch-none p-1"
           >
             <GripVertical className="size-4" />
           </button>
-          <button type="button"
-            onClick={() => setCollapsedDays((prev: any) => ({ ...prev, [day.id]: !prev[day.id] }))}
+          <button
+            type="button"
+            onClick={() =>
+              setCollapsedDays((prev: any) => ({
+                ...prev,
+                [day.id]: !prev[day.id],
+              }))
+            }
             className="text-muted hover:text-primary transition-colors p-1"
           >
-            {isDayCollapsed ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
+            {isDayCollapsed ? (
+              <ChevronRight className="size-4" />
+            ) : (
+              <ChevronDown className="size-4" />
+            )}
           </button>
           <input
             value={day.title}
@@ -71,15 +117,17 @@ export function SortableDayItem({
         </div>
         <div className="flex items-center gap-2">
           <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mr-2">
-            {sectionsCount} {sectionsCount === 1 ? 'section' : 'sections'}
+            {sectionsCount} {sectionsCount === 1 ? "section" : "sections"}
           </span>
-          <button type="button"
+          <button
+            type="button"
             onClick={addModule}
             className="text-[10px] uppercase font-bold text-primary hover:underline"
           >
             + Add Lesson
           </button>
-          <button type="button"
+          <button
+            type="button"
             onClick={() => removeDay(wIdx, dIdx)}
             className="text-muted hover:text-red-600 ml-2"
           >
@@ -91,10 +139,16 @@ export function SortableDayItem({
       {!isDayCollapsed && (
         <div className="space-y-4 pt-2 border-t border-default/50 mt-2">
           {(!day.subModules || day.subModules.length === 0) && (
-             <div className="flex flex-col items-center justify-center p-6 bg-white border border-dashed border-default rounded-lg text-muted">
-                <p className="text-sm">No lessons found.</p>
-                <button type="button" onClick={addModule} className="text-primary text-xs font-bold uppercase mt-2 hover:underline">+ Create Lesson</button>
-             </div>
+            <div className="flex flex-col items-center justify-center p-6 bg-white border border-dashed border-default rounded-lg text-muted">
+              <p className="text-sm">No lessons found.</p>
+              <button
+                type="button"
+                onClick={addModule}
+                className="text-primary text-xs font-bold uppercase mt-2 hover:underline"
+              >
+                + Create Lesson
+              </button>
+            </div>
           )}
           <DndContext
             collisionDetection={closestCenter}
@@ -102,24 +156,35 @@ export function SortableDayItem({
               const { active, over } = event;
               if (over && active.id !== over.id) {
                 const next = [...form.curriculum!];
-                const oldIndex = next[wIdx].days[dIdx].subModules.findIndex((m: any) => m.id === active.id);
-                const newIndex = next[wIdx].days[dIdx].subModules.findIndex((m: any) => m.id === over.id);
-                next[wIdx].days[dIdx].subModules = arrayMove(next[wIdx].days[dIdx].subModules, oldIndex, newIndex);
+                const oldIndex = next[wIdx].days[dIdx].subModules.findIndex(
+                  (m: any) => m.id === active.id,
+                );
+                const newIndex = next[wIdx].days[dIdx].subModules.findIndex(
+                  (m: any) => m.id === over.id,
+                );
+                next[wIdx].days[dIdx].subModules = arrayMove(
+                  next[wIdx].days[dIdx].subModules,
+                  oldIndex,
+                  newIndex,
+                );
                 update("curriculum", next);
               }
             }}
           >
-            <SortableContext items={day.subModules?.map((m: any) => m.id) || []} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={day.subModules?.map((m: any) => m.id) || []}
+              strategy={verticalListSortingStrategy}
+            >
               {day.subModules?.map((mod: any, mIdx: number) => (
-                <SortableModuleItem 
-                  key={mod.id} 
-                  mod={mod} 
-                  mIdx={mIdx} 
-                  wIdx={wIdx} 
-                  dIdx={dIdx} 
-                  form={form} 
-                  update={update} 
-                  removeModule={removeModule} 
+                <SortableModuleItem
+                  key={mod.id}
+                  mod={mod}
+                  mIdx={mIdx}
+                  wIdx={wIdx}
+                  dIdx={dIdx}
+                  form={form}
+                  update={update}
+                  removeModule={removeModule}
                 />
               ))}
             </SortableContext>
@@ -130,14 +195,39 @@ export function SortableDayItem({
   );
 }
 
-function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 50 : 1 };
+function SortableModuleItem({
+  mod,
+  mIdx,
+  wIdx,
+  dIdx,
+  form,
+  update,
+  removeModule,
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: mod.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 1,
+  };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex flex-col gap-3 bg-white border border-default rounded-xl p-4 text-sm shadow-sm transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 relative z-10">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex flex-col gap-3 bg-white border border-default rounded-xl p-4 text-sm shadow-sm transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 relative z-10"
+    >
       <div className="flex items-center gap-3">
-        <button type="button"
+        <button
+          type="button"
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing text-muted hover:text-primary touch-none p-1"
@@ -145,7 +235,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           <GripVertical className="size-4" />
         </button>
         <input
-          value={mod.title || ''}
+          value={mod.title || ""}
           placeholder="Lesson Title"
           onChange={(e) => {
             const next = [...form.curriculum!];
@@ -173,7 +263,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           </SelectContent>
         </Select>
         <input
-          value={mod.duration || ''}
+          value={mod.duration || ""}
           placeholder="Duration"
           onChange={(e) => {
             const next = [...form.curriculum!];
@@ -182,7 +272,8 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           }}
           className="w-24 text-right outline-none text-secondary border border-default rounded-md px-2 py-1"
         />
-        <button type="button"
+        <button
+          type="button"
           onClick={() => removeModule(mIdx)}
           className="text-muted hover:text-red-600 ml-1 p-1"
         >
@@ -191,30 +282,34 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
       </div>
 
       <div className="flex items-start border-t border-default pt-2 mt-2">
-        {mod.type === 'video' && (
+        {mod.type === "video" && (
           <div className="flex flex-col w-full gap-3">
-            <input 
-              value={mod.videoUrl || ''} 
+            <input
+              value={mod.videoUrl || ""}
               onChange={(e) => {
                 const next = [...form.curriculum!];
-                next[wIdx].days[dIdx].subModules[mIdx].videoUrl = e.target.value;
+                next[wIdx].days[dIdx].subModules[mIdx].videoUrl =
+                  e.target.value;
                 update("curriculum", next);
               }}
-              placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ) or full URL" 
-              className="flex-1 bg-surface outline-none text-foreground border border-default rounded-md px-3 py-2" 
+              placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ) or full URL"
+              className="flex-1 bg-surface outline-none text-foreground border border-default rounded-md px-3 py-2"
             />
-            <textarea 
-              value={mod.description || ''} 
+            <textarea
+              value={mod.description || ""}
               onChange={(e) => {
                 const next = [...form.curriculum!];
-                next[wIdx].days[dIdx].subModules[mIdx].description = e.target.value;
+                next[wIdx].days[dIdx].subModules[mIdx].description =
+                  e.target.value;
                 update("curriculum", next);
               }}
-              placeholder="Video Summary (appears below the video)" 
-              className="flex-1 bg-surface outline-none text-foreground resize-y min-h-[120px] rounded-md border border-default p-3" 
+              placeholder="Video Summary (appears below the video)"
+              className="flex-1 bg-surface outline-none text-foreground resize-y min-h-[120px] rounded-md border border-default p-3"
             />
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted mb-2">Attachments</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted mb-2">
+                Attachments
+              </p>
               <FileUploader
                 folder={`lessons/${mod.id}`}
                 files={mod.attachedFiles ?? []}
@@ -228,7 +323,7 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
             </div>
           </div>
         )}
-        {mod.type === 'doc' && (
+        {mod.type === "doc" && (
           <div className="w-full space-y-3">
             <LessonSectionEditor
               sections={mod.sections ?? []}
@@ -241,15 +336,18 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
             />
           </div>
         )}
-        {mod.type === 'mixed' && (
+        {mod.type === "mixed" && (
           <div className="w-full space-y-4">
-             <p className="text-xs italic text-muted">Mixed lessons are deprecated. Please change type to 'Doc / Sections'.</p>
+            <p className="text-xs italic text-muted">
+              Mixed lessons are deprecated. Please change type to 'Doc /
+              Sections'.
+            </p>
           </div>
         )}
-        {mod.type === 'quiz' && (
+        {mod.type === "quiz" && (
           <div className="w-full">
-            <QuizBuilder 
-              quizData={mod.quizData} 
+            <QuizBuilder
+              quizData={mod.quizData}
               onChange={(newData: any) => {
                 const next = [...form.curriculum!];
                 next[wIdx].days[dIdx].subModules[mIdx].quizData = newData;
@@ -258,13 +356,14 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
             />
           </div>
         )}
-        {mod.type === 'assignment' && (
+        {mod.type === "assignment" && (
           <div className="w-full flex flex-col gap-3">
             <textarea
-              value={mod.description || ''}
+              value={mod.description || ""}
               onChange={(e) => {
                 const next = [...form.curriculum!];
-                next[wIdx].days[dIdx].subModules[mIdx].description = e.target.value;
+                next[wIdx].days[dIdx].subModules[mIdx].description =
+                  e.target.value;
                 update("curriculum", next);
               }}
               placeholder="Assignment instructions (visible to students)"

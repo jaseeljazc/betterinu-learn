@@ -20,13 +20,13 @@ import type { Course, Day, SubModule, Week } from "@/types";
 import { useProgress } from "@/lib/hooks/useProgress";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DocViewer } from "./DocViewer";
-import { VideoPlayer } from "./VideoPlayer";
-import { AssignmentViewer } from "./AssignmentViewer";
-import { QuizViewer } from "./QuizViewer";
+import { DocViewer } from "./doc-viewer";
+import { VideoPlayer } from "./video-player";
+import { AssignmentViewer } from "./assignment-viewer";
+import { QuizViewer } from "./quiz-viewer";
 import { FileViewer } from "@/components/ui/FileViewer";
-import { LessonSectionViewer } from "./LessonSectionViewer";
-import BackButton from "@/components/layout/BackButton";
+import { LessonSectionViewer } from "./lesson-section-viewer";
+import BackButton from "@/components/layout/back-button";
 
 const typeIcons: Record<string, any> = {
   doc: FileText,
@@ -232,75 +232,75 @@ export function LessonViewerClient({
   return (
     <div className="flex flex-1 min-h-0 lg:flex-row overflow-hidden w-full">
       {/* ─── LEFT SIDEBAR ─── */}
-<aside className="hidden lg:flex lg:w-72 xl:w-96 shrink-0 flex-col bg-background border-r border-default overflow-hidden">
-  {/* Header Section (Fixed at top) */}
-  <div className="shrink-0 border-b border-default p-5">
-    <Link
-      href={`/course/${course.id}/learn`}
-      className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted transition-colors hover:text-primary"
-    >
-      <ArrowLeft className="size-3.5" />
-      Curriculum
-    </Link>
+      <aside className="hidden lg:flex lg:w-72 xl:w-96 shrink-0 flex-col bg-background border-r border-default overflow-hidden">
+        {/* Header Section (Fixed at top) */}
+        <div className="shrink-0 border-b border-default p-5">
+          <Link
+            href={`/course/${course.id}/learn`}
+            className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted transition-colors hover:text-primary"
+          >
+            <ArrowLeft className="size-3.5" />
+            Curriculum
+          </Link>
 
-    <div className="mb-1 flex items-center gap-2">
-      <span className="rounded-md bg-surface border border-default px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
-        {week.title}
-      </span>
-    </div>
-    <h3 className="text-base font-bold leading-snug text-foreground">
-      {day.title}
-    </h3>
-    <p className="mt-0.5 text-xs text-muted">{day.label}</p>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="rounded-md bg-surface border border-default px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
+              {week.title}
+            </span>
+          </div>
+          <h3 className="text-base font-bold leading-snug text-foreground">
+            {day.title}
+          </h3>
+          <p className="mt-0.5 text-xs text-muted">{day.label}</p>
 
-    {/* Progress bar */}
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
-          Progress
-        </span>
-        <span className="text-[10px] font-bold text-secondary">
-          {completeCount}/{modules.length}
-        </span>
-      </div>
-      <div className="h-1 w-full rounded-full bg-border overflow-hidden">
-        <div
-          className="h-full rounded-full bg-primary transition-all duration-700"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-    </div>
-  </div>
+          {/* Progress bar */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
+                Progress
+              </span>
+              <span className="text-[10px] font-bold text-secondary">
+                {completeCount}/{modules.length}
+              </span>
+            </div>
+            <div className="h-1 w-full rounded-full bg-border overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
-  {/* Module list — Dedicated scroll container */}
-  <style>{`
+        {/* Module list — Dedicated scroll container */}
+        <style>{`
     .sidebar-scroll::-webkit-scrollbar { width: 4px; }
     .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
     .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 9999px; }
     .sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
     .sidebar-scroll { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
   `}</style>
-  <div className="sidebar-scroll flex-1 overflow-y-auto">
-    <div className="p-3 space-y-0.5">
-      {day.subModules.map((mod, idx) => (
-        <SidebarSubModuleItem
-          key={mod.id}
-          module={mod}
-          courseId={course.id}
-          weekId={week.id}
-          isActive={mod.id === subModule.id}
-          isComplete={isSubModuleComplete(mod.id)}
-          index={idx}
-        />
-      ))}
-    </div>
-  </div>
+        <div className="sidebar-scroll flex-1 overflow-y-auto">
+          <div className="p-3 space-y-0.5">
+            {day.subModules.map((mod, idx) => (
+              <SidebarSubModuleItem
+                key={mod.id}
+                module={mod}
+                courseId={course.id}
+                weekId={week.id}
+                isActive={mod.id === subModule.id}
+                isComplete={isSubModuleComplete(mod.id)}
+                index={idx}
+              />
+            ))}
+          </div>
+        </div>
 
-  {/* Decorative footer to align with right side and prevent cut-off illusion */}
-  <div className="shrink-0 border-t border-default bg-surface px-5 py-4">
-    <div className="min-h-[40px]"></div>
-  </div>
-</aside>
+        {/* Decorative footer to align with right side and prevent cut-off illusion */}
+        <div className="shrink-0 border-t border-default bg-surface px-5 py-4">
+          <div className="min-h-[40px]"></div>
+        </div>
+      </aside>
 
       {/* ─── MAIN CONTENT ─── */}
       <div className="flex-1 min-w-0 bg-white flex flex-col overflow-hidden">

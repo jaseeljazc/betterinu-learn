@@ -1,19 +1,19 @@
 import { notFound } from "next/navigation";
-import { PageWrapper } from "@/components/layout/PageWrapper";
-import { QuizClient } from "@/components/quiz/QuizClient";
+import { PageWrapper } from "@/components/layout/page-wrapper";
+import { QuizClient } from "@/components/quiz/quiz-client";
 import { sql } from "@/lib/db";
 import type { Course, Week } from "@/types";
 
-export default async function QuizPage({ 
+export default async function QuizPage({
   params,
-  searchParams
-}: { 
+  searchParams,
+}: {
   params: Promise<{ courseId: string; weekId: string }>;
   searchParams: Promise<{ moduleId?: string }>;
 }) {
   const { courseId, weekId } = await params;
   const { moduleId } = await searchParams;
-  
+
   if (!moduleId) {
     notFound();
   }
@@ -50,7 +50,7 @@ export default async function QuizPage({
   // Find the quiz module to get the quizData
   let quizModule;
   for (const day of week.days) {
-    const mod = day.subModules.find(m => m.id === moduleId);
+    const mod = day.subModules.find((m) => m.id === moduleId);
     if (mod) {
       quizModule = mod;
       break;
@@ -63,7 +63,13 @@ export default async function QuizPage({
 
   return (
     <PageWrapper>
-      <QuizClient course={course} week={week} quizData={quizModule.quizData} moduleId={moduleId} moduleTitle={quizModule.title} />
+      <QuizClient
+        course={course}
+        week={week}
+        quizData={quizModule.quizData}
+        moduleId={moduleId}
+        moduleTitle={quizModule.title}
+      />
     </PageWrapper>
   );
 }
