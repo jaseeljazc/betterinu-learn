@@ -3,38 +3,68 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ChevronLeft, ChevronDown, ChevronRight, Plus, X, Save, CheckCircle2,
-  Info, BookOpen, User, Settings2, Target, ArrowUp, ArrowDown
+  ChevronLeft,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  X,
+  Save,
+  CheckCircle2,
+  Info,
+  BookOpen,
+  User,
+  Settings2,
+  Target,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import Link from "next/link";
-import { QuizBuilder } from "@/components/admin/QuizBuilder";
-import { RichTextEditor } from "@/components/admin/RichTextEditor";
-import { CurriculumGuide } from "@/components/admin/CurriculumGuide";
-import { LessonSectionEditor } from "@/components/admin/LessonSectionEditor";
-import { SortableDayItem } from "@/components/admin/SortableDayItem";
-import { ThreePanelCurriculumBuilder } from "@/components/admin/ThreePanelCurriculumBuilder"; // ADDED
+import { QuizBuilder } from "@/components/admin/quiz-builder";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { CurriculumGuide } from "@/components/admin/curriculum-guide";
+import { LessonSectionEditor } from "@/components/admin/lesson-section-editor";
+import { SortableDayItem } from "@/components/admin/sortable-day-item";
+import { ThreePanelCurriculumBuilder } from "@/components/admin/three-panel-curriculum-builder"; // ADDED
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { AttachedFile } from "@/components/ui/FileUploader";
 import { DndContext, closestCenter } from "@dnd-kit/core";
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { toast } from "sonner";
 
 type CourseRow = {
-  id: string; title: string; tagline: string; description: string;
-  instructor: string; instructor_bio: string; duration: string;
-  total_modules: number; level: string; color: string; icon: string;
-  outcomes: string[]; is_active: boolean;
+  id: string;
+  title: string;
+  tagline: string;
+  description: string;
+  instructor: string;
+  instructor_bio: string;
+  duration: string;
+  total_modules: number;
+  level: string;
+  color: string;
+  icon: string;
+  outcomes: string[];
+  is_active: boolean;
   image: string;
-
 };
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 
-
-function WeekJsonEditor({ week, onSave }: { week: any, onSave: (data: any) => void }) {
+function WeekJsonEditor({
+  week,
+  onSave,
+}: {
+  week: any;
+  onSave: (data: any) => void;
+}) {
   const [collapsed, setCollapsed] = useState(true);
   const [input, setInput] = useState(() => JSON.stringify(week, null, 2));
   const [err, setErr] = useState("");
@@ -49,26 +79,51 @@ function WeekJsonEditor({ week, onSave }: { week: any, onSave: (data: any) => vo
     <div className="rounded-xl border border-default bg-white overflow-hidden shadow-sm transition-all">
       <div className="flex items-center justify-between bg-surface px-4 py-3 border-b border-default">
         <div className="flex items-center gap-3 flex-1">
-           <button type="button" onClick={() => setCollapsed(!collapsed)} className="text-muted hover:text-primary p-1">
-             {collapsed ? <ChevronRight className="size-5" /> : <ChevronDown className="size-5" />}
-           </button>
-           <span className="font-bold text-primary text-sm">{week.title}</span>
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className="text-muted hover:text-primary p-1"
+          >
+            {collapsed ? (
+              <ChevronRight className="size-5" />
+            ) : (
+              <ChevronDown className="size-5" />
+            )}
+          </button>
+          <span className="font-bold text-primary text-sm">{week.title}</span>
         </div>
         {!collapsed && (
-          <button type="button" className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-green-800 font-semibold flex items-center gap-1 transition-colors" onClick={() => {
-             try {
+          <button
+            type="button"
+            className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-green-800 font-semibold flex items-center gap-1 transition-colors"
+            onClick={() => {
+              try {
                 const p = JSON.parse(input);
                 onSave(p);
                 setErr("");
                 setCollapsed(true);
-             } catch(e) { setErr("Invalid JSON format"); }
-          }}><Save className="size-3" /> Save JSON</button>
+              } catch (e) {
+                setErr("Invalid JSON format");
+              }
+            }}
+          >
+            <Save className="size-3" /> Save JSON
+          </button>
         )}
       </div>
       {!collapsed && (
         <div className="p-4 bg-[#fafafa]">
-          <textarea className="w-full h-[350px] font-mono text-xs p-4 rounded-xl border border-default bg-white outline-none focus:border-primary shadow-inner resize-y" value={input} onChange={e => setInput(e.target.value)} spellCheck={false} />
-          {err && <p className="text-red-500 text-xs mt-2 font-semibold bg-red-50 p-2 rounded">{err}</p>}
+          <textarea
+            className="w-full h-[350px] font-mono text-xs p-4 rounded-xl border border-default bg-white outline-none focus:border-primary shadow-inner resize-y"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            spellCheck={false}
+          />
+          {err && (
+            <p className="text-red-500 text-xs mt-2 font-semibold bg-red-50 p-2 rounded">
+              {err}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -78,21 +133,31 @@ function WeekJsonEditor({ week, onSave }: { week: any, onSave: (data: any) => vo
 export default function CourseCurriculumPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [form, setForm] = useState<Partial<CourseRow> & { curriculum?: any[] } | null>(null);
+  const [form, setForm] = useState<
+    (Partial<CourseRow> & { curriculum?: any[] }) | null
+  >(null);
   const activeTab = "curriculum" as string;
   const [showJson, setShowJson] = useState(false);
   const [showJsonHelp, setShowJsonHelp] = useState(false);
-  const [jsonMode, setJsonMode] = useState<"full" | "week" | "edit-weeks">("full");
+  const [jsonMode, setJsonMode] = useState<"full" | "week" | "edit-weeks">(
+    "full",
+  );
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState("");
   const [outcomeInput, setOutcomeInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
-  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
+  const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>(
+    {},
+  );
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
+    {},
+  );
   const [useThreePanel, setUseThreePanel] = useState(true); // ADDED
-  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
+  const [collapsedModules, setCollapsedModules] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     fetch("/api/admin/courses", { credentials: "include" })
@@ -106,17 +171,18 @@ export default function CourseCurriculumPage() {
       .then((data) => {
         if (!data || !data.courses) return;
         const course = data.courses.find((c: any) => c.id === id);
-        if (course) setForm({ 
-          ...course, 
-          outcomes: course.outcomes ?? [], 
-          curriculum: course.curriculum ?? [] 
-        });
+        if (course)
+          setForm({
+            ...course,
+            outcomes: course.outcomes ?? [],
+            curriculum: course.curriculum ?? [],
+          });
       })
       .catch((err) => console.error(err));
   }, [id, router]);
 
   function update(field: keyof CourseRow | "curriculum", value: unknown) {
-    setForm((prev: any) => prev ? { ...prev, [field]: value } : prev);
+    setForm((prev: any) => (prev ? { ...prev, [field]: value } : prev));
   }
 
   function addOutcome() {
@@ -127,7 +193,10 @@ export default function CourseCurriculumPage() {
   }
 
   function removeOutcome(i: number) {
-    update("outcomes", (form?.outcomes ?? []).filter((_, idx) => idx !== i));
+    update(
+      "outcomes",
+      (form?.outcomes ?? []).filter((_, idx) => idx !== i),
+    );
   }
 
   // Curriculum Helpers
@@ -138,7 +207,7 @@ export default function CourseCurriculumPage() {
       id: `week-${nextIndex}`,
       title: `Week ${nextIndex}: New Week`,
       isLocked: nextIndex > 1,
-      days: []
+      days: [],
     });
     update("curriculum", weeks);
   }
@@ -150,7 +219,7 @@ export default function CourseCurriculumPage() {
       id: `${id}-w${weekIndex + 1}-d${dayIndex}`,
       label: `Day ${dayIndex}`,
       title: "New Day Topic",
-      subModules: []
+      subModules: [],
     });
     update("curriculum", weeks);
   }
@@ -162,25 +231,31 @@ export default function CourseCurriculumPage() {
       title: "New Lesson",
       type: "video",
       duration: "10 min",
-      description: "Lesson description here."
+      description: "Lesson description here.",
     });
     update("curriculum", weeks);
   }
 
   function removeWeek(idx: number) {
-    const weeks = (form?.curriculum ?? []).filter((_: any, i: number) => i !== idx);
+    const weeks = (form?.curriculum ?? []).filter(
+      (_: any, i: number) => i !== idx,
+    );
     update("curriculum", weeks);
   }
 
   function removeDay(weekIdx: number, dayIdx: number) {
     const weeks = [...(form?.curriculum ?? [])];
-    weeks[weekIdx].days = weeks[weekIdx].days.filter((_: any, i: number) => i !== dayIdx);
+    weeks[weekIdx].days = weeks[weekIdx].days.filter(
+      (_: any, i: number) => i !== dayIdx,
+    );
     update("curriculum", weeks);
   }
 
   function removeModule(weekIdx: number, dayIdx: number, modIdx: number) {
     const weeks = [...(form?.curriculum ?? [])];
-    weeks[weekIdx].days[dayIdx].subModules = weeks[weekIdx].days[dayIdx].subModules.filter((_: any, i: number) => i !== modIdx);
+    weeks[weekIdx].days[dayIdx].subModules = weeks[weekIdx].days[
+      dayIdx
+    ].subModules.filter((_: any, i: number) => i !== modIdx);
     update("curriculum", weeks);
   }
 
@@ -198,7 +273,10 @@ export default function CourseCurriculumPage() {
       if (!res.ok) throw new Error("Save failed");
       toast.success("Course saved successfully!");
       setSuccess(true);
-      setTimeout(() => { setSuccess(false); router.push("/admin/courses"); }, 1500);
+      setTimeout(() => {
+        setSuccess(false);
+        router.push("/admin/courses");
+      }, 1500);
     } catch {
       toast.error("Failed to save. Please try again.");
       setError("Failed to save. Please try again.");
@@ -215,14 +293,19 @@ export default function CourseCurriculumPage() {
     );
   }
 
-  const inputClass = "w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-  const sectionClass = "rounded-xl border border-default bg-white p-6 space-y-5";
+  const inputClass =
+    "w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  const sectionClass =
+    "rounded-xl border border-default bg-white p-6 space-y-5";
 
   return (
     <div className="p-8 w-full">
       {/* Header */}
       <div className="mb-8 flex items-center gap-3">
-        <Link href="/admin/courses" className="group flex items-center gap-2 text-sm font-semibold text-secondary transition-colors hover:text-primary focus-ring rounded mr-2">
+        <Link
+          href="/admin/courses"
+          className="group flex items-center gap-2 text-sm font-semibold text-secondary transition-colors hover:text-primary focus-ring rounded mr-2"
+        >
           <span className="flex size-8 items-center justify-center rounded-full border border-default bg-white shadow-sm transition-all group-hover:border-primary group-hover:bg-primary/5">
             <ChevronLeft className="size-4" />
           </span>
@@ -231,7 +314,9 @@ export default function CourseCurriculumPage() {
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">Edit Course</h1>
           <p className="text-sm text-secondary">
-            <span className="font-mono text-xs bg-elevated px-1.5 py-0.5 rounded">{id}</span>
+            <span className="font-mono text-xs bg-elevated px-1.5 py-0.5 rounded">
+              {id}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-subtle p-1">
@@ -251,58 +336,66 @@ export default function CourseCurriculumPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold">Course Curriculum</h2>
+              <p className="text-sm text-secondary">
+                Organize your content into weeks, days, and lessons.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* ADDED */}
+              <button
+                type="button"
+                onClick={() => setUseThreePanel(!useThreePanel)}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                  useThreePanel
+                    ? "bg-primary text-white border-primary"
+                    : "bg-surface border-default text-secondary hover:text-primary"
+                }`}
+              >
+                {useThreePanel ? "Use Standard Builder" : "Use 3-Panel Builder"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!showJson || jsonMode !== "edit-weeks") {
+                    setJsonError("");
+                    setJsonMode("edit-weeks");
+                    setShowJson(true);
+                  } else {
+                    setShowJson(false);
+                  }
+                }}
+                className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
+              >
+                {showJson && jsonMode === "edit-weeks"
+                  ? "Visual Builder"
+                  : "Edit JSON by Week"}
+              </button>
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">Course Curriculum</h2>
-                <p className="text-sm text-secondary">Organize your content into weeks, days, and lessons.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* ADDED */}
-                <button
-                  type="button"
-                  onClick={() => setUseThreePanel(!useThreePanel)}
-                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                    useThreePanel ? "bg-primary text-white border-primary" : "bg-surface border-default text-secondary hover:text-primary"
-                  }`}
-                >
-                  {useThreePanel ? "Use Standard Builder" : "Use 3-Panel Builder"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!showJson || jsonMode !== "edit-weeks") {
-                      setJsonError("");
-                      setJsonMode("edit-weeks");
-                      setShowJson(true);
-                    } else {
-                      setShowJson(false);
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
-                >
-                  {showJson && jsonMode === "edit-weeks" ? "Visual Builder" : "Edit JSON by Week"}
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!showJson || jsonMode !== "week") {
+                    setJsonInput("");
+                    setJsonError("");
+                    setJsonMode("week");
+                    setShowJson(true);
+                  } else {
+                    setShowJson(false);
+                  }
+                }}
+                className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
+              >
+                {showJson && jsonMode === "week"
+                  ? "Cancel Import"
+                  : "Import Week JSON"}
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!showJson || jsonMode !== "week") {
-                      setJsonInput("");
-                      setJsonError("");
-                      setJsonMode("week");
-                      setShowJson(true);
-                    } else {
-                      setShowJson(false);
-                    }
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-surface border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary transition-colors"
-                >
-                  {showJson && jsonMode === "week" ? "Cancel Import" : "Import Week JSON"}
-                </button>
-
-                {!showJson && !useThreePanel && ( // ADDED !useThreePanel
+              {!showJson &&
+                !useThreePanel && ( // ADDED !useThreePanel
                   <button
                     type="button"
                     onClick={addWeek}
@@ -311,198 +404,236 @@ export default function CourseCurriculumPage() {
                     <Plus className="size-4" /> Add Week
                   </button>
                 )}
-              </div>
             </div>
-
-            {useThreePanel && !showJson ? ( // ADDED
-              <ThreePanelCurriculumBuilder 
-                form={form} 
-                update={update}
-                onCancel={() => router.push('/admin/courses')}
-                onSave={async () => {
-                  try {
-                    setSaving(true);
-                    setError("");
-                    const res = await fetch(`/api/admin/courses/${id}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(form),
-                    });
-                    if (!res.ok) throw new Error("Failed to save course");
-                    toast.success("Curriculum saved successfully!");
-                    setSuccess(true);
-                    setTimeout(() => setSuccess(false), 2000);
-                  } catch (err: any) {
-                    toast.error(err.message || "Failed to save curriculum");
-                    setError(err.message);
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                saving={saving}
-              />
-            ) : showJson ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-secondary">
-                    {jsonMode === "edit-weeks" 
-                      ? "Edit the JSON for each week individually below." 
-                      : "Paste a single week JSON object here. It will be appended to the curriculum."}
-                  </p>
-                  <div className="flex items-center gap-4">
-                    {jsonError && <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">{jsonError}</p>}
-                    <button
-                      type="button"
-                      onClick={() => setShowJsonHelp(!showJsonHelp)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-secondary hover:text-primary transition-colors"
-                    >
-                      <Info className="size-4" /> Structure Guide
-                    </button>
-                  </div>
+          </div>
+          {useThreePanel && !showJson ? ( // ADDED
+            <ThreePanelCurriculumBuilder
+              form={form}
+              update={update}
+              onCancel={() => router.push("/admin/courses")}
+              onSave={async () => {
+                try {
+                  setSaving(true);
+                  setError("");
+                  const res = await fetch(`/api/admin/courses/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(form),
+                  });
+                  if (!res.ok) throw new Error("Failed to save course");
+                  toast.success("Curriculum saved successfully!");
+                  setSuccess(true);
+                  setTimeout(() => setSuccess(false), 2000);
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to save curriculum");
+                  setError(err.message);
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              saving={saving}
+            />
+          ) : showJson ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-secondary">
+                  {jsonMode === "edit-weeks"
+                    ? "Edit the JSON for each week individually below."
+                    : "Paste a single week JSON object here. It will be appended to the curriculum."}
+                </p>
+                <div className="flex items-center gap-4">
+                  {jsonError && (
+                    <p className="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded">
+                      {jsonError}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowJsonHelp(!showJsonHelp)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-secondary hover:text-primary transition-colors"
+                  >
+                    <Info className="size-4" /> Structure Guide
+                  </button>
                 </div>
-
-                {showJsonHelp && (
-                  <CurriculumGuide />
-                )}
-
-                {jsonMode === "edit-weeks" ? (
-                  <div className="space-y-4">
-                    {(form.curriculum ?? []).map((week: any, wIdx: number) => (
-                      <WeekJsonEditor
-                        key={week.id || wIdx}
-                        week={week}
-                        onSave={(parsed) => {
-                          const next = [...form.curriculum!];
-                          next[wIdx] = parsed;
-                          update("curriculum", next);
-                        }}
-                      />
-                    ))}
-                    {(form.curriculum ?? []).length === 0 && (
-                      <p className="text-sm text-muted text-center py-8">No weeks to edit. Add a week first.</p>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <textarea
-                      className="w-full h-[400px] font-mono text-sm p-4 rounded-xl border border-default bg-surface outline-none focus:border-primary shadow-inner"
-                      value={jsonInput}
-                      onChange={(e) => setJsonInput(e.target.value)}
-                      placeholder="Paste JSON here..."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        try {
-                          const parsed = JSON.parse(jsonInput);
-                          if (typeof parsed === "object" && !Array.isArray(parsed) && parsed !== null) {
-                            update("curriculum", [...(form.curriculum ?? []), parsed]);
-                            setJsonError("");
-                            setShowJson(false);
-                            setJsonInput(""); // clear for next import
-                          } else {
-                            setJsonError("JSON must be a single week object.");
-                          }
-                        } catch (err) {
-                          setJsonError("Invalid JSON format.");
-                        }
-                      }}
-                      className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
-                    >
-                      <CheckCircle2 className="size-4" /> Add Week from JSON
-                    </button>
-                  </>
-                )}
               </div>
-            ) : !useThreePanel ? ( // ADDED
-              <div className="space-y-6">
-                {(form.curriculum ?? []).map((week: any, wIdx: number) => {
-                  const isCollapsed = collapsedWeeks[wIdx];
-                  return (
-                    <div key={week.id} className="rounded-xl border border-default bg-white overflow-hidden shadow-sm transition-all">
-                      <div className="flex items-center justify-between bg-surface px-4 py-3 border-b border-default">
-                        <div className="flex items-center gap-3 flex-1">
-                          <button
-                            type="button"
-                            onClick={() => setCollapsedWeeks(prev => ({ ...prev, [wIdx]: !prev[wIdx] }))}
-                            className="text-muted hover:text-primary transition-colors p-1"
-                          >
-                            {isCollapsed ? <ChevronRight className="size-5" /> : <ChevronDown className="size-5" />}
-                          </button>
-                          <input
-                            value={week.title}
-                            onChange={(e) => {
-                              const next = [...form.curriculum!];
-                              next[wIdx].title = e.target.value;
-                              update("curriculum", next);
-                            }}
-                            className="bg-transparent font-bold text-[#1a4031] outline-none focus:underline flex-1"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => addDay(wIdx)}
-                            className="text-xs font-semibold text-primary hover:underline"
-                          >
-                            + Add Day
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeWeek(wIdx)}
-                            className="text-muted hover:text-red-600 p-1"
-                          >
-                            <X className="size-4" />
-                          </button>
-                        </div>
-                      </div>
 
-                      {!isCollapsed && (
-                        <div className="p-4 space-y-4">
-                          <DndContext
-                            collisionDetection={closestCenter}
-                            onDragEnd={(event) => {
-                              const { active, over } = event;
-                              if (over && active.id !== over.id) {
-                                const next = [...form.curriculum!];
-                                const oldIndex = next[wIdx].days.findIndex((d: any) => d.id === active.id);
-                                const newIndex = next[wIdx].days.findIndex((d: any) => d.id === over.id);
-                                next[wIdx].days = arrayMove(next[wIdx].days, oldIndex, newIndex);
-                                update("curriculum", next);
-                              }
-                            }}
+              {showJsonHelp && <CurriculumGuide />}
+
+              {jsonMode === "edit-weeks" ? (
+                <div className="space-y-4">
+                  {(form.curriculum ?? []).map((week: any, wIdx: number) => (
+                    <WeekJsonEditor
+                      key={week.id || wIdx}
+                      week={week}
+                      onSave={(parsed) => {
+                        const next = [...form.curriculum!];
+                        next[wIdx] = parsed;
+                        update("curriculum", next);
+                      }}
+                    />
+                  ))}
+                  {(form.curriculum ?? []).length === 0 && (
+                    <p className="text-sm text-muted text-center py-8">
+                      No weeks to edit. Add a week first.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    className="w-full h-[400px] font-mono text-sm p-4 rounded-xl border border-default bg-surface outline-none focus:border-primary shadow-inner"
+                    value={jsonInput}
+                    onChange={(e) => setJsonInput(e.target.value)}
+                    placeholder="Paste JSON here..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        const parsed = JSON.parse(jsonInput);
+                        if (
+                          typeof parsed === "object" &&
+                          !Array.isArray(parsed) &&
+                          parsed !== null
+                        ) {
+                          update("curriculum", [
+                            ...(form.curriculum ?? []),
+                            parsed,
+                          ]);
+                          setJsonError("");
+                          setShowJson(false);
+                          setJsonInput(""); // clear for next import
+                        } else {
+                          setJsonError("JSON must be a single week object.");
+                        }
+                      } catch (err) {
+                        setJsonError("Invalid JSON format.");
+                      }
+                    }}
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
+                  >
+                    <CheckCircle2 className="size-4" /> Add Week from JSON
+                  </button>
+                </>
+              )}
+            </div>
+          ) : !useThreePanel ? ( // ADDED
+            <div className="space-y-6">
+              {(form.curriculum ?? []).map((week: any, wIdx: number) => {
+                const isCollapsed = collapsedWeeks[wIdx];
+                return (
+                  <div
+                    key={week.id}
+                    className="rounded-xl border border-default bg-white overflow-hidden shadow-sm transition-all"
+                  >
+                    <div className="flex items-center justify-between bg-surface px-4 py-3 border-b border-default">
+                      <div className="flex items-center gap-3 flex-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCollapsedWeeks((prev) => ({
+                              ...prev,
+                              [wIdx]: !prev[wIdx],
+                            }))
+                          }
+                          className="text-muted hover:text-primary transition-colors p-1"
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight className="size-5" />
+                          ) : (
+                            <ChevronDown className="size-5" />
+                          )}
+                        </button>
+                        <input
+                          value={week.title}
+                          onChange={(e) => {
+                            const next = [...form.curriculum!];
+                            next[wIdx].title = e.target.value;
+                            update("curriculum", next);
+                          }}
+                          className="bg-transparent font-bold text-[#1a4031] outline-none focus:underline flex-1"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => addDay(wIdx)}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          + Add Day
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeWeek(wIdx)}
+                          className="text-muted hover:text-red-600 p-1"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {!isCollapsed && (
+                      <div className="p-4 space-y-4">
+                        <DndContext
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => {
+                            const { active, over } = event;
+                            if (over && active.id !== over.id) {
+                              const next = [...form.curriculum!];
+                              const oldIndex = next[wIdx].days.findIndex(
+                                (d: any) => d.id === active.id,
+                              );
+                              const newIndex = next[wIdx].days.findIndex(
+                                (d: any) => d.id === over.id,
+                              );
+                              next[wIdx].days = arrayMove(
+                                next[wIdx].days,
+                                oldIndex,
+                                newIndex,
+                              );
+                              update("curriculum", next);
+                            }
+                          }}
+                        >
+                          <SortableContext
+                            items={week.days.map((d: any) => d.id)}
+                            strategy={verticalListSortingStrategy}
                           >
-                            <SortableContext items={week.days.map((d: any) => d.id)} strategy={verticalListSortingStrategy}>
-                              {week.days.map((day: any, dIdx: number) => (
-                                <SortableDayItem
-                                  key={day.id}
-                                  day={day}
-                                  wIdx={wIdx}
-                                  dIdx={dIdx}
-                                  form={form}
-                                  update={update}
-                                  isDayCollapsed={collapsedDays[day.id]}
-                                  setCollapsedDays={setCollapsedDays}
-                                  removeDay={removeDay}
-                                />
-                              ))}
-                            </SortableContext>
-                          </DndContext>
-                    {week.days.length === 0 && (
-                      <p className="text-sm text-center text-muted py-4 italic">This week is empty. Click "+ Add Day" to start.</p>
+                            {week.days.map((day: any, dIdx: number) => (
+                              <SortableDayItem
+                                key={day.id}
+                                day={day}
+                                wIdx={wIdx}
+                                dIdx={dIdx}
+                                form={form}
+                                update={update}
+                                isDayCollapsed={collapsedDays[day.id]}
+                                setCollapsedDays={setCollapsedDays}
+                                removeDay={removeDay}
+                              />
+                            ))}
+                          </SortableContext>
+                        </DndContext>
+                        {week.days.length === 0 && (
+                          <p className="text-sm text-center text-muted py-4 italic">
+                            This week is empty. Click "+ Add Day" to start.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
-                 )}
-                </div>
                 );
               })}
-              </div>
-            ) : null} {/* ADDED : null */}
-          </div>
+            </div>
+          ) : null}{" "}
+          {/* ADDED : null */}
+        </div>
 
         {/* Error */}
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
         )}
 
         {/* Actions — hidden when 3-panel builder is active (save/cancel are inside the builder's right panel) */}
@@ -514,14 +645,26 @@ export default function CourseCurriculumPage() {
               className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60 transition-colors"
             >
               {saving ? (
-                <><RoboLoader size="xs" className="text-current" />Saving...</>
+                <>
+                  <RoboLoader size="xs" className="text-current" />
+                  Saving...
+                </>
               ) : success ? (
-                <><CheckCircle2 className="size-4" />Saved!</>
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Saved!
+                </>
               ) : (
-                <><Save className="size-4" />Save Changes</>
+                <>
+                  <Save className="size-4" />
+                  Save Changes
+                </>
               )}
             </button>
-            <Link href="/admin/courses" className="text-sm text-secondary hover:text-primary">
+            <Link
+              href="/admin/courses"
+              className="text-sm text-secondary hover:text-primary"
+            >
               Cancel
             </Link>
           </div>

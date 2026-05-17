@@ -16,7 +16,7 @@ import {
   FileUp,
   RefreshCw,
 } from "lucide-react";
-import { PageWrapper } from "@/components/layout/PageWrapper";
+import { PageWrapper } from "@/components/layout/page-wrapper";
 import { FileViewer } from "@/components/ui/FileViewer";
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { AttachedFile } from "@/components/ui/FileUploader";

@@ -1,5 +1,5 @@
-import { PageWrapper } from "@/components/layout/PageWrapper";
-import { DashboardClient } from "@/components/dashboard/DashboardClient";
+import { PageWrapper } from "@/components/layout/page-wrapper";
+import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
 export default function DashboardPage() {
   return (

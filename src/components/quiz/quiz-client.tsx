@@ -7,9 +7,9 @@ import { useProgress } from "@/lib/hooks/useProgress";
 import { useQuiz } from "@/lib/hooks/useQuiz";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { ProgressDots } from "./ProgressDots";
-import { QuizQuestion } from "./QuizQuestion";
-import { QuizResult } from "./QuizResult";
+import { ProgressDots } from "./progress-dots";
+import { QuizQuestion } from "./quiz-question";
+import { QuizResult } from "./quiz-result";
 
 export function QuizClient({ 
   course, 

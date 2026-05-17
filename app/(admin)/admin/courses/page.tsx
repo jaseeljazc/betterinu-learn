@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Pencil, Plus, BookOpen, Settings2 } from "lucide-react";
 import { sql } from "@/lib/db";
-import { DeleteCourseButton } from "@/components/admin/DeleteCourseButton";
+import { DeleteCourseButton } from "@/components/admin/delete-course-button";
 
 async function getCourses() {
   return sql`SELECT * FROM courses ORDER BY id`;

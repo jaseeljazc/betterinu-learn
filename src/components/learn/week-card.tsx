@@ -8,7 +8,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ModuleAccordion } from "./ModuleAccordion";
+import { ModuleAccordion } from "./module-accordion";
 
 export function WeekCard({
   courseId,

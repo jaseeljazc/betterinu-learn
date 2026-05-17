@@ -1,8 +1,16 @@
 "use client";
 
-import { ClipboardList, Lock, Plus, Trash2, Link2, FileUp, ImageIcon } from "lucide-react";
+import {
+  ClipboardList,
+  Lock,
+  Plus,
+  Trash2,
+  Link2,
+  FileUp,
+  ImageIcon,
+} from "lucide-react";
 import type { AssignmentSubModuleData } from "@/types";
-import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { AttachedFile } from "@/components/ui/FileUploader";
 
@@ -13,14 +21,23 @@ interface AssignmentModuleEditorProps {
   hideTitle?: boolean;
 }
 
-const SUBMISSION_TYPES: { key: "text" | "file" | "image" | "url"; label: string; desc: string }[] = [
-  { key: "text",  label: "Text Response", desc: "Student types an answer" },
-  { key: "file",  label: "File Upload",   desc: "PDF, DOCX, ZIP, etc." },
-  { key: "image", label: "Image Upload",  desc: "PNG, JPG, WEBP" },
-  { key: "url",   label: "URL / Link",    desc: "GitHub, live sites, etc." },
+const SUBMISSION_TYPES: {
+  key: "text" | "file" | "image" | "url";
+  label: string;
+  desc: string;
+}[] = [
+  { key: "text", label: "Text Response", desc: "Student types an answer" },
+  { key: "file", label: "File Upload", desc: "PDF, DOCX, ZIP, etc." },
+  { key: "image", label: "Image Upload", desc: "PNG, JPG, WEBP" },
+  { key: "url", label: "URL / Link", desc: "GitHub, live sites, etc." },
 ];
 
-export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hideTitle = false }: AssignmentModuleEditorProps) {
+export function AssignmentModuleEditor({
+  moduleId,
+  assignmentData,
+  onChange,
+  hideTitle = false,
+}: AssignmentModuleEditorProps) {
   const data: AssignmentSubModuleData = assignmentData || {
     title: "",
     instructions: "",
@@ -50,7 +67,9 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
     patch({ referenceLinks: [...links, { label: "", url: "" }] });
   }
   function updateLink(idx: number, field: "label" | "url", value: string) {
-    const next = links.map((l, i) => i === idx ? { ...l, [field]: value } : l);
+    const next = links.map((l, i) =>
+      i === idx ? { ...l, [field]: value } : l,
+    );
     patch({ referenceLinks: next });
   }
   function removeLink(idx: number) {
@@ -58,10 +77,13 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
   }
 
   // Attached files
-  const attachedFiles: AttachedFile[] = (data.attachedFiles as AttachedFile[]) || [];
+  const attachedFiles: AttachedFile[] =
+    (data.attachedFiles as AttachedFile[]) || [];
 
-  const inputCls = "w-full rounded-lg border border-default bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-colors";
-  const labelCls = "block text-[9px] font-bold uppercase tracking-widest text-muted mb-1";
+  const inputCls =
+    "w-full rounded-lg border border-default bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-colors";
+  const labelCls =
+    "block text-[9px] font-bold uppercase tracking-widest text-muted mb-1";
   const sectionCls = "space-y-3 border-b border-default pb-5";
 
   return (
@@ -72,8 +94,12 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
           <ClipboardList className="size-4 text-orange-700" />
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-700">Assignment Editor</p>
-          <p className="text-[10px] text-muted">Configure this assignment for students</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-orange-700">
+            Assignment Editor
+          </p>
+          <p className="text-[10px] text-muted">
+            Configure this assignment for students
+          </p>
         </div>
       </div>
 
@@ -120,7 +146,13 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
             min={0}
             className={inputCls}
             value={data.totalMarks ?? ""}
-            onChange={(e) => patch({ totalMarks: e.target.value ? parseInt(e.target.value) : undefined })}
+            onChange={(e) =>
+              patch({
+                totalMarks: e.target.value
+                  ? parseInt(e.target.value)
+                  : undefined,
+              })
+            }
             placeholder="e.g. 100"
           />
         </div>
@@ -129,7 +161,10 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
       {/* Admin File Attachments */}
       <div className={sectionCls}>
         <label className={labelCls}>Reference Files & Images</label>
-        <p className="text-[10px] text-muted mb-2">Upload multiple PDFs, images, or other files students can download or view.</p>
+        <p className="text-[10px] text-muted mb-2">
+          Upload multiple PDFs, images, or other files students can download or
+          view.
+        </p>
         <FileUploader
           folder={`assignments/${moduleId}/resources`}
           files={attachedFiles}
@@ -151,7 +186,9 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
           </button>
         </div>
         {links.length === 0 && (
-          <p className="text-[10px] text-muted italic">No links yet. Click "Add Link" to add reference URLs.</p>
+          <p className="text-[10px] text-muted italic">
+            No links yet. Click "Add Link" to add reference URLs.
+          </p>
         )}
         <div className="space-y-2">
           {links.map((link, idx) => (
@@ -188,7 +225,14 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
         <div className="grid grid-cols-2 gap-2">
           {SUBMISSION_TYPES.map(({ key, label, desc }) => {
             const checked = (data.allowedSubmissionTypes || []).includes(key);
-            const Icon = key === "file" ? FileUp : key === "image" ? ImageIcon : key === "url" ? Link2 : null;
+            const Icon =
+              key === "file"
+                ? FileUp
+                : key === "image"
+                  ? ImageIcon
+                  : key === "url"
+                    ? Link2
+                    : null;
             return (
               <label
                 key={key}
@@ -205,7 +249,9 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
                   className="mt-0.5 size-3.5 accent-primary shrink-0"
                 />
                 <div>
-                  <p className="text-xs font-semibold text-foreground leading-tight">{label}</p>
+                  <p className="text-xs font-semibold text-foreground leading-tight">
+                    {label}
+                  </p>
                   <p className="text-[10px] text-muted">{desc}</p>
                 </div>
               </label>
@@ -217,11 +263,13 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
       {/* Requires Approval Toggle */}
       <div>
         <label className={labelCls}>Progression Gate</label>
-        <label className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all ${
-          data.requiresApproval
-            ? "border-amber-400 bg-amber-50 shadow-sm"
-            : "border-default bg-surface hover:border-default"
-        }`}>
+        <label
+          className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all ${
+            data.requiresApproval
+              ? "border-amber-400 bg-amber-50 shadow-sm"
+              : "border-default bg-surface hover:border-default"
+          }`}
+        >
           <input
             type="checkbox"
             checked={data.requiresApproval}
@@ -231,7 +279,9 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hid
           <div>
             <div className="flex items-center gap-1.5">
               <Lock className="size-3.5 text-amber-600" />
-              <p className="text-xs font-bold text-foreground">Requires Admin Approval to Unlock Next Day</p>
+              <p className="text-xs font-bold text-foreground">
+                Requires Admin Approval to Unlock Next Day
+              </p>
             </div>
             <p className="text-[10px] text-muted mt-0.5">
               Next day stays locked until an admin approves this submission.

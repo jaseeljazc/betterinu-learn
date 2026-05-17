@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Clock, UserRound } from "lucide-react";
 import type { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { EnrollButton } from "./EnrollButton";
+import { EnrollButton } from "./enroll-button";
 import { Card } from "../ui/card";
 
 export function CourseHero({ course }: { course: Course }) {
@@ -16,7 +16,9 @@ export function CourseHero({ course }: { course: Course }) {
         <div className="flex items-center gap-8">
           {/* Left: Text content */}
           <div className="max-w-3xl flex-1">
-            <Badge variant="secondary" className="bg-[#1a4031] text-white">Course Track</Badge>
+            <Badge variant="secondary" className="bg-[#1a4031] text-white">
+              Course Track
+            </Badge>
             <h1 className="mt-5 font-display text-[40px] font-medium leading-[1.1] tracking-tight md:text-[52px]">
               {course.title}
             </h1>

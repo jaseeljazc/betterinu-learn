@@ -3,9 +3,9 @@
  * Wraps all student-facing pages with the existing Navbar and toast system.
  * This layout is NOT applied to admin routes.
  */
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar } from "@/components/layout/main-navbar";
 import { ToastHost } from "@/components/ui/toast";
-import { StudentTokenRefresher } from "@/components/layout/StudentTokenRefresher";
+import { StudentTokenRefresher } from "@/components/layout/student-token-refresher";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
