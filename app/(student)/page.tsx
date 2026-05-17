@@ -175,7 +175,7 @@ function CourseCard({ course, assignments }: { course: Course; assignments: Flat
             src={course.image}
             alt={course.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-102"
+            className="object-cover transition-transform duration-500 group-hover:scale-102 "
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -194,13 +194,13 @@ function CourseCard({ course, assignments }: { course: Course; assignments: Flat
             {course.title}
           </h3>
           {course.description && (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">
+            <p className="mt-1 line-clamp-4 text-xs leading-relaxed text-muted">
               {course.description}
             </p>
           )}
         </div>
 
-        {courseAssignments.length > 0 && (
+        {/* {courseAssignments.length > 0 && (
           <div className="mt-auto flex items-center gap-2">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
               <div
@@ -221,7 +221,7 @@ function CourseCard({ course, assignments }: { course: Course; assignments: Flat
           <span className="flex items-center gap-1 text-[11px] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
             Continue <ArrowRight size={11} />
           </span>
-        </div>
+        </div> */}
       </div>
     </Link>
   );
@@ -365,7 +365,7 @@ export default function Home() {
 
             {courses === null ? (
               <div className="flex flex-col gap-4">
-                {[1, 2].map((i) => (
+                {[1].map((i) => (
                   <div key={i} className="flex flex-col rounded-2xl border border-default bg-white overflow-hidden shadow-sm">
                     <Skeleton className="aspect-[16/7] w-full rounded-none" />
                     <div className="flex flex-1 flex-col gap-3 p-4">
@@ -373,10 +373,6 @@ export default function Home() {
                         <Skeleton className="mb-2 h-4 w-3/4" />
                         <Skeleton className="h-3 w-full" />
                         <Skeleton className="mt-1 h-3 w-5/6" />
-                      </div>
-                      <div className="mt-auto flex items-center gap-2">
-                        <Skeleton className="h-1.5 flex-1 rounded-full" />
-                        <Skeleton className="h-3 w-6" />
                       </div>
                     </div>
                   </div>

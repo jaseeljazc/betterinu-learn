@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Pencil, Plus, BookOpen, Settings2 } from "lucide-react";
 import { sql } from "@/lib/db";
+import { DeleteCourseButton } from "@/components/admin/DeleteCourseButton";
 
 async function getCourses() {
   return sql`SELECT * FROM courses ORDER BY id`;
@@ -89,6 +90,7 @@ export default async function AdminCoursesPage() {
                         <BookOpen className="size-3.5" />
                         Curriculum
                       </Link>
+                      {/* <DeleteCourseButton courseId={course.id as string} courseName={course.title as string} /> */}
                     </div>
                   </td>
                 </tr>

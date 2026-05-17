@@ -16,6 +16,7 @@ import {
   Settings2,
   Target,
   ImageIcon,
+  Copy,
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import Link from "next/link";
@@ -175,6 +176,44 @@ export default function CourseNewPage() {
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
     {},
   );
+
+  const [existingCourses, setExistingCourses] = useState<CourseRow[]>([]);
+  const [importCourseId, setImportCourseId] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/courses", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.courses) setExistingCourses(d.courses);
+      })
+      .catch(console.error);
+  }, []);
+
+  async function handleImport() {
+    if (!importCourseId) return;
+    setImporting(true);
+    try {
+      const res = await fetch(`/api/admin/courses/${importCourseId}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (
+        data.course &&
+        data.course.curriculum &&
+        data.course.curriculum.length > 0
+      ) {
+        update("curriculum", data.course.curriculum);
+        toast.success("Curriculum imported successfully!");
+      } else {
+        toast.error("No curriculum found in the selected course.");
+      }
+    } catch (err: any) {
+      toast.error("Failed to import curriculum.");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function update(field: keyof CourseRow, value: unknown) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -338,264 +377,346 @@ export default function CourseNewPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-6">
-          {/* 1. Basic Info */}
-          <div className={sectionClass}>
-            <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-              <BookOpen className="size-4 text-[#1a4031]" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                Basic Information
-              </h2>
-            </div>
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">
-                    Course ID (Slug) *
-                  </label>
-                  <input
-                    value={form.id ?? ""}
-                    onChange={(e) =>
-                      update(
-                        "id",
-                        e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
-                      )
-                    }
-                    required
-                    className={inputClass}
-                    placeholder="e.g. advanced-react"
-                  />
-                  <p className="mt-1 text-xs text-[#7a7a62]">
-                    Used in URLs. Letters, numbers, and hyphens only.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">
-                    Course Title *
-                  </label>
-                  <input
-                    value={form.title ?? ""}
-                    onChange={(e) => update("title", e.target.value)}
-                    required
-                    className={inputClass}
-                    placeholder="e.g. Advanced React Patterns"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Tagline
-                </label>
-                <input
-                  value={form.tagline ?? ""}
-                  onChange={(e) => update("tagline", e.target.value)}
-                  className={inputClass}
-                  placeholder="A short catchy line for the course card"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Description
-                </label>
-                <textarea
-                  rows={4}
-                  value={form.description ?? ""}
-                  onChange={(e) => update("description", e.target.value)}
-                  className={inputClass}
-                  placeholder="Full course description..."
-                />
-              </div>
-            </div>
-
-            {/* Course Thumbnail */}
+        {activeTab === "settings" && (
+          <div className="space-y-6">
+            {/* 1. Basic Info */}
             <div className={sectionClass}>
               <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-                <ImageIcon className="size-4 text-[#1a4031]" />
+                <BookOpen className="size-4 text-[#1a4031]" />
                 <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                  Course Thumbnail
+                  Basic Information
                 </h2>
               </div>
-              <CourseImageUploader
-                value={form.image ?? ""}
-                onChange={(url) => update("image", url)}
-              />
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">
+                      Course ID (Slug) *
+                    </label>
+                    <input
+                      value={form.id ?? ""}
+                      onChange={(e) =>
+                        update(
+                          "id",
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]/g, ""),
+                        )
+                      }
+                      required
+                      className={inputClass}
+                      placeholder="e.g. advanced-react"
+                    />
+                    <p className="mt-1 text-xs text-[#7a7a62]">
+                      Used in URLs. Letters, numbers, and hyphens only.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">
+                      Course Title *
+                    </label>
+                    <input
+                      value={form.title ?? ""}
+                      onChange={(e) => update("title", e.target.value)}
+                      required
+                      className={inputClass}
+                      placeholder="e.g. Advanced React Patterns"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Tagline
+                  </label>
+                  <input
+                    value={form.tagline ?? ""}
+                    onChange={(e) => update("tagline", e.target.value)}
+                    className={inputClass}
+                    placeholder="A short catchy line for the course card"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={form.description ?? ""}
+                    onChange={(e) => update("description", e.target.value)}
+                    className={inputClass}
+                    placeholder="Full course description..."
+                  />
+                </div>
+              </div>
+
+              {/* Course Thumbnail */}
+              <div className={sectionClass}>
+                <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                  <ImageIcon className="size-4 text-[#1a4031]" />
+                  <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                    Course Thumbnail
+                  </h2>
+                </div>
+                <CourseImageUploader
+                  value={form.image ?? ""}
+                  onChange={(url) => update("image", url)}
+                />
+                <p className="text-xs text-[#7a7a62]">
+                  Displayed on the course card and detail page. Recommended:
+                  1280×720px (16:9).
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Course Details */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                <Settings2 className="size-4 text-[#1a4031]" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                  Course Details
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Duration
+                  </label>
+                  <input
+                    value={form.duration ?? ""}
+                    onChange={(e) => update("duration", e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. 8 Weeks"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Total Modules
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.total_modules ?? ""}
+                    onChange={(e) =>
+                      update("total_modules", Number(e.target.value))
+                    }
+                    className={inputClass}
+                    placeholder="e.g. 32"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Difficulty Level
+                  </label>
+                  <Select
+                    value={form.level ?? ""}
+                    onValueChange={(v) => update("level", v)}
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="-- Select Level --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEVEL_OPTIONS.map((l) => (
+                        <SelectItem key={l} value={l}>
+                          {l}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Color CSS Variable
+                  </label>
+                  <input
+                    value={form.color ?? ""}
+                    onChange={(e) => update("color", e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. --course-mern"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Instructor */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                <User className="size-4 text-[#1a4031]" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                  Instructor
+                </h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Instructor Name
+                  </label>
+                  <input
+                    value={form.instructor ?? ""}
+                    onChange={(e) => update("instructor", e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. Dr. Sarah Chen"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Instructor Bio
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.instructor_bio ?? ""}
+                    onChange={(e) => update("instructor_bio", e.target.value)}
+                    className={inputClass}
+                    placeholder="Short bio about the instructor..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Outcomes */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                <Target className="size-4 text-[#1a4031]" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                  Learning Outcomes
+                </h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(form.outcomes ?? []).map((o, i) => (
+                  <span
+                    key={i}
+                    className="flex items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1.5 text-xs font-medium text-[#1a4031]"
+                  >
+                    {o}
+                    <button
+                      type="button"
+                      onClick={() => removeOutcome(i)}
+                      className="hover:text-red-600 transition-colors"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={outcomeInput}
+                  onChange={(e) => setOutcomeInput(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addOutcome())
+                  }
+                  placeholder="Add outcome..."
+                  className="flex-1 rounded-lg border border-[#e5e2da] bg-[#f9f9f6] px-3 py-2 text-sm outline-none focus:border-[#1a4031]"
+                />
+                <button
+                  type="button"
+                  onClick={addOutcome}
+                  className="flex items-center gap-1 rounded-lg bg-[#1a4031]/10 px-3 py-2 text-sm font-semibold text-[#1a4031]"
+                >
+                  <Plus className="size-4" /> Add
+                </button>
+              </div>
+            </div>
+
+            {/* 5. Visibility */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                <Info className="size-4 text-[#1a4031]" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                  Visibility
+                </h2>
+              </div>
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.is_active ?? true}
+                  onChange={(e) => update("is_active", e.target.checked)}
+                  className="mt-0.5 size-4 rounded border-[#e5e2da] accent-[#1a4031]"
+                />
+                <div>
+                  <p className="text-sm font-semibold">
+                    Active — visible to enrolled students
+                  </p>
+                  <p className="text-xs text-[#7a7a62] mt-0.5">
+                    Inactive courses are hidden from the student portal.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "curriculum" && (
+          <div className="space-y-6">
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
+                <Copy className="size-4 text-[#1a4031]" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
+                  Import Curriculum
+                </h2>
+              </div>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Copy from Existing Course
+                  </label>
+                  <Select
+                    value={importCourseId}
+                    onValueChange={setImportCourseId}
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="-- Select Course --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingCourses.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={importing || !importCourseId}
+                  className="px-4 py-2.5 bg-[#1a4031] text-white font-semibold text-sm rounded-lg hover:bg-[#1a4031]/90 disabled:opacity-50 transition-colors"
+                >
+                  {importing ? "Importing..." : "Import Weeks"}
+                </button>
+              </div>
               <p className="text-xs text-[#7a7a62]">
-                Displayed on the course card and detail page. Recommended:
-                1280×720px (16:9).
+                Importing will replace any current curriculum draft you have
+                here.
               </p>
             </div>
-          </div>
 
-          {/* 2. Course Details */}
-          <div className={sectionClass}>
-            <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-              <Settings2 className="size-4 text-[#1a4031]" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                Course Details
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Duration
-                </label>
-                <input
-                  value={form.duration ?? ""}
-                  onChange={(e) => update("duration", e.target.value)}
-                  className={inputClass}
-                  placeholder="e.g. 8 Weeks"
+            {form.curriculum && form.curriculum.length > 0 ? (
+              <div className="border border-default rounded-xl overflow-hidden bg-white min-h-[600px] h-[calc(100vh-200px)]">
+                <ThreePanelCurriculumBuilder
+                  courseId={form.id || "new-course"}
+                  initialData={form.curriculum}
+                  onChange={(data: any) => update("curriculum", data)}
+                  onSave={() => {
+                    toast.success(
+                      "Curriculum draft saved. Hit Create Course to finalize.",
+                    );
+                  }}
+                  onCancel={() => setActiveTab("settings")}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Total Modules
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.total_modules ?? ""}
-                  onChange={(e) =>
-                    update("total_modules", Number(e.target.value))
-                  }
-                  className={inputClass}
-                  placeholder="e.g. 32"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Difficulty Level
-                </label>
-                <Select value={form.level ?? ""} onValueChange={(v) => update("level", v)}>
-                  <SelectTrigger className={inputClass}>
-                    <SelectValue placeholder="-- Select Level --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEVEL_OPTIONS.map((l) => (
-                      <SelectItem key={l} value={l}>{l}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Color CSS Variable
-                </label>
-                <input
-                  value={form.color ?? ""}
-                  onChange={(e) => update("color", e.target.value)}
-                  className={inputClass}
-                  placeholder="e.g. --course-mern"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Instructor */}
-          <div className={sectionClass}>
-            <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-              <User className="size-4 text-[#1a4031]" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                Instructor
-              </h2>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Instructor Name
-                </label>
-                <input
-                  value={form.instructor ?? ""}
-                  onChange={(e) => update("instructor", e.target.value)}
-                  className={inputClass}
-                  placeholder="e.g. Dr. Sarah Chen"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  Instructor Bio
-                </label>
-                <textarea
-                  rows={3}
-                  value={form.instructor_bio ?? ""}
-                  onChange={(e) => update("instructor_bio", e.target.value)}
-                  className={inputClass}
-                  placeholder="Short bio about the instructor..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Outcomes */}
-          <div className={sectionClass}>
-            <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-              <Target className="size-4 text-[#1a4031]" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                Learning Outcomes
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(form.outcomes ?? []).map((o, i) => (
-                <span
-                  key={i}
-                  className="flex items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1.5 text-xs font-medium text-[#1a4031]"
-                >
-                  {o}
-                  <button
-                    type="button"
-                    onClick={() => removeOutcome(i)}
-                    className="hover:text-red-600 transition-colors"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                value={outcomeInput}
-                onChange={(e) => setOutcomeInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), addOutcome())
-                }
-                placeholder="Add outcome..."
-                className="flex-1 rounded-lg border border-[#e5e2da] bg-[#f9f9f6] px-3 py-2 text-sm outline-none focus:border-[#1a4031]"
-              />
-              <button
-                type="button"
-                onClick={addOutcome}
-                className="flex items-center gap-1 rounded-lg bg-[#1a4031]/10 px-3 py-2 text-sm font-semibold text-[#1a4031]"
-              >
-                <Plus className="size-4" /> Add
-              </button>
-            </div>
-          </div>
-
-          {/* 5. Visibility */}
-          <div className={sectionClass}>
-            <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
-              <Info className="size-4 text-[#1a4031]" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#1a4031]">
-                Visibility
-              </h2>
-            </div>
-            <label className="flex cursor-pointer items-start gap-3">
-              <input
-                type="checkbox"
-                checked={form.is_active ?? true}
-                onChange={(e) => update("is_active", e.target.checked)}
-                className="mt-0.5 size-4 rounded border-[#e5e2da] accent-[#1a4031]"
-              />
-              <div>
-                <p className="text-sm font-semibold">
-                  Active — visible to enrolled students
+            ) : (
+              <div className="rounded-xl border border-dashed border-default p-12 text-center bg-white">
+                <p className="text-sm font-semibold text-foreground">
+                  No Curriculum Yet
                 </p>
-                <p className="text-xs text-[#7a7a62] mt-0.5">
-                  Inactive courses are hidden from the student portal.
+                <p className="text-xs text-muted mt-1">
+                  Import from an existing course above to prepopulate the
+                  curriculum.
                 </p>
               </div>
-            </label>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Error */}
         {error && (

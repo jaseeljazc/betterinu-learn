@@ -96,7 +96,7 @@ export default async function CourseDetailPage({
                   ))}
                 </div>
               </Card>
-              <Card className="p-5">
+              {/* <Card className="p-5">
                 <h2 className="font-display text-xl font-bold">Instructor</h2>
                 <div className="mt- flex items-center gap-3">
                   <span className="grid size-12 place-items-center rounded-full bg-elevated font-bold">
@@ -109,7 +109,7 @@ export default async function CourseDetailPage({
                     </p>
                   </div>
                 </div>
-              </Card>
+              </Card> */}
               <EnrollButton courseId={course.id}  className="w-full"/>
             </div>
           </aside>

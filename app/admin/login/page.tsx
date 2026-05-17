@@ -149,7 +149,7 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            <div className="mt-8 text-center text-sm text-muted">
+            {/* <div className="mt-8 text-center text-sm text-muted">
               Are you a student?{" "}
               <Link
                 href="/login"
@@ -157,7 +157,7 @@ export default function AdminLoginPage() {
               >
                 Student portal →
               </Link>
-            </div>
+            </div> */}
           </div>
 
           {/* Right: Branding Image */}

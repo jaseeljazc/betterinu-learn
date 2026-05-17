@@ -46,3 +46,20 @@ export async function PUT(
   const rows = await sql`SELECT * FROM courses WHERE id = ${id}`;
   return NextResponse.json({ course: rows[0] });
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const token = extractToken(req.headers.get("authorization")) ?? req.cookies.get("__session")?.value ?? "";
+  if (!await verifyAdminToken(token)) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+
+  const { id } = await params;
+
+  try {
+    await sql`DELETE FROM courses WHERE id = ${id}`;
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
