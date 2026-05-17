@@ -22,7 +22,7 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   rejected: { label: "Rejected", cls: "bg-red-100 text-red-700 border-red-200" },
 };
 
-export function StandaloneSubmissionsTab() {
+export function StandaloneSubmissionsTab({ initialId }: { initialId?: string | null }) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Submission | null>(null);
@@ -35,7 +35,12 @@ export function StandaloneSubmissionsTab() {
     setLoading(true);
     const res = await fetch("/api/admin/standalone-submissions", { credentials: "include" });
     const data = await res.json();
-    setSubmissions(data.submissions ?? []);
+    const subs = data.submissions ?? [];
+    setSubmissions(subs);
+    if (initialId && !selected) {
+      const match = subs.find((s: Submission) => s.id === initialId);
+      if (match) setSelected(match);
+    }
     setLoading(false);
   }
 

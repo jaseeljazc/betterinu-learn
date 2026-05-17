@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ClipboardList, Plus, X, Save, Globe, BookOpen,
@@ -46,7 +47,11 @@ function fmtDate(iso: string) {
 const inputCls = "w-full rounded-lg border border-default bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-colors";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
-export default function StandaloneAssignmentsPage() {
+function StandaloneAssignmentsContent() {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "submissions" ? "submissions" : "assignments";
+  const initialId = searchParams.get("id");
+
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +60,7 @@ export default function StandaloneAssignmentsPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"assignments" | "submissions">("assignments");
+  const [activeTab, setActiveTab] = useState<"assignments" | "submissions">(initialTab);
 
   // New assignment form state
   const [newTitle, setNewTitle] = useState("");
@@ -202,7 +207,7 @@ export default function StandaloneAssignmentsPage() {
       </div>
 
       {activeTab === "submissions" ? (
-        <StandaloneSubmissionsTab />
+        <StandaloneSubmissionsTab initialId={initialId} />
       ) : (
         <>
           {/* Filter Tabs */}
@@ -343,5 +348,17 @@ export default function StandaloneAssignmentsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function StandaloneAssignmentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <RoboLoader size="md" />
+      </div>
+    }>
+      <StandaloneAssignmentsContent />
+    </Suspense>
   );
 }

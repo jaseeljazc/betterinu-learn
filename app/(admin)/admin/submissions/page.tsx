@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   Clock,
@@ -40,7 +41,9 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   rejected: { label: "Rejected", cls: "bg-red-100 text-red-700 border-red-200" },
 };
 
-export default function SubmissionsPage() {
+function SubmissionsContent() {
+  const searchParams = useSearchParams();
+  const initialId = searchParams.get("id");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Submission | null>(null);
@@ -53,7 +56,12 @@ export default function SubmissionsPage() {
     setLoading(true);
     const res = await fetch("/api/admin/assignments", { credentials: "include" });
     const data = await res.json();
-    setSubmissions(data.submissions ?? []);
+    const subs = data.submissions ?? [];
+    setSubmissions(subs);
+    if (initialId && !selected) {
+      const match = subs.find((s: Submission) => s.id === initialId);
+      if (match) setSelected(match);
+    }
     setLoading(false);
   }
 
@@ -321,5 +329,17 @@ export default function SubmissionsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SubmissionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <RoboLoader size="md" />
+      </div>
+    }>
+      <SubmissionsContent />
+    </Suspense>
   );
 }

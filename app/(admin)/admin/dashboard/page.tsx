@@ -1,35 +1,71 @@
-import { LayoutDashboard, BookOpen, TrendingUp, Users } from "lucide-react";
+import Link from "next/link";
+import { LayoutDashboard, BookOpen, TrendingUp, Users, ClipboardList, BookMarked, Clock } from "lucide-react";
+import { DashboardRow } from "./DashboardRow";
 import { sql } from "@/lib/db";
 
 async function getStats() {
-  const [students, courses, assignments, recent] = await Promise.all([
+  const [students, courses, assignments, courseSubmissions, standaloneSubmissions] = await Promise.all([
     sql`SELECT COUNT(*)::int AS count FROM students`,
     sql`SELECT COUNT(*)::int AS count FROM courses WHERE is_active = true`,
     sql`SELECT COUNT(*)::int AS count FROM student_courses`,
     sql`
-      SELECT s.name, s.email, c.title AS course_title, sc.assigned_at
-      FROM student_courses sc
-      JOIN students s ON s.id = sc.student_id
-      JOIN courses   c ON c.id = sc.course_id
-      ORDER BY sc.assigned_at DESC
+      SELECT
+        s.id,
+        s.assignment_id,
+        s.submitted_at,
+        s.status,
+        st.name AS student_name,
+        c.title AS course_title,
+        'course' AS submission_type
+      FROM assignment_submissions s
+      JOIN students st ON st.id = s.student_id
+      JOIN courses  c  ON c.id  = s.course_id
+      ORDER BY s.submitted_at DESC
+      LIMIT 10
+    `,
+    sql`
+      SELECT
+        sub.id,
+        sub.assignment_id,
+        sub.submitted_at,
+        sub.status,
+        st.name  AS student_name,
+        sa.title AS course_title,
+        'standalone' AS submission_type
+      FROM standalone_assignment_submissions sub
+      JOIN students st ON st.id = sub.student_id
+      JOIN standalone_assignments sa ON sa.id = sub.assignment_id
+      ORDER BY sub.submitted_at DESC
       LIMIT 10
     `,
   ]);
+
+  // Merge and sort by submitted_at descending, keep top 10
+  const allSubmissions = [...courseSubmissions, ...standaloneSubmissions]
+    .sort((a, b) => new Date(b.submitted_at as string).getTime() - new Date(a.submitted_at as string).getTime())
+    .slice(0, 10);
+
   return {
     students: students[0].count as number,
     courses:  courses[0].count  as number,
     assignments: assignments[0].count as number,
-    recent,
+    recentSubmissions: allSubmissions,
   };
 }
+
+const statusConfig: Record<string, { label: string; className: string }> = {
+  pending:  { label: "Pending",  className: "bg-amber-100 text-amber-700 border-amber-200" },
+  approved: { label: "Approved", className: "bg-green-100 text-green-700 border-green-200" },
+  rejected: { label: "Revise",   className: "bg-red-100 text-red-700 border-red-200" },
+};
 
 export default async function AdminDashboard() {
   const stats = await getStats();
 
   const cards = [
-    { label: "Total Students",    value: stats.students,    Icon: Users,     color: "bg-blue-50   text-blue-600" },
-    { label: "Active Courses",    value: stats.courses,     Icon: BookOpen,  color: "bg-green-50  text-[#1a4031]" },
-    { label: "Total Assignments", value: stats.assignments, Icon: TrendingUp, color: "bg-amber-50  text-amber-600" },
+    { label: "Total Students",    value: stats.students,    Icon: Users,       color: "bg-blue-50   text-blue-600" },
+    { label: "Active Courses",    value: stats.courses,     Icon: BookOpen,    color: "bg-green-50  text-[#1a4031]" },
+    { label: "Total Assignments", value: stats.assignments, Icon: TrendingUp,  color: "bg-amber-50  text-amber-600" },
   ];
 
   return (
@@ -57,45 +93,50 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Recent assignments */}
+      {/* Recent Submissions */}
       <div className="mt-10">
-        <h2 className="mb-4 text-lg font-bold text-foreground">Recent Assignments</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <ClipboardList className="size-5 text-primary" />
+            Latest Submissions
+          </h2>
+          <div className="flex gap-2">
+            <Link href="/admin/submissions" className="text-xs font-semibold text-primary hover:underline">
+              View course submissions →
+            </Link>
+          </div>
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-default bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="border-b border-default bg-subtle">
-              <tr>
-                {["Student", "Email", "Course", "Assigned"].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-default">
-              {stats.recent.length === 0 ? (
+          {stats.recentSubmissions.length === 0 ? (
+            <div className="px-6 py-12 text-center text-muted font-medium">
+              No submissions yet.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b border-default bg-subtle">
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-muted font-medium">
-                    No assignments yet.
-                  </td>
+                  {["Student", "Assignment / Task", "Type", "Status", "Submitted"].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                stats.recent.map((row, i) => (
-                  <tr key={i} className="hover:bg-subtle/50 transition-colors">
-                    <td className="px-5 py-3 font-semibold text-foreground">{row.name as string}</td>
-                    <td className="px-5 py-3 text-secondary">{row.email as string}</td>
-                    <td className="px-5 py-3 text-foreground font-medium">{row.course_title as string}</td>
-                    <td className="px-5 py-3 text-secondary">
-                      {new Date(row.assigned_at as string).toLocaleDateString("en-GB", {
-                        day: "numeric", month: "short", year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-default">
+                {stats.recentSubmissions.map((row, i) => {
+                  const status = statusConfig[row.status as string] ?? { label: row.status as string, className: "bg-gray-100 text-gray-600 border-gray-200" };
+                  return (
+                    <DashboardRow key={i} row={row} status={status} />
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+
