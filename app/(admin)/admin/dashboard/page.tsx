@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LayoutDashboard, BookOpen, TrendingUp, Users, ClipboardList, BookMarked, Clock } from "lucide-react";
-import { DashboardRow } from "./DashboardRow";
+import { DashboardRow } from "./dashboard-row";
 import { sql } from "@/lib/db";
 
 async function getStats() {
