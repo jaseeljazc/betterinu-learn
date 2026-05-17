@@ -249,7 +249,10 @@ export function useProgress() {
         return false;
       }
 
-      return areAllWeekDaysComplete(course, previousWeek.id) && hasPassedQuiz(course.id, previousWeek.id);
+      const requiresQuiz = previousWeek.quiz && previousWeek.quiz.questions && previousWeek.quiz.questions.length > 0;
+      const passedQuiz = requiresQuiz ? hasPassedQuiz(course.id, previousWeek.id) : true;
+
+      return areAllWeekDaysComplete(course, previousWeek.id) && passedQuiz;
     },
     [areAllWeekDaysComplete, hasPassedQuiz],
   );

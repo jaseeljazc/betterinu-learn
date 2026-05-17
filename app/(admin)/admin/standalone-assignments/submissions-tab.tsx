@@ -133,8 +133,8 @@ export function StandaloneSubmissionsTab() {
 
       {/* Review Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-default">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 py-8 md:py-12 bg-black/50 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white shadow-2xl rounded-2xl border border-default my-8">
             <div className="flex items-center justify-between px-6 py-4 border-b border-default">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-0.5">Task Review</p>

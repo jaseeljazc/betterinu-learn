@@ -228,16 +228,34 @@ export default function SubmissionsPage() {
                     <BookOpen className="size-4 text-primary" />
                     Assignment Details
                   </h3>
-                  {selected.assignment_data.description && (
-                    <div className="rounded-xl border border-default bg-subtle p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                      {selected.assignment_data.description}
-                    </div>
-                  )}
-                  {selected.assignment_data.files?.length > 0 && (
-                    <FileViewer
-                      files={selected.assignment_data.files}
-                      title="Reference Materials (Admin)"
+                  {/* Handle legacy (instructions) or new (description) */}
+                  {(selected.assignment_data.instructions || selected.assignment_data.description) && (
+                    <div
+                      className="rounded-xl border border-default bg-subtle p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: selected.assignment_data.instructions || selected.assignment_data.description }}
                     />
+                  )}
+                  {/* Handle files or attachedFiles */}
+                  {(selected.assignment_data.files?.length > 0 || selected.assignment_data.attachedFiles?.length > 0) && (
+                    <FileViewer
+                      files={selected.assignment_data.files || selected.assignment_data.attachedFiles}
+                      title="Reference Materials"
+                    />
+                  )}
+                  {/* Handle reference links */}
+                  {selected.assignment_data.referenceLinks?.length > 0 && (
+                    <div className="mt-2 rounded-xl border border-default bg-subtle p-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted mb-2">Reference Links</p>
+                      <ul className="list-disc list-inside text-sm text-primary space-y-1">
+                        {selected.assignment_data.referenceLinks.map((link: any, idx: number) => (
+                          <li key={idx}>
+                            <a href={link.url} target="_blank" rel="noreferrer" className="hover:underline">
+                              {link.label || link.url}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               )}

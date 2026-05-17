@@ -281,9 +281,9 @@ export default function StandaloneAssignmentsPage() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 py-8 md:py-12 bg-black/50 overflow-y-auto">
           <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl my-8">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-default sticky top-0 bg-white z-10 rounded-t-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-default">
               <h2 className="font-display text-lg font-bold">Create Standalone Task</h2>
               <button onClick={() => { setShowCreate(false); resetForm(); }} className="p-2 text-muted hover:bg-subtle rounded-full transition-colors"><X className="size-5" /></button>
             </div>
@@ -316,7 +316,7 @@ export default function StandaloneAssignmentsPage() {
                 </div>
               )}
 
-              <div className="border border-default rounded-xl overflow-hidden mb-6">
+              <div className="border border-default rounded-xl overflow-hidden mb-6 p-2">
                 <AssignmentModuleEditor
                   moduleId={moduleId}
                   assignmentData={newAssignmentData}

@@ -6,7 +6,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/admin/standalone-assignments/[id]/students
- * Returns all students assigned to this standalone assignment + their submission status.
+ * Returns all students assigned to this standalone assignment + their submission details.
  */
 export async function GET(req: NextRequest, { params }: Params) {
   const token =
@@ -20,14 +20,17 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const rows = await sql`
     SELECT
-      st.id           AS student_id,
-      st.name         AS student_name,
-      st.email        AS student_email,
+      st.id               AS student_id,
+      st.name             AS student_name,
+      st.email            AS student_email,
       sas.assigned_at,
-      sub.id          AS submission_id,
-      sub.status      AS submission_status,
+      sub.id              AS submission_id,
+      sub.status          AS submission_status,
       sub.submitted_at,
-      sub.feedback
+      sub.submitted_text,
+      sub.submitted_files,
+      sub.feedback,
+      sub.reviewed_at
     FROM standalone_assignment_student sas
     JOIN students st ON st.id = sas.student_id
     LEFT JOIN standalone_assignment_submissions sub

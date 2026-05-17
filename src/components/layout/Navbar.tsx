@@ -2,18 +2,33 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, Menu, X, ClipboardList } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [newTaskCount, setNewTaskCount] = useState(0);
 
   async function handleSignOut() {
     await clientAuth.signOut();
     document.cookie = "__session=; path=/; max-age=0";
     window.location.href = "/login";
   }
+
+  // Fetch pending standalone tasks (tasks with no submission yet)
+  useEffect(() => {
+    fetch("/api/student/standalone-assignments", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        const assignments = d.assignments ?? [];
+        const newCount = assignments.filter(
+          (a: { submission_id: string | null }) => !a.submission_id
+        ).length;
+        setNewTaskCount(newCount);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 h-[64px] border-b border-default bg-white/98 backdrop-blur-xl">
@@ -41,8 +56,13 @@ export function Navbar() {
           <Link href="/" className="transition-colors hover:text-primary">
             Home
           </Link>
-          <Link href="/assignments" className="transition-colors hover:text-primary">
+          <Link href="/assignments" className="relative transition-colors hover:text-primary flex items-center gap-1.5">
             My Tasks
+            {newTaskCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[9px] font-extrabold px-1 shadow-sm">
+                {newTaskCount}
+              </span>
+            )}
           </Link>
           <Link href="/about" className="transition-colors hover:text-primary">
             About
@@ -93,10 +113,16 @@ export function Navbar() {
             </Link>
             <Link 
               href="/assignments" 
-              className="block w-full transition-colors hover:text-primary"
+              className="flex items-center gap-2 w-full transition-colors hover:text-primary"
               onClick={() => setIsMobileMenuOpen(false)}
             >
+              <ClipboardList className="size-4" />
               My Tasks
+              {newTaskCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[9px] font-extrabold px-1">
+                  {newTaskCount}
+                </span>
+              )}
             </Link>
             <Link 
               href="/about" 

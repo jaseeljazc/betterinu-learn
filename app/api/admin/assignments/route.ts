@@ -88,6 +88,15 @@ export async function GET(req: NextRequest) {
                 row.assignment_id;
               break outer;
             }
+            if (mod.sections && Array.isArray(mod.sections)) {
+              for (const sec of mod.sections) {
+                if (sec.id === row.assignment_id && sec.type === "task") {
+                  assignmentData = { description: sec.description, title: sec.title };
+                  assignmentTitle = sec.title || row.assignment_id;
+                  break outer;
+                }
+              }
+            }
           }
         }
       }

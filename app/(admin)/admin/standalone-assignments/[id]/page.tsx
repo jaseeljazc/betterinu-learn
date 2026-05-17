@@ -4,18 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft, Save, Globe, BookOpen, Users, Pencil, UserPlus, Eye, X, AlertCircle,
+  ChevronLeft, Save, Globe, BookOpen, Users, Pencil, UserPlus,
+  X, AlertCircle, Clock, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+  FileText, Paperclip,
 } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import { AssignmentModuleEditor } from "@/components/admin/AssignmentModuleEditor";
 import { FileViewer } from "@/components/ui/FileViewer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import type { AssignmentSubModuleData } from "@/types";
 
@@ -27,35 +22,151 @@ interface Assignment {
 }
 interface AssignedStudent {
   student_id: string; student_name: string; student_email: string;
+  assigned_at: string;
+  submission_id: string | null;
   submission_status: string | null;
+  submitted_at: string | null;
+  submitted_text: string | null;
+  submitted_files: { url: string; name: string; type: string }[] | null;
+  feedback: string | null;
+  reviewed_at: string | null;
 }
 interface StudentRow { id: string; name: string; email: string; }
 
-const STATUS_CFG: Record<string, string> = {
-  pending: "bg-amber-50 border-amber-200 text-amber-700",
-  approved: "bg-green-50 border-green-200 text-green-700",
-  rejected: "bg-red-50 border-red-200 text-red-600",
+const STATUS_CFG: Record<string, { cls: string; label: string; Icon: React.ElementType }> = {
+  pending:  { cls: "bg-amber-50 border-amber-200 text-amber-700",  label: "Under Review", Icon: Clock },
+  approved: { cls: "bg-green-50 border-green-200 text-green-700",  label: "Approved",      Icon: CheckCircle2 },
+  rejected: { cls: "bg-red-50 border-red-200 text-red-600",        label: "Needs Revision",Icon: XCircle },
 };
-const STATUS_LABEL: Record<string, string> = { pending: "Under Review", approved: "Approved", rejected: "Revise" };
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
+function fmtDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
 
+// ── Expandable student submission card ──────────────────────────────────────
+function StudentCard({
+  s, onUnassign, unassigning,
+}: {
+  s: AssignedStudent;
+  onUnassign: (id: string) => void;
+  unassigning: string | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const cfg = s.submission_status ? STATUS_CFG[s.submission_status] : null;
+  const hasSubmission = !!s.submission_id;
+
+  return (
+    <div className="rounded-xl border border-default bg-white overflow-hidden">
+      {/* Row header */}
+      <div className="flex items-center gap-3 p-3">
+        <div className="size-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-extrabold text-primary">
+          {s.student_name.charAt(0).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold text-foreground truncate">{s.student_name}</p>
+          <p className="text-[10px] text-muted truncate">{s.student_email}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {cfg ? (
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase ${cfg.cls}`}>
+              <cfg.Icon className="size-2.5" />{cfg.label}
+            </span>
+          ) : (
+            <span className="text-[9px] text-muted font-medium">Not submitted</span>
+          )}
+          {hasSubmission && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-1 rounded-lg text-muted hover:bg-subtle hover:text-primary transition-colors"
+              title={expanded ? "Collapse" : "View submission"}
+            >
+              {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+            </button>
+          )}
+          <button
+            onClick={() => onUnassign(s.student_id)}
+            disabled={unassigning === s.student_id}
+            className="p-1 text-muted hover:text-red-500 transition-colors"
+          >
+            {unassigning === s.student_id ? <RoboLoader size="xs" /> : <X className="size-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded submission detail */}
+      {expanded && hasSubmission && (
+        <div className="border-t border-default bg-surface px-4 py-4 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted">
+              Submission · {s.submitted_at ? fmtDateTime(s.submitted_at) : "—"}
+            </p>
+            {s.reviewed_at && (
+              <p className="text-[9px] text-muted">Reviewed {fmtDate(s.reviewed_at)}</p>
+            )}
+          </div>
+
+          {/* Submitted text */}
+          {s.submitted_text && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted flex items-center gap-1 mb-1.5">
+                <FileText className="size-2.5" /> Answer
+              </p>
+              <div className="rounded-lg border border-default bg-white p-3 text-xs text-foreground leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+                {s.submitted_text}
+              </div>
+            </div>
+          )}
+
+          {/* Submitted files */}
+          {(s.submitted_files || []).length > 0 && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted flex items-center gap-1 mb-1.5">
+                <Paperclip className="size-2.5" /> Uploaded Files
+              </p>
+              <FileViewer files={s.submitted_files!} title="" />
+            </div>
+          )}
+
+          {/* Feedback */}
+          {s.feedback && (
+            <div className={`rounded-lg border p-3 text-xs ${
+              s.submission_status === "approved"
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}>
+              <p className="font-bold uppercase tracking-widest text-[9px] mb-1">Instructor Feedback</p>
+              {s.feedback}
+            </div>
+          )}
+
+          {!s.submitted_text && !(s.submitted_files || []).length && (
+            <p className="text-xs text-muted italic">No submission content available.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────
 export default function StandaloneAssignmentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
-  const [students, setStudents] = useState<AssignedStudent[]>([]);
+  const [students, setStudents]     = useState<AssignedStudent[]>([]);
   const [allStudents, setAllStudents] = useState<StudentRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [assigning, setAssigning] = useState(false);
+  const [loading, setLoading]       = useState(true);
+  const [editing, setEditing]       = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [saveError, setSaveError]   = useState("");
+  const [assigning, setAssigning]   = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [unassigning, setUnassigning] = useState<string | null>(null);
-  const [editData, setEditData] = useState<AssignmentSubModuleData | null>(null);
-  const [editTitle, setEditTitle] = useState("");
+  const [editData, setEditData]     = useState<AssignmentSubModuleData | null>(null);
+  const [editTitle, setEditTitle]   = useState("");
+  const [studentFilter, setStudentFilter] = useState<"all" | "submitted" | "pending" | "approved" | "rejected" | "todo">("all");
 
   async function load() {
     setLoading(true);
@@ -148,6 +259,13 @@ export default function StandaloneAssignmentDetailPage() {
   const assignedIds = new Set(students.map(s => s.student_id));
   const unassignedStudents = allStudents.filter(s => !assignedIds.has(s.id));
 
+  const filteredStudents = students.filter(s => {
+    if (studentFilter === "all") return true;
+    if (studentFilter === "submitted") return !!s.submission_id;
+    if (studentFilter === "todo") return !s.submission_id;
+    return s.submission_status === studentFilter;
+  });
+
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><RoboLoader size="md" /></div>;
   if (!assignment) return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -158,6 +276,12 @@ export default function StandaloneAssignmentDetailPage() {
   );
 
   const inputCls = "w-full rounded-lg border border-default bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/10";
+
+  const submittedCount = students.filter(s => s.submission_id).length;
+  const pendingCount   = students.filter(s => s.submission_status === "pending").length;
+  const approvedCount  = students.filter(s => s.submission_status === "approved").length;
+  const rejectedCount  = students.filter(s => s.submission_status === "rejected").length;
+  const todoCount      = students.filter(s => !s.submission_id).length;
 
   return (
     <div className="w-full px-6 lg:px-10 py-8">
@@ -186,6 +310,7 @@ export default function StandaloneAssignmentDetailPage() {
       </div>
 
       <div className="flex flex-col xl:flex-row gap-6 items-start">
+        {/* ── Left: Assignment content ── */}
         <div className="flex-1 min-w-0 space-y-5">
           {editing ? (
             <div className="rounded-2xl border border-default bg-white p-6 space-y-5">
@@ -229,7 +354,9 @@ export default function StandaloneAssignmentDetailPage() {
           )}
         </div>
 
-        <div className="w-full xl:w-80 shrink-0 space-y-4">
+        {/* ── Right: Students panel ── */}
+        <div className="w-full xl:w-96 shrink-0 space-y-4">
+          {/* Assign */}
           <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign to Students</p>
             <div className="space-y-2">
@@ -249,26 +376,46 @@ export default function StandaloneAssignmentDetailPage() {
             </div>
           </div>
 
+          {/* Student list with submission details */}
           <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assigned Students ({students.length})</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Students ({students.length})</p>
+              <div className="flex items-center gap-2 text-[9px] font-bold text-muted">
+                <span className="text-amber-600">{pendingCount} review</span>
+                <span className="text-green-700">{approvedCount} approved</span>
+              </div>
+            </div>
+
+            {/* Filter pills */}
+            {students.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {([
+                  { key: "all",       label: `All (${students.length})` },
+                  { key: "todo",      label: `To Do (${todoCount})` },
+                  { key: "pending",   label: `Review (${pendingCount})` },
+                  { key: "approved",  label: `Approved (${approvedCount})` },
+                  { key: "rejected",  label: `Revise (${rejectedCount})` },
+                ] as const).map(({ key, label }) => (
+                  <button key={key} onClick={() => setStudentFilter(key)}
+                    className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold transition-colors border ${
+                      studentFilter === key
+                        ? "bg-primary text-white border-primary"
+                        : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {students.length === 0 ? (
               <p className="text-xs text-muted italic">No students assigned yet.</p>
+            ) : filteredStudents.length === 0 ? (
+              <p className="text-xs text-muted italic text-center py-4">No students in this filter.</p>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {students.map((s) => (
-                  <div key={s.student_id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-subtle border border-default group">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-foreground truncate">{s.student_name}</p>
-                      {s.submission_status ? (
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase mt-0.5 ${STATUS_CFG[s.submission_status] || ""}`}>
-                          {STATUS_LABEL[s.submission_status] || s.submission_status}
-                        </span>
-                      ) : <span className="text-[9px] text-muted">Not submitted</span>}
-                    </div>
-                    <button onClick={() => handleUnassign(s.student_id)} disabled={unassigning === s.student_id} className="p-1 text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                      {unassigning === s.student_id ? <RoboLoader size="xs" /> : <X className="size-3.5" />}
-                    </button>
-                  </div>
+              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-0.5">
+                {filteredStudents.map((s) => (
+                  <StudentCard key={s.student_id} s={s} onUnassign={handleUnassign} unassigning={unassigning} />
                 ))}
               </div>
             )}

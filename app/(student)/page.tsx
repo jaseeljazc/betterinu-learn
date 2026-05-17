@@ -7,7 +7,7 @@ import { PageWrapper } from "@/components/layout/PageWrapper";
 import {
   AlertCircle, BookOpenCheck, CheckCircle2, ChevronRight,
   ClipboardCheck, Clock, GraduationCap,
-  User2, XCircle, Flame, TrendingUp, Star, ArrowRight,
+  User2, XCircle, Flame, TrendingUp, Star, ArrowRight, Globe, BookOpen,
 } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
 import { useProgress } from "@/lib/hooks/useProgress";
@@ -42,6 +42,16 @@ interface FlatAssignment {
   submitted_at?: string;
   status: "todo" | "pending" | "approved" | "rejected";
   feedback?: string;
+}
+
+interface StandaloneAssignment {
+  assignment_id: string;
+  title: string;
+  due_date: string | null;
+  scope: "course" | "common";
+  course_title: string | null;
+  submission_id: string | null;
+  submission_status: "pending" | "approved" | "rejected" | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -223,6 +233,8 @@ export default function Home() {
   const [user, setUser]               = useState<User | null>(null);
   const [courses, setCourses]         = useState<Course[] | null>(null);
   const [submissions, setSubmissions] = useState<Submission[] | null>(null);
+  const [allStandaloneTasks, setAllStandaloneTasks] = useState<StandaloneAssignment[] | null>(null);
+  const [newTasks, setNewTasks] = useState<StandaloneAssignment[] | null>(null);
 
   useEffect(() => {
     const unsub = clientAuth.onAuthStateChanged((u) => setUser(u));
@@ -239,6 +251,18 @@ export default function Home() {
       .then((r) => r.json())
       .then((d) => setSubmissions(d.submissions ?? []))
       .catch(() => setSubmissions([]));
+
+    fetch("/api/student/standalone-assignments", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        const tasks = d.assignments ?? [];
+        setAllStandaloneTasks(tasks);
+        setNewTasks(tasks.filter((t: StandaloneAssignment) => !t.submission_id));
+      })
+      .catch(() => {
+        setAllStandaloneTasks([]);
+        setNewTasks([]);
+      });
   }, []);
 
   const isLoading   = courses === null || submissions === null;
@@ -375,15 +399,70 @@ export default function Home() {
             )}
           </section>
 
-          {/* --- Assignments column --- */}
+          {/* --- Other Tasks column --- */}
           <section className="flex flex-col">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-foreground">Assignments</h2>
-              {!isLoading && submitted.length > 0 && (
-                <span className="rounded-full bg-green-50 border border-green-100 px-3 py-0.5 text-[10px] font-bold text-green-700">
-                  {approvedAll}/{submitted.length} approved
-                </span>
-              )}
+              <h2 className="font-display text-base font-bold text-foreground">Other Tasks</h2>
+              <Link href="/assignments" className="text-[11px] font-bold text-primary hover:underline">View all →</Link>
+            </div>
+
+            {isLoading || allStandaloneTasks === null ? (
+              <div className="flex flex-col gap-2">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+              </div>
+            ) : allStandaloneTasks.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+                <Globe size={36} className="text-muted" />
+                <div>
+                  <p className="font-semibold text-foreground">No tasks yet</p>
+                  <p className="mt-0.5 text-sm text-muted">Standalone assignments will appear here.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden flex flex-col flex-1">
+                <div className="overflow-y-auto flex-1 p-4">
+                  <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-muted flex items-center gap-1">
+                    <Globe className="size-3" /> Standalone Tasks · {allStandaloneTasks.length}
+                    {(newTasks?.length ?? 0) > 0 && (
+                      <span className="ml-1 rounded-full bg-primary text-white text-[9px] font-extrabold px-1.5 py-0.5">{newTasks!.length} new</span>
+                    )}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {allStandaloneTasks.map((task) => {
+                      const status = task.submission_status ?? "todo";
+                      const statusMap: Record<string, { dot: string; badge: string; label: string }> = {
+                        todo:     { dot: "bg-blue-400",  badge: "bg-blue-50 border-blue-200 text-blue-700",   label: "To Do" },
+                        pending:  { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-700", label: "Review" },
+                        approved: { dot: "bg-green-500", badge: "bg-green-50 border-green-200 text-green-700", label: "Approved" },
+                        rejected: { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-600",       label: "Revise" },
+                      };
+                      const cfg = statusMap[status] ?? statusMap.todo;
+                      return (
+                        <Link key={task.assignment_id} href={`/assignments/${task.assignment_id}`}
+                          className="group flex items-center gap-3 rounded-xl border border-default bg-white p-3 transition-all hover:border-primary/30 hover:shadow-md">
+                          <span className={`size-2 shrink-0 rounded-full ${cfg.dot}${status === "todo" ? " animate-pulse" : ""}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-foreground">{task.title}</p>
+                            <p className="truncate text-[11px] text-muted">
+                              {task.scope === "common" ? "Common Task" : task.course_title ?? "Standalone"}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold ${cfg.badge}`}>{cfg.label}</span>
+                          <ChevronRight size={13} className="shrink-0 text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* --- Course Tasks column --- */}
+          <section className="flex flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-base font-bold text-foreground">Course Tasks</h2>
+              <Link href="/assignments" className="text-[11px] font-bold text-primary hover:underline">View all →</Link>
             </div>
 
             {isLoading ? (
@@ -392,133 +471,25 @@ export default function Home() {
               </div>
             ) : submitted.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
-                <ClipboardCheck size={36} className="text-muted" />
+                <BookOpenCheck size={36} className="text-muted" />
                 <div>
-                  <p className="font-semibold text-foreground">No submissions yet</p>
-                  <p className="mt-0.5 text-sm text-muted">Your submitted assignments will appear here.</p>
+                  <p className="font-semibold text-foreground">No tasks yet</p>
+                  <p className="mt-0.5 text-sm text-muted">Course assignments will appear here.</p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-5">
-                {pending.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted">
-                      Needs Revision · {pending.length}
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {pending.map((a) => <AssignmentRow key={a.id} item={a} />)}
-                    </div>
+              <div className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden flex flex-col flex-1">
+                <div className="overflow-y-auto flex-1 p-4">
+                  <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-muted flex items-center gap-1">
+                    <BookOpenCheck className="size-3" /> Course Tasks · {submitted.length}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {submitted.map((a) => <AssignmentRow key={a.id} item={a} />)}
                   </div>
-                )}
-                {reviewed.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted">
-                      Submitted · {reviewed.length}
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {reviewed.map((a) => <AssignmentRow key={a.id} item={a} />)}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             )}
           </section>
-
-          {/* --- Sidebar column --- */}
-          <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
-
-            {/* Progress Section */}
-            <section className="flex flex-col flex-1">
-              <div className="mb-3">
-                <h2 className="font-display text-base font-bold text-foreground">Overall Progress</h2>
-              </div>
-              <div className="flex flex-1 flex-col rounded-2xl border border-default bg-white p-5 shadow-sm">
-                
-                {/* Top: Progress Bars */}
-                <div className="flex flex-col justify-center flex-1">
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      <Skeleton className="h-1.5 w-full rounded-full" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  ) : assignments.length > 0 ? (
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[14px]">
-                          <span className="text-muted">Assignments approved</span>
-                          <span className="font-bold text-primary">{Math.round((approvedAll / assignments.length) * 100)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle">
-                          <div
-                            className="h-full rounded-full bg-primary transition-all duration-700"
-                            style={{ width: `${Math.round((approvedAll / assignments.length) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[14px]">
-                          <span className="text-muted">Lessons completed</span>
-                          <span className="font-bold text-primary">{progress.completedSubModules.length}</span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle">
-                          <div
-                            className="h-full rounded-full bg-green-400 transition-all duration-700"
-                            style={{ width: progress.completedSubModules.length > 0 ? "100%" : "0%" }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted text-center">Start a course to track your progress.</p>
-                  )}
-                </div>
-
-                <hr className="my-5 border-default" />
-
-                {/* Bottom: Stats pills */}
-                <div className="grid grid-cols-3 gap-2 shrink-0">
-                  {[
-                    { Icon: BookOpenCheck, value: courses?.length ?? "—", label: "Courses", color: "text-blue-600 bg-blue-50" },
-                    { Icon: Star, value: approvedAll, label: "Approved", color: "text-green-700 bg-green-50" },
-                    { Icon: Flame, value: isLoading ? "—" : reviewed.filter(a => a.status === "pending").length, label: "Under Review", color: "text-amber-600 bg-amber-50" },
-                  ].map(({ Icon, value, label, color }) => (
-                    <div key={label} className="flex flex-col items-center gap-1.5 rounded-xl bg-subtle/50 px-2 py-3">
-                      <span className={`grid size-7 place-items-center rounded-lg ${color}`}>
-                        <Icon size={13} />
-                      </span>
-                      <span className="text-lg font-extrabold text-foreground leading-none">{value}</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted">{label}</span>
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-            </section>
-
-            {/* Quick links to courses */}
-            {/* {courses && courses.length > 0 && (
-              <div className="rounded-2xl border border-default bg-white p-4 shadow-sm">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted">Quick Access</h3>
-                <div className="flex flex-col gap-1">
-                  {courses.slice(0, 4).map((course) => (
-                    <Link
-                      key={course.id}
-                      href={`/course/${course.id}`}
-                      className="group flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-subtle"
-                    >
-                      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                        <GraduationCap size={12} />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate font-medium text-foreground group-hover:text-primary text-xs">
-                        {course.title}
-                      </span>
-                      <ChevronRight size={11} className="shrink-0 text-muted opacity-0 group-hover:opacity-100" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )} */}
-          </aside>
         </div>
       </div>
     </PageWrapper>

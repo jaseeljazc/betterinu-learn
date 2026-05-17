@@ -10,7 +10,7 @@ import { WeekCard } from "./WeekCard";
 
 export function LearnClient({ course }: { course: Course }) {
   const { isWeekUnlocked } = useProgress();
-  
+
   // Pad the weeks to 30 to show upcoming weeks as locked.
   const paddedWeeks = Array.from({ length: 30 }).map((_, index) => {
     if (index < course.weeks.length) return course.weeks[index];
@@ -19,12 +19,16 @@ export function LearnClient({ course }: { course: Course }) {
       title: `Week ${index + 1}: Coming Soon`,
       isLocked: true,
       isShared: false,
-      days: []
+      days: [],
     } as any;
   });
 
   const paddedCourse = { ...course, weeks: paddedWeeks };
-  const activeWeek = paddedCourse.weeks.find((week: any) => isWeekUnlocked(paddedCourse, week.id) && !week.id.startsWith("dummy")) ?? paddedCourse.weeks[0];
+  const activeWeek =
+    paddedCourse.weeks.find(
+      (week: any) =>
+        isWeekUnlocked(paddedCourse, week.id) && !week.id.startsWith("dummy"),
+    ) ?? paddedCourse.weeks[0];
 
   return (
     <div className="flex gap-10">
@@ -33,26 +37,42 @@ export function LearnClient({ course }: { course: Course }) {
         {/* Course header */}
         <div className="rounded-lg border border-default bg-white overflow-hidden">
           <div className="p-6 ">
-            <nav className="flex items-center gap-2 text-xs font-semibold text-muted mb-4" aria-label="Breadcrumb">
-              <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            <nav
+              className="flex items-center gap-2 text-xs font-semibold text-muted mb-4"
+              aria-label="Breadcrumb"
+            >
+              <Link href="/" className="hover:text-primary transition-colors">
+                Home
+              </Link>
               <ChevronRight size={12} className="opacity-50" />
-              <Link href={`/course/${course.id}`} className="hover:text-primary transition-colors">{course.title}</Link>
+              <Link
+                href={`/course/${course.id}`}
+                className="hover:text-primary transition-colors"
+              >
+                {course.title}
+              </Link>
               <ChevronRight size={12} className="opacity-50" />
               <span className="text-foreground">Learn</span>
             </nav>
-            <p className="text-[16px] font-bold uppercase tracking-widest text-primary">Course material</p>
+            <p className="text-[16px] font-bold uppercase tracking-widest text-primary">
+              Course material
+            </p>
             {/* <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-foreground">
               {activeWeek.title.replace(":", " —")}
             </h1> */}
-
           </div>
         </div>
 
         {paddedCourse.weeks.map((week: any, index: number) =>
-          isWeekUnlocked(paddedCourse, week.id) && !week.id.startsWith("dummy") ? (
+          isWeekUnlocked(paddedCourse, week.id) &&
+          !week.id.startsWith("dummy") ? (
             <WeekCard courseId={paddedCourse.id} key={week.id} week={week} />
           ) : (
-            <LockedWeekCard key={week.id} previousWeekNumber={index} week={week} />
+            <LockedWeekCard
+              key={week.id}
+              previousWeekNumber={index}
+              week={week}
+            />
           ),
         )}
       </div>

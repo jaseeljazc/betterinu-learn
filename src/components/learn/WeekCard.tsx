@@ -10,11 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ModuleAccordion } from "./ModuleAccordion";
 
-export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week }) {
-  const { areAllWeekDaysComplete, hasPassedQuiz, isSubModuleComplete } = useProgress();
+export function WeekCard({
+  courseId,
+  week,
+}: {
+  courseId: CourseId;
+  week: Week;
+}) {
+  const { areAllWeekDaysComplete, hasPassedQuiz, isSubModuleComplete } =
+    useProgress();
   const allSubModules = week.days.flatMap((day) => day.subModules);
-  const complete = allSubModules.filter((module) => isSubModuleComplete(module.id)).length;
-  const percent = allSubModules.length ? Math.round((complete / allSubModules.length) * 100) : 0;
+  const complete = allSubModules.filter((module) =>
+    isSubModuleComplete(module.id),
+  ).length;
+  const percent = allSubModules.length
+    ? Math.round((complete / allSubModules.length) * 100)
+    : 0;
   const daysComplete = areAllWeekDaysComplete(courseId, week.id);
   const passed = hasPassedQuiz(courseId, week.id);
 
@@ -51,12 +62,17 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
             <div className="w-full md:w-52 shrink-0">
               <div className="flex items-center justify-between mb-1.5 text-xs font-semibold">
                 <span className="text-muted-foreground">Progress</span>
-                <span className={percent === 100 ? "text-green-600" : ""}>{percent}%</span>
+                <span className={percent === 100 ? "text-green-600" : ""}>
+                  {percent}%
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${percent}%`, background: "var(--color-primary)" }}
+                  style={{
+                    width: `${percent}%`,
+                    background: "var(--color-primary)",
+                  }}
                 />
               </div>
             </div>
@@ -65,9 +81,23 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
       </Card>
 
       {/* Days */}
-      <Accordion type="multiple" defaultValue={!week.days[0] || (week.days.length > 1 && !week.days[0].subModules.every(m => isSubModuleComplete(m.id))) ? [] : [week.days[0].id]} className="grid gap-3 w-full">
+      <Accordion
+        type="multiple"
+        defaultValue={
+          !week.days[0] ||
+          (week.days.length > 1 &&
+            !week.days[0].subModules.every((m) => isSubModuleComplete(m.id)))
+            ? []
+            : [week.days[0].id]
+        }
+        className="grid gap-3 w-full"
+      >
         {week.days.map((day, idx) => {
-          const isLocked = idx > 0 && !week.days[idx - 1].subModules.every((m) => isSubModuleComplete(m.id));
+          const isLocked =
+            idx > 0 &&
+            !week.days[idx - 1].subModules.every((m) =>
+              isSubModuleComplete(m.id),
+            );
           return (
             <ModuleAccordion
               courseId={courseId}
@@ -86,10 +116,18 @@ export function WeekCard({ courseId, week }: { courseId: CourseId; week: Week })
           <CardContent className="pt-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-display text-lg font-bold">Week complete! 🎉</p>
-                <p className="mt-0.5 text-sm text-green-200">Pass the quiz to unlock the next week and earn 150 XP.</p>
+                <p className="font-display text-lg font-bold">
+                  Week complete! 🎉
+                </p>
+                <p className="mt-0.5 text-sm text-green-200">
+                  Pass the quiz to unlock the next week and earn 150 XP.
+                </p>
               </div>
-              <Button asChild variant="secondary" className="shrink-0 gap-2 font-bold">
+              <Button
+                asChild
+                variant="secondary"
+                className="shrink-0 gap-2 font-bold"
+              >
                 <Link href={`/quiz/${courseId}/${week.id}`}>
                   Take Quiz
                   <ArrowRight className="size-4" aria-hidden />
