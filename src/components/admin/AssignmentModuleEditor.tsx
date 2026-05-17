@@ -10,6 +10,7 @@ interface AssignmentModuleEditorProps {
   moduleId: string;
   assignmentData: AssignmentSubModuleData;
   onChange: (data: AssignmentSubModuleData) => void;
+  hideTitle?: boolean;
 }
 
 const SUBMISSION_TYPES: { key: "text" | "file" | "image" | "url"; label: string; desc: string }[] = [
@@ -19,7 +20,7 @@ const SUBMISSION_TYPES: { key: "text" | "file" | "image" | "url"; label: string;
   { key: "url",   label: "URL / Link",    desc: "GitHub, live sites, etc." },
 ];
 
-export function AssignmentModuleEditor({ moduleId, assignmentData, onChange }: AssignmentModuleEditorProps) {
+export function AssignmentModuleEditor({ moduleId, assignmentData, onChange, hideTitle = false }: AssignmentModuleEditorProps) {
   const data: AssignmentSubModuleData = assignmentData || {
     title: "",
     instructions: "",
@@ -77,15 +78,17 @@ export function AssignmentModuleEditor({ moduleId, assignmentData, onChange }: A
       </div>
 
       {/* Title */}
-      <div className={sectionCls}>
-        <label className={labelCls}>Assignment Title</label>
-        <input
-          className={inputCls}
-          value={data.title}
-          onChange={(e) => patch({ title: e.target.value })}
-          placeholder="e.g. Build a Todo App"
-        />
-      </div>
+      {!hideTitle && (
+        <div className={sectionCls}>
+          <label className={labelCls}>Assignment Title</label>
+          <input
+            className={inputCls}
+            value={data.title}
+            onChange={(e) => patch({ title: e.target.value })}
+            placeholder="e.g. Build a Todo App"
+          />
+        </div>
+      )}
 
       {/* Instructions */}
       <div className={sectionCls}>

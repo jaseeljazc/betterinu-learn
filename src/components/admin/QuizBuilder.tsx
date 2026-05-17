@@ -1,6 +1,13 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function QuizBuilder({
   quizData,
@@ -70,14 +77,18 @@ export function QuizBuilder({
             </button>
 
             <div className="flex gap-3">
-              <select
+              <Select
                 value={q.type || "multiple-choice"}
-                onChange={(e) => updateQuestion(qIdx, { type: e.target.value })}
-                className="text-xs p-1.5 border border-[#d1d5db] rounded outline-none bg-transparent"
+                onValueChange={(v) => updateQuestion(qIdx, { type: v })}
               >
-                <option value="multiple-choice">Multiple Choice</option>
-                <option value="text">Text Answer</option>
-              </select>
+                <SelectTrigger className="h-8 w-44 rounded-md border border-[#d1d5db] bg-transparent text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                  <SelectItem value="text">Text Answer</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <textarea

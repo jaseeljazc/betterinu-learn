@@ -209,7 +209,7 @@ export default function CourseCurriculumPage() {
 
   if (!form) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <RoboLoader size="md" className="text-[#7a7a62]" />
       </div>
     );

@@ -41,6 +41,9 @@ export function Navbar() {
           <Link href="/" className="transition-colors hover:text-primary">
             Home
           </Link>
+          <Link href="/assignments" className="transition-colors hover:text-primary">
+            My Tasks
+          </Link>
           <Link href="/about" className="transition-colors hover:text-primary">
             About
           </Link>
@@ -87,6 +90,13 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Home
+            </Link>
+            <Link 
+              href="/assignments" 
+              className="block w-full transition-colors hover:text-primary"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              My Tasks
             </Link>
             <Link 
               href="/about" 

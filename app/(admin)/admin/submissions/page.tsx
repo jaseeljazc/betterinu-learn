@@ -123,7 +123,7 @@ export default function SubmissionsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
+        <div className="flex min-h-[60vh] items-center justify-center">
           <RoboLoader size="md" />
         </div>
       ) : filtered.length === 0 ? (

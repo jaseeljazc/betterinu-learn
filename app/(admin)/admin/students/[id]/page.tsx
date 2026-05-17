@@ -12,6 +12,14 @@ import {
 import RoboLoader from "@/components/loading/robo-loader";
 import { FileViewer } from "@/components/ui/FileViewer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type StudentDetail = {
@@ -98,7 +106,8 @@ export default function AdminStudentDetailPage() {
   const [assigning,      setAssigning]      = useState(false);
   const [deleting,       setDeleting]       = useState(false);
   const [submissions,    setSubmissions]    = useState<Submission[]>([]);
-  const [activeTab,      setActiveTab]      = useState<"courses" | "submissions">("courses");
+  const [activeTab,      setActiveTab]      = useState<"courses" | "submissions" | "tasks">("courses");
+  const [standaloneSubs, setStandaloneSubs] = useState<any[]>([]);
   const [loadError,      setLoadError]      = useState<string | null>(null);
 
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
@@ -107,6 +116,11 @@ export default function AdminStudentDetailPage() {
   const [actionError, setActionError] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRemoveCourseOpen, setIsRemoveCourseOpen] = useState(false);
+
+  // Standalone task assignment state
+  const [allTasks, setAllTasks] = useState<any[]>([]);
+  const [selectedTask, setSelectedTask] = useState("");
+  const [assigningTask, setAssigningTask] = useState(false);
 
   async function load() {
     try {
@@ -127,6 +141,14 @@ export default function AdminStudentDetailPage() {
 
       if (coursesRes.ok) { const d = await coursesRes.json(); setAllCourses(d.courses || []); }
       if (subRes.ok)     { const d = await subRes.json();     setSubmissions(d.submissions || []); }
+
+      // Also load standalone task submissions for this student
+      const taskSubRes = await fetch(`/api/admin/standalone-submissions?studentId=${id}`, { credentials: "include" });
+      if (taskSubRes.ok) { const d = await taskSubRes.json(); setStandaloneSubs(d.submissions || []); }
+
+      // Also load all tasks to populate the assignment dropdown
+      const tasksRes = await fetch(`/api/admin/standalone-assignments`, { credentials: "include" });
+      if (tasksRes.ok) { const d = await tasksRes.json(); setAllTasks(d.assignments || []); }
     } catch (e: any) {
       setLoadError(e?.message ?? "Network error — could not load student data.");
     }
@@ -147,6 +169,20 @@ export default function AdminStudentDetailPage() {
     });
     setSelectedCourse("");
     setAssigning(false);
+    load();
+  }
+
+  async function handleAssignTask() {
+    if (!selectedTask) return;
+    setAssigningTask(true);
+    await fetch(`/api/admin/standalone-assignments/${selectedTask}/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ studentIds: [id] }),
+    });
+    setSelectedTask("");
+    setAssigningTask(false);
     load();
   }
 
@@ -202,6 +238,15 @@ export default function AdminStudentDetailPage() {
   const pendingCount     = submissions.filter((s) => s.status === "pending").length;
   const rejectedCount    = submissions.filter((s) => s.status === "rejected").length;
 
+  // Filter tasks to only show common tasks or tasks belonging to courses the student is assigned to
+  const assignedCourseIds = new Set(assigned.map(a => a.course_id));
+  const eligibleTasks = allTasks.filter(t => 
+    t.scope === "common" || (t.scope === "course" && assignedCourseIds.has(t.course_id))
+  );
+  // Also exclude tasks the student has already submitted (optional, but good UX)
+  const submittedTaskIds = new Set(standaloneSubs.map(s => s.assignment_id));
+  const unassignedTasks = eligibleTasks.filter(t => !submittedTaskIds.has(t.id));
+
   if (loadError) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-center px-6">
@@ -220,7 +265,7 @@ export default function AdminStudentDetailPage() {
 
   if (!student) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <RoboLoader size="md" />
       </div>
     );
@@ -333,7 +378,7 @@ export default function AdminStudentDetailPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 rounded-xl border border-default bg-white p-1 shadow-sm w-fit">
-              {(["courses", "submissions"] as const).map((tab) => (
+              {(["courses", "submissions", "tasks"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -343,7 +388,7 @@ export default function AdminStudentDetailPage() {
                       : "text-muted hover:text-foreground"
                   }`}
                 >
-                  {tab === "courses" ? `Courses (${assigned.length})` : `Submissions (${submissions.length})`}
+                  {tab === "courses" ? `Courses (${assigned.length})` : tab === "submissions" ? `Submissions (${submissions.length})` : `Tasks (${standaloneSubs.length})`}
                 </button>
               ))}
             </div>
@@ -585,6 +630,57 @@ export default function AdminStudentDetailPage() {
                 )}
               </div>
             )}
+
+            {/* ── Tasks tab (standalone assignments) ──────────────────── */}
+            {activeTab === "tasks" && (
+              <div className="space-y-3">
+                {standaloneSubs.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+                    <ClipboardList size={36} className="text-muted" />
+                    <div>
+                      <p className="font-semibold text-foreground">No task submissions</p>
+                      <p className="mt-0.5 text-sm text-muted">This student has not submitted any standalone tasks yet.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-default overflow-hidden shadow-sm bg-white">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-surface border-b border-default text-xs font-bold uppercase tracking-widest text-muted">
+                          <th className="px-4 py-3 text-left">Assignment</th>
+                          <th className="px-4 py-3 text-left">Submitted</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                          <th className="px-4 py-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-default">
+                        {standaloneSubs.map((sub: any) => (
+                          <tr key={sub.id} className="hover:bg-subtle/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-foreground">{sub.assignment_title}</p>
+                              {sub.course_title && <p className="text-[11px] text-muted">{sub.course_title}</p>}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-secondary">{new Date(sub.submitted_at).toLocaleString()}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                STATUS_CFG[sub.status as keyof typeof STATUS_CFG]?.cls || "bg-gray-50 border-gray-200 text-gray-600"
+                              }`}>
+                                {STATUS_CFG[sub.status as keyof typeof STATUS_CFG]?.label || sub.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <a href={`/admin/standalone-submissions`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white transition-colors">
+                                <Eye className="size-3.5" /> Review
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>{/* end main content */}
 
           {/* ── Right sidebar: Assign Course ──────────────────────────── */}
@@ -597,16 +693,13 @@ export default function AdminStudentDetailPage() {
                 <p className="text-sm text-muted italic">All available courses are already assigned.</p>
               ) : (
                 <div className="space-y-3">
-                  <select
+                  <Combobox
+                    options={unassigned.map((c) => ({ value: c.id, label: c.title }))}
                     value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                    className="w-full rounded-xl border border-default bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  >
-                    <option value="">Select a course…</option>
-                    {unassigned.map((c) => (
-                      <option key={c.id} value={c.id}>{c.title}</option>
-                    ))}
-                  </select>
+                    onValueChange={setSelectedCourse}
+                    placeholder="Select a course…"
+                    searchPlaceholder="Search courses…"
+                  />
                   <button
                     onClick={handleAssign}
                     disabled={!selectedCourse || assigning}
@@ -623,6 +716,38 @@ export default function AdminStudentDetailPage() {
               )}
             </div>
 
+            {/* Assign new task card */}
+            <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign Task</p>
+              {unassignedTasks.length === 0 ? (
+                <p className="text-sm text-muted italic">No eligible tasks to assign.</p>
+              ) : (
+                <div className="space-y-3">
+                  <Combobox
+                    options={unassignedTasks.map((t) => ({
+                      value: t.id,
+                      label: `${t.title} ${t.scope === "common" ? "(Common)" : `(${t.course_title})`}`,
+                    }))}
+                    value={selectedTask}
+                    onValueChange={setSelectedTask}
+                    placeholder="Select a task…"
+                    searchPlaceholder="Search tasks…"
+                  />
+                  <button
+                    onClick={handleAssignTask}
+                    disabled={!selectedTask || assigningTask}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {assigningTask ? (
+                      <RoboLoader size="xs" className="text-current" />
+                    ) : (
+                      <PlusCircle className="size-4" />
+                    )}
+                    {assigningTask ? "Assigning…" : "Assign Task"}
+                  </button>
+                </div>
+              )}
+            </div>
             {/* Quick stats card */}
             <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Quick Stats</p>

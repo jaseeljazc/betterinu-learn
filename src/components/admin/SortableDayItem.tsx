@@ -5,6 +5,13 @@ import { GripVertical, ChevronDown, ChevronRight, X } from "lucide-react";
 import { LessonSectionEditor } from "./LessonSectionEditor";
 import { QuizBuilder } from "./QuizBuilder";
 import { FileUploader } from "@/components/ui/FileUploader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function SortableDayItem({
   day, wIdx, dIdx, form, update, isDayCollapsed, setCollapsedDays, removeDay
@@ -147,21 +154,24 @@ function SortableModuleItem({ mod, mIdx, wIdx, dIdx, form, update, removeModule 
           }}
           className="flex-1 outline-none font-semibold text-foreground text-base placeholder:font-normal"
         />
-        <select
+        <Select
           value={mod.type}
-          onChange={(e) => {
+          onValueChange={(v) => {
             const next = [...form.curriculum!];
-            next[wIdx].days[dIdx].subModules[mIdx].type = e.target.value;
+            next[wIdx].days[dIdx].subModules[mIdx].type = v;
             update("curriculum", next);
           }}
-          className="bg-transparent font-semibold outline-none text-secondary border border-default rounded-md px-2 py-1"
         >
-          <option value="doc">Doc / Sections</option>
-          <option value="video">Video</option>
-          <option value="mixed">Mixed</option>
-          {/* <option value="quiz">Quiz</option> */}
-          <option value="assignment">Assignment</option>
-        </select>
+          <SelectTrigger className="w-40 rounded-md border border-default bg-transparent text-xs font-semibold text-secondary px-2 py-1 h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="doc">Doc / Sections</SelectItem>
+            <SelectItem value="video">Video</SelectItem>
+            <SelectItem value="mixed">Mixed</SelectItem>
+            <SelectItem value="assignment">Assignment</SelectItem>
+          </SelectContent>
+        </Select>
         <input
           value={mod.duration || ''}
           placeholder="Duration"

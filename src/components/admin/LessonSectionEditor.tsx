@@ -24,6 +24,13 @@ import {
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { LessonSection, LessonSectionType } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ── helpers ─────────────────────────────────────────────────────
 function uid() {
@@ -140,16 +147,17 @@ function SectionEditor({
             </div>
             <div>
               <label className={labelCls}>Display Size</label>
-              <select
-                value={section.size || "full"}
-                onChange={(e) => patch({ size: e.target.value })}
-                className={inputCls}
-              >
-                <option value="sm">Small (25%)</option>
-                <option value="md">Medium (50%)</option>
-                <option value="lg">Large (75%)</option>
-                <option value="full">Full Width (100%)</option>
-              </select>
+              <Select value={section.size || "full"} onValueChange={(v) => patch({ size: v })}>
+                <SelectTrigger className={inputCls}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Small (25%)</SelectItem>
+                  <SelectItem value="md">Medium (50%)</SelectItem>
+                  <SelectItem value="lg">Large (75%)</SelectItem>
+                  <SelectItem value="full">Full Width (100%)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -345,15 +353,16 @@ function ColumnsEditor({
               {/* Col header */}
               <div className="flex items-center gap-2 bg-surface px-3 py-2 border-b border-default">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Column {i + 1}</span>
-                <select
-                  value={col.type}
-                  onChange={(e) => changeColType(i, e.target.value)}
-                  className="ml-auto text-[10px] font-semibold border border-default rounded-md px-2 py-0.5 bg-white text-secondary focus:outline-none focus:border-primary"
-                >
-                  {COL_TYPES.map((t) => (
-                    <option key={t.type} value={t.type}>{t.label}</option>
-                  ))}
-                </select>
+                <Select value={col.type} onValueChange={(v) => changeColType(i, v)}>
+                  <SelectTrigger className="ml-auto h-6 w-32 text-[10px] font-semibold border border-default rounded-md bg-white text-secondary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COL_TYPES.map((t) => (
+                      <SelectItem key={t.type} value={t.type}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Col content editor */}
@@ -372,12 +381,17 @@ function ColumnsEditor({
                     )}
                     <input value={col.url || ""} onChange={(e) => updateCol(i, { url: e.target.value })} placeholder="Image URL…" className={inputCls} />
                     <input value={col.caption || ""} onChange={(e) => updateCol(i, { caption: e.target.value })} placeholder="Caption (optional)" className={inputCls} />
-                    <select value={col.size || "full"} onChange={(e) => updateCol(i, { size: e.target.value })} className={inputCls}>
-                      <option value="sm">Small</option>
-                      <option value="md">Medium</option>
-                      <option value="lg">Large</option>
-                      <option value="full">Full</option>
-                    </select>
+                    <Select value={col.size || "full"} onValueChange={(v) => updateCol(i, { size: v })}>
+                      <SelectTrigger className={inputCls}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sm">Small</SelectItem>
+                        <SelectItem value="md">Medium</SelectItem>
+                        <SelectItem value="lg">Large</SelectItem>
+                        <SelectItem value="full">Full</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
                 {col.type === "video" && (

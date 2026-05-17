@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/tooltip";
 
 const nav = [
-  { href: "/admin/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/admin/courses", label: "Courses", Icon: BookOpen },
-  { href: "/admin/students", label: "Students", Icon: Users },
-  { href: "/admin/submissions", label: "Submissions", Icon: ClipboardList },
+  { href: "/admin/dashboard",             label: "Dashboard",        Icon: LayoutDashboard },
+  { href: "/admin/courses",               label: "Courses",           Icon: BookOpen },
+  { href: "/admin/students",              label: "Students",          Icon: Users },
+  { href: "/admin/submissions",           label: "Submissions",       Icon: ClipboardList },
+  { href: "/admin/standalone-assignments",label: "Standalone Tasks",  Icon: GraduationCap },
 ];
 
 export function AdminSidebar({

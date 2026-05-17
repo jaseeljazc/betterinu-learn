@@ -6,8 +6,23 @@ import Link from "next/link";
 import { ChevronLeft, AlertCircle, CheckCircle2, Copy } from "lucide-react";
 import RoboLoader from "@/components/loading/robo-loader";
 import { createStudentAction } from "../actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 type Course = { id: string; title: string };
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+];
 
 export default function NewStudentPage() {
   const router = useRouter();
@@ -18,6 +33,7 @@ export default function NewStudentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successData, setSuccessData] = useState<{ studentId: string; emailSent: boolean; manualData?: any } | null>(null);
+  const [gender, setGender] = useState("");
   
   useEffect(() => {
     fetch("/api/admin/courses").then(r => r.json()).then(d => setCourses(d.courses || []));
@@ -146,13 +162,15 @@ export default function NewStudentPage() {
             </div>
             <div>
               <label htmlFor="gender" className="block text-sm font-semibold mb-1.5">Gender</label>
-              <select id="gender" name="gender" className="w-full rounded-lg border border-[#e5e2da] bg-[#f9f9f6] px-3 py-2.5 text-sm outline-none focus:border-[#1a4031] focus:ring-2">
-                <option value="">-- Select --</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="prefer_not_to_say">Prefer not to say</option>
-              </select>
+              <Combobox
+                options={GENDER_OPTIONS}
+                value={gender}
+                onValueChange={setGender}
+                placeholder="-- Select --"
+                searchPlaceholder="Search…"
+              />
+              {/* hidden input so the form still submits the value */}
+              <input type="hidden" name="gender" value={gender} />
             </div>
             <div>
               <label htmlFor="enrollment_date" className="block text-sm font-semibold mb-1.5">Enrollment Date</label>

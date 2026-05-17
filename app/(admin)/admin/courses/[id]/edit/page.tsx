@@ -16,6 +16,13 @@ import { SortableDayItem } from "@/components/admin/SortableDayItem";
 import { ThreePanelCurriculumBuilder } from "@/components/admin/ThreePanelCurriculumBuilder"; // ADDED
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { AttachedFile } from "@/components/ui/FileUploader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -200,7 +207,7 @@ export default function CourseEditPage() {
 
   if (!form) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <RoboLoader size="md" className="text-[#7a7a62]" />
       </div>
     );
@@ -297,10 +304,16 @@ export default function CourseEditPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Difficulty Level</label>
-                  <select value={form.level ?? ""} onChange={(e) => update("level", e.target.value)} className={inputClass}>
-                    <option value="">-- Select Level --</option>
-                    {LEVEL_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
-                  </select>
+                  <Select value={form.level ?? ""} onValueChange={(v) => update("level", v)}>
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="-- Select Level --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEVEL_OPTIONS.map((l) => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Color CSS Variable</label>

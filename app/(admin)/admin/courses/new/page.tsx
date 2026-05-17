@@ -31,6 +31,13 @@ import {
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
 import { CourseImageUploader } from "@/components/admin/CourseImageUploader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type CourseRow = {
   id: string;
@@ -458,18 +465,16 @@ export default function CourseNewPage() {
                 <label className="block text-sm font-semibold mb-1.5">
                   Difficulty Level
                 </label>
-                <select
-                  value={form.level ?? ""}
-                  onChange={(e) => update("level", e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">-- Select Level --</option>
-                  {LEVEL_OPTIONS.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
+                <Select value={form.level ?? ""} onValueChange={(v) => update("level", v)}>
+                  <SelectTrigger className={inputClass}>
+                    <SelectValue placeholder="-- Select Level --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEVEL_OPTIONS.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">
