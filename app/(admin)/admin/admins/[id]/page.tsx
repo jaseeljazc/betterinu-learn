@@ -135,8 +135,8 @@ export default function EditAdminPage({ params }: Props) {
 
   if (success) {
     return (
-      <div className="p-8 max-w-md">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
+      <div className="flex min-h-[50vh] w-full items-center justify-center">
+        <div className="max-w-md w-full rounded-xl border border-green-200 bg-green-50 p-6 text-center">
           <CheckCircle2 className="mx-auto mb-3 size-10 text-green-600" />
           <h2 className="text-lg font-bold text-green-900">Changes saved!</h2>
           <p className="mt-2 text-sm text-secondary">Redirecting…</p>
@@ -146,18 +146,19 @@ export default function EditAdminPage({ params }: Props) {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/admins" className="rounded-lg border border-default p-2 hover:bg-subtle">
-          <ChevronLeft className="size-4" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Edit Admin</h1>
-          <p className="text-sm text-secondary">Update role, status, or name.</p>
+    <div className="min-h-screen bg-subtle px-6 lg:px-10 py-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-8 flex items-center gap-3">
+          <Link href="/admin/admins" className="rounded-lg border border-default p-2 hover:bg-subtle">
+            <ChevronLeft className="size-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Edit Admin</h1>
+            <p className="text-sm text-secondary">Update role, status, or name.</p>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-default bg-white p-6 space-y-5 shadow-sm">
           {/* Read-only last login */}
           {lastLogin && (
@@ -301,6 +302,7 @@ export default function EditAdminPage({ params }: Props) {
           </Link>
         </div>
       </form>
+      </div>
     </div>
   )
 }

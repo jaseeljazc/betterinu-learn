@@ -298,20 +298,22 @@ export function RoleFormPage({
   loading,
 }: RoleFormPageProps) {
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <Link
-          href="/admin/roles"
-          className="rounded-lg border border-default p-2 hover:bg-subtle transition-colors"
-        >
-          <ChevronLeft className="size-4" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{pageTitle}</h1>
-          <p className="text-sm text-secondary">{pageSubtitle}</p>
+    <div className="min-h-screen bg-subtle px-6 lg:px-10 py-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-8 flex items-center gap-3">
+          <Link
+            href="/admin/roles"
+            className="rounded-lg border border-default p-2 hover:bg-subtle transition-colors"
+          >
+            <ChevronLeft className="size-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{pageTitle}</h1>
+            <p className="text-sm text-secondary">{pageSubtitle}</p>
+          </div>
         </div>
+        <RoleForm initialData={initialData} onSubmit={onSubmit} loading={loading} />
       </div>
-      <RoleForm initialData={initialData} onSubmit={onSubmit} loading={loading} />
     </div>
   )
 }

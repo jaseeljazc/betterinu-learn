@@ -3,12 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { LogOut, Menu, X, ClipboardList } from "lucide-react";
+import { LogOut, Menu, X, ClipboardList, KeyRound } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
+import { ChangePasswordModal } from "@/components/shared/change-password-modal";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [newTaskCount, setNewTaskCount] = useState(0);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   async function handleSignOut() {
     await clientAuth.signOut();
@@ -31,6 +33,7 @@ export function Navbar() {
   }, []);
 
   return (
+    <>
     <header className="fixed inset-x-0 top-0 z-40 h-[64px] border-b border-default bg-white/98 backdrop-blur-xl">
       <nav
         className="mx-auto relative flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
@@ -77,6 +80,18 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          {/* Change Password button — desktop */}
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="hidden md:flex items-center gap-2 rounded-sm border border-default bg-white py-1.5 pl-2 pr-3.5 text-xs font-bold text-foreground transition-all hover:bg-subtle focus-ring"
+            aria-label="Change password"
+          >
+            <span className="grid size-6 place-items-center rounded-sm bg-subtle">
+              <KeyRound className="size-3.5 text-muted" aria-hidden />
+            </span>
+            <span className="hidden sm:inline text-muted">Change Password</span>
+          </button>
+
           {/* Sign out button */}
           <button
             onClick={handleSignOut}
@@ -138,7 +153,17 @@ export function Navbar() {
             >
               Support
             </Link>
-            <div className="pt-2 mt-2 border-t border-default">
+            <div className="pt-2 mt-2 border-t border-default space-y-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowChangePassword(true);
+                }}
+                className="flex w-full items-center gap-2 py-2 text-foreground transition-colors hover:text-primary font-bold"
+              >
+                <KeyRound className="size-4" />
+                <span>Change Password</span>
+              </button>
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -154,5 +179,11 @@ export function Navbar() {
         </div>
       )}
     </header>
+
+    {/* Change Password Modal */}
+    {showChangePassword && (
+      <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+    )}
+    </>
   );
 }

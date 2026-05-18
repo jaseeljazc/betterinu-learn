@@ -258,3 +258,38 @@ export type {
   AdminRoleRecord,
   AdminAccount,
 } from "./rbac"
+
+// ── Account Manager types ─────────────────────────────────────
+export type AccountType = 'cash' | 'bank' | 'digital_wallet' | 'petty_cash'
+export type TransactionType = 'income' | 'expense' | 'transfer'
+export type TransactionStatus = 'confirmed' | 'pending' | 'void'
+
+export interface Account {
+  id: string; name: string; type: AccountType; accountNumber?: string; ifscCode?: string
+  openingBalance: number; currentBalance: number; isActive: boolean
+  createdBy?: { id: string; fullName: string }; createdAt: string
+}
+
+export interface AccountCategory {
+  id: string; name: string; type: 'income' | 'expense'
+  color?: string; icon?: string; isSystem: boolean; isArchived: boolean
+}
+
+export interface AccountAttachment {
+  id: string; transactionId: string; s3Key: string
+  fileName: string; fileType: string; fileSize: number
+  uploadedBy?: { id: string; fullName: string }; uploadedAt: string
+  presignedUrl?: string  // never stored — fetched fresh on demand only
+}
+
+export interface AccountTransaction {
+  id: string; type: TransactionType
+  account: Pick<Account, 'id' | 'name' | 'type'>
+  toAccount?: Pick<Account, 'id' | 'name' | 'type'>
+  category?: AccountCategory; amount: number; date: string
+  description?: string; referenceNumber?: string
+  status: TransactionStatus
+  attachments?: AccountAttachment[]
+  createdBy?: { id: string; fullName: string }; createdAt: string
+  voidedBy?: { id: string; fullName: string }; voidedAt?: string
+}

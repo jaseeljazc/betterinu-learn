@@ -30,7 +30,7 @@ type PermissionPair = { module: PermissionModule; action: PermissionAction }
  */
 export function getDefaultPermissions(role: AdminRole): PermissionPair[] {
   const all: PermissionPair[] = (
-    ["students", "courses", "curriculum", "tasks", "admins"] as PermissionModule[]
+    ["students", "courses", "curriculum", "tasks", "admins", "accounts"] as PermissionModule[]
   ).flatMap((m) =>
     (["view", "create", "edit", "delete"] as PermissionAction[]).map((a) => ({
       module: m,
@@ -58,6 +58,12 @@ export function getDefaultPermissions(role: AdminRole): PermissionPair[] {
         { module: "courses", action: "view" },
         { module: "tasks", action: "view" },
       ]
+
+    case "account_manager":
+      return (["view", "create", "edit", "delete"] as PermissionAction[]).map((a) => ({
+        module: "accounts" as PermissionModule,
+        action: a,
+      }))
 
     default:
       return []
