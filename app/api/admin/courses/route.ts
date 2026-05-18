@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractToken, verifyAdminToken } from "@/lib/auth";
+import { requirePermission } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
 
 /**
  * GET /api/admin/courses — list all courses from DB
  */
 export async function GET(req: NextRequest) {
-  const token =
-    extractToken(req.headers.get("authorization")) ??
-    req.cookies.get("__session")?.value ??
-    "";
-  if (!(await verifyAdminToken(token)))
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  const auth = await requirePermission(req, "courses", "view");
+  if (auth instanceof NextResponse) return auth;
 
   const rows = await sql`SELECT * FROM courses ORDER BY created_at DESC`;
   return NextResponse.json({ courses: rows });
@@ -22,12 +18,8 @@ export async function GET(req: NextRequest) {
  * Create a new course
  */
 export async function POST(req: NextRequest) {
-  const token =
-    extractToken(req.headers.get("authorization")) ??
-    req.cookies.get("__session")?.value ??
-    "";
-  if (!(await verifyAdminToken(token)))
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  const auth = await requirePermission(req, "courses", "create");
+  if (auth instanceof NextResponse) return auth;
 
   try {
     const body = await req.json();

@@ -249,3 +249,12 @@ export interface QuizResult {
   attemptNumber: number;
   completedAt: string;
 }
+
+export type {
+  AdminRole,
+  PermissionModule,
+  PermissionAction,
+  Permission,
+  AdminRoleRecord,
+  AdminAccount,
+} from "./rbac"

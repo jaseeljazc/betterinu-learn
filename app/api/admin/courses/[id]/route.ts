@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractToken, verifyAdminToken } from "@/lib/auth";
+import { requirePermission } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
 
 /**
@@ -11,8 +11,8 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = extractToken(req.headers.get("authorization")) ?? req.cookies.get("__session")?.value ?? "";
-  if (!await verifyAdminToken(token)) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  const auth = await requirePermission(req, "courses", "edit");
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
   const body = await req.json();
@@ -51,8 +51,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const token = extractToken(req.headers.get("authorization")) ?? req.cookies.get("__session")?.value ?? "";
-  if (!await verifyAdminToken(token)) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  const auth = await requirePermission(req, "courses", "delete");
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
 

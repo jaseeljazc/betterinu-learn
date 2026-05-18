@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus, Trash2, Eye, Users } from "lucide-react";
 import { sql } from "@/lib/db";
+import { cookies } from "next/headers";
+import { hasPermission } from "@/lib/permissions";
 
 async function getStudents() {
   return sql`
@@ -16,6 +18,16 @@ async function getStudents() {
 
 export default async function AdminStudentsPage() {
   const students = await getStudents();
+  
+  const cookieStore = await cookies();
+  const rbacStr = cookieStore.get("__rbac")?.value;
+  let canCreate = false;
+  if (rbacStr) {
+    try {
+      const payload = JSON.parse(decodeURIComponent(rbacStr));
+      canCreate = hasPermission(payload.role, payload.permissions || [], "students", "create");
+    } catch {}
+  }
 
   return (
     <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-10">
@@ -31,12 +43,14 @@ export default async function AdminStudentsPage() {
             {students.length} student{students.length !== 1 ? "s" : ""} registered.
           </p>
         </div>
-        <Link
-          href="/admin/students/new"
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm hover:shadow-md"
-        >
-          <Plus className="size-4" /> Add Student
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/students/new"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm hover:shadow-md"
+          >
+            <Plus className="size-4" /> Add Student
+          </Link>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-default bg-white shadow-sm">
@@ -55,9 +69,11 @@ export default async function AdminStudentsPage() {
               <tr>
                 <td colSpan={5} className="px-5 py-10 text-center text-muted font-medium">
                   No students yet.{" "}
-                  <Link href="/admin/students/new" className="font-semibold text-primary hover:underline">
-                    Add the first one →
-                  </Link>
+                  {canCreate && (
+                    <Link href="/admin/students/new" className="font-semibold text-primary hover:underline">
+                      Add the first one →
+                    </Link>
+                  )}
                 </td>
               </tr>
             ) : (

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft, Trash2, X, Clock, CheckCircle2, XCircle,
+  ChevronLeft, ChevronDown, ChevronUp, Trash2, X, Clock, CheckCircle2, XCircle,
   BookOpen, BarChart2, ClipboardList, User, Calendar,
   Mail, PlusCircle, AlertCircle, TrendingUp, Award,
   Eye, Send, MoreVertical
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
+import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type StudentDetail = {
@@ -98,11 +99,25 @@ const STATUS_CFG = {
 export default function AdminStudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
+  const { can } = useAdminPermissions();
+  const [mounted, setMounted] = useState(false);
+  
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const canEditStudent = mounted ? can("students", "edit") : false;
+  const canDeleteStudent = mounted ? can("students", "delete") : false;
+
+console.log("permission", can)
+
 
   const [student,        setStudent]        = useState<StudentDetail | null>(null);
   const [assigned,       setAssigned]       = useState<AssignedCourse[]>([]);
   const [allCourses,     setAllCourses]     = useState<CourseRow[]>([]);
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set());
   const [assigning,      setAssigning]      = useState(false);
   const [deleting,       setDeleting]       = useState(false);
   const [submissions,    setSubmissions]    = useState<Submission[]>([]);
@@ -324,46 +339,52 @@ export default function AdminStudentDetailPage() {
               </div>
 
               {/* Three dots menu to the right of details */}
-              <div className="shrink-0 pt-2 md:pt-0 relative">
-                <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 rounded-xl border border-default bg-white hover:bg-subtle text-muted hover:text-foreground transition-colors shadow-sm"
-                >
-                  <MoreVertical className="size-5" />
-                </button>
+              {(canEditStudent || canDeleteStudent) && (
+                <div className="shrink-0 pt-2 md:pt-0 relative">
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="p-2 rounded-xl border border-default bg-white hover:bg-subtle text-muted hover:text-foreground transition-colors shadow-sm"
+                  >
+                    <MoreVertical className="size-5" />
+                  </button>
 
-                {isMenuOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setIsMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-default bg-white shadow-lg z-50 overflow-hidden">
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setIsRemoveCourseOpen(true);
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-subtle transition-colors"
-                      >
-                        <BookOpen className="size-4" />
-                        Remove Course
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          handleDelete();
-                        }}
-                        disabled={deleting}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        {deleting ? <RoboLoader size="xs" className="text-current" /> : <Trash2 className="size-4" />}
-                        Remove Student
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+                  {isMenuOpen && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setIsMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 rounded-xl border border-default bg-white shadow-lg z-50 overflow-hidden">
+                        {canEditStudent && (
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setIsRemoveCourseOpen(true);
+                            }}
+                            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-subtle transition-colors"
+                          >
+                            <BookOpen className="size-4" />
+                            Remove Course
+                          </button>
+                        )}
+                        {canDeleteStudent && (
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              handleDelete();
+                            }}
+                            disabled={deleting}
+                            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            {deleting ? <RoboLoader size="xs" className="text-current" /> : <Trash2 className="size-4" />}
+                            Remove Student
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -415,6 +436,7 @@ export default function AdminStudentDetailPage() {
 
                     // Find the current week: first week that isn't 100% done
                     const currentWeek = weekProgress.find((w) => w.done < w.total) ?? weekProgress[weekProgress.length - 1];
+                    const isCollapsed = collapsedCourses.has(c.course_id);
 
                     return (
                       <div key={c.course_id} className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden">
@@ -432,70 +454,79 @@ export default function AdminStudentDetailPage() {
                             </p>
                           </div>
                           <button
-                            onClick={() => handleUnassign(c.course_id)}
-                            className="shrink-0 rounded-lg border border-default p-1.5 text-muted hover:border-red-200 hover:text-red-500 transition-colors"
-                            title="Remove course"
+                            onClick={() => {
+                              setCollapsedCourses((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(c.course_id)) next.delete(c.course_id);
+                                else next.add(c.course_id);
+                                return next;
+                              });
+                            }}
+                            className="shrink-0 rounded-lg border border-default p-1.5 text-muted hover:border-primary hover:text-primary transition-colors"
+                            title={isCollapsed ? "Expand course" : "Collapse course"}
                           >
-                            <X className="size-4" />
+                            {isCollapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
                           </button>
                         </div>
 
-                        {/* Overall progress bar */}
-                        <div className="px-5 pb-4 space-y-1.5">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-secondary font-medium">Course Progress</span>
-                            <span className="font-bold text-primary">{done}/{total} lessons ({pct}%)</span>
-                          </div>
-                          <div className="h-2.5 w-full overflow-hidden rounded-full bg-subtle">
-                            <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-
-                        {/* Current position banner */}
-                        {currentWeek && total > 0 && (
-                          <div className="mx-5 mb-4 rounded-xl bg-primary/5 border border-primary/15 px-4 py-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-1">Currently on</p>
-                            <p className="text-sm font-bold text-primary">{currentWeek.title}</p>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {currentWeek.days.map((day: any) => {
-                                const dayDone = day.lessons.filter((l: any) => l.done).length;
-                                const dayTotal = day.lessons.length;
-                                const isDayComplete = dayDone === dayTotal && dayTotal > 0;
-                                return (
-                                  <span
-                                    key={day.id}
-                                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                      isDayComplete
-                                        ? "bg-green-50 border-green-200 text-green-700"
-                                        : dayDone > 0
-                                        ? "bg-amber-50 border-amber-200 text-amber-700"
-                                        : "bg-subtle border-default text-muted"
-                                    }`}
-                                  >
-                                    {isDayComplete ? <CheckCircle2 size={9} /> : dayDone > 0 ? <Clock size={9} /> : null}
-                                    {day.label} · {dayDone}/{dayTotal}
-                                  </span>
-                                );
-                              })}
+                        {!isCollapsed && (
+                          <>
+                            {/* Overall progress bar */}
+                            <div className="px-5 pb-4 space-y-1.5">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-secondary font-medium">Course Progress</span>
+                                <span className="font-bold text-primary">{done}/{total} lessons ({pct}%)</span>
+                              </div>
+                              <div className="h-2.5 w-full overflow-hidden rounded-full bg-subtle">
+                                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${pct}%` }} />
+                              </div>
                             </div>
-                          </div>
-                        )}
 
-                        {/* Week-by-week breakdown (Accordion) */}
-                        {weekProgress.length > 0 && (
-                          <div className="border-t border-default">
-                            <div className="flex items-center justify-between px-5 py-3 text-xs font-semibold text-muted select-none">
-                              <span>Week-by-week breakdown</span>
-                              <span className="text-primary">{weekProgress.filter((w) => w.done === w.total && w.total > 0).length}/{weekProgress.length} weeks complete</span>
-                            </div>
-                            <Accordion type="multiple" defaultValue={currentWeek ? [currentWeek.id] : []} className="divide-y divide-default border-t border-default">
-                              {weekProgress.map((week) => (
-                                <AccordionItem key={week.id} value={week.id} className="border-b-0">
-                                  <AccordionTrigger className="px-5 py-4 hover:bg-subtle/50 transition-colors hover:no-underline">
-                                    <div className="flex items-center justify-between w-full pr-4">
-                                      <p className="text-sm font-bold text-foreground">{week.title}</p>
-                                      <span className={`text-xs font-bold ${
-                                        week.done === week.total && week.total > 0 ? "text-green-600" : week.done > 0 ? "text-amber-600" : "text-muted"
+                            {/* Current position banner */}
+                            {currentWeek && total > 0 && (
+                              <div className="mx-5 mb-4 rounded-xl bg-primary/5 border border-primary/15 px-4 py-3">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-1">Currently on</p>
+                                <p className="text-sm font-bold text-primary">{currentWeek.title}</p>
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {currentWeek.days.map((day: any) => {
+                                    const dayDone = day.lessons.filter((l: any) => l.done).length;
+                                    const dayTotal = day.lessons.length;
+                                    const isDayComplete = dayDone === dayTotal && dayTotal > 0;
+                                    return (
+                                      <span
+                                        key={day.id}
+                                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                          isDayComplete
+                                            ? "bg-green-50 border-green-200 text-green-700"
+                                            : dayDone > 0
+                                            ? "bg-amber-50 border-amber-200 text-amber-700"
+                                            : "bg-subtle border-default text-muted"
+                                        }`}
+                                      >
+                                        {isDayComplete ? <CheckCircle2 size={9} /> : dayDone > 0 ? <Clock size={9} /> : null}
+                                        {day.label} · {dayDone}/{dayTotal}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Week-by-week breakdown (Accordion) */}
+                            {weekProgress.length > 0 && (
+                              <div className="border-t border-default">
+                                <div className="flex items-center justify-between px-5 py-3 text-xs font-semibold text-muted select-none">
+                                  <span>Week-by-week breakdown</span>
+                                  <span className="text-primary">{weekProgress.filter((w) => w.done === w.total && w.total > 0).length}/{weekProgress.length} weeks complete</span>
+                                </div>
+                                <Accordion type="multiple" defaultValue={currentWeek ? [currentWeek.id] : []} className="divide-y divide-default border-t border-default">
+                                  {weekProgress.map((week) => (
+                                    <AccordionItem key={week.id} value={week.id} className="border-b-0">
+                                      <AccordionTrigger className="px-5 py-4 hover:bg-subtle/50 transition-colors hover:no-underline">
+                                        <div className="flex items-center justify-between w-full pr-4">
+                                          <p className="text-sm font-bold text-foreground">{week.title}</p>
+                                          <span className={`text-xs font-bold ${
+                                            week.done === week.total && week.total > 0 ? "text-green-600" : week.done > 0 ? "text-amber-600" : "text-muted"
                                       }`}>
                                         {week.done}/{week.total}
                                       </span>
@@ -553,6 +584,8 @@ export default function AdminStudentDetailPage() {
                               </div>
                             ))}
                           </div>
+                        )}
+                        </>
                         )}
                       </div>
                     );
@@ -685,69 +718,74 @@ export default function AdminStudentDetailPage() {
 
           {/* ── Right sidebar: Assign Course ──────────────────────────── */}
           <div className="w-full xl:w-72 shrink-0 xl:sticky xl:top-6 space-y-4">
-
-            {/* Assign new course card */}
-            <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign Course</p>
-              {unassigned.length === 0 ? (
-                <p className="text-sm text-muted italic">All available courses are already assigned.</p>
-              ) : (
-                <div className="space-y-3">
-                  <Combobox
-                    options={unassigned.map((c) => ({ value: c.id, label: c.title }))}
-                    value={selectedCourse}
-                    onValueChange={setSelectedCourse}
-                    placeholder="Select a course…"
-                    searchPlaceholder="Search courses…"
-                  />
-                  <button
-                    onClick={handleAssign}
-                    disabled={!selectedCourse || assigning}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  >
-                    {assigning ? (
-                      <RoboLoader size="xs" className="text-current" />
-                    ) : (
-                      <PlusCircle className="size-4" />
-                    )}
-                    {assigning ? "Assigning…" : "Assign Course"}
-                  </button>
+            
+            {canEditStudent && (
+              <>
+                {/* Assign new course card */}
+                <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign Course</p>
+                  {unassigned.length === 0 ? (
+                    <p className="text-sm text-muted italic">All available courses are already assigned.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <Combobox
+                        options={unassigned.map((c) => ({ value: c.id, label: c.title }))}
+                        value={selectedCourse}
+                        onValueChange={setSelectedCourse}
+                        placeholder="Select a course…"
+                        searchPlaceholder="Search courses…"
+                      />
+                      <button
+                        onClick={handleAssign}
+                        disabled={!selectedCourse || assigning}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      >
+                        {assigning ? (
+                          <RoboLoader size="xs" className="text-current" />
+                        ) : (
+                          <PlusCircle className="size-4" />
+                        )}
+                        {assigning ? "Assigning…" : "Assign Course"}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Assign new task card */}
-            <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign Task</p>
-              {unassignedTasks.length === 0 ? (
-                <p className="text-sm text-muted italic">No eligible tasks to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  <Combobox
-                    options={unassignedTasks.map((t) => ({
-                      value: t.id,
-                      label: `${t.title} ${t.scope === "common" ? "(Common)" : `(${t.course_title})`}`,
-                    }))}
-                    value={selectedTask}
-                    onValueChange={setSelectedTask}
-                    placeholder="Select a task…"
-                    searchPlaceholder="Search tasks…"
-                  />
-                  <button
-                    onClick={handleAssignTask}
-                    disabled={!selectedTask || assigningTask}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  >
-                    {assigningTask ? (
-                      <RoboLoader size="xs" className="text-current" />
-                    ) : (
-                      <PlusCircle className="size-4" />
-                    )}
-                    {assigningTask ? "Assigning…" : "Assign Task"}
-                  </button>
+                {/* Assign new task card */}
+                <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Assign Task</p>
+                  {unassignedTasks.length === 0 ? (
+                    <p className="text-sm text-muted italic">No eligible tasks to assign.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <Combobox
+                        options={unassignedTasks.map((t) => ({
+                          value: t.id,
+                          label: `${t.title} ${t.scope === "common" ? "(Common)" : `(${t.course_title})`}`,
+                        }))}
+                        value={selectedTask}
+                        onValueChange={setSelectedTask}
+                        placeholder="Select a task…"
+                        searchPlaceholder="Search tasks…"
+                      />
+                      <button
+                        onClick={handleAssignTask}
+                        disabled={!selectedTask || assigningTask}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      >
+                        {assigningTask ? (
+                          <RoboLoader size="xs" className="text-current" />
+                        ) : (
+                          <PlusCircle className="size-4" />
+                        )}
+                        {assigningTask ? "Assigning…" : "Assign Task"}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
+
             {/* Quick stats card */}
             <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">Quick Stats</p>
