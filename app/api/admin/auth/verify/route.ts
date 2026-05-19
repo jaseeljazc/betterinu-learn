@@ -39,6 +39,24 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
+    
+    // Store RBAC payload so the client layout can render the super_admin navs
+    response.cookies.set(
+      "__rbac",
+      JSON.stringify({
+        adminId: "super_admin_bootstrap",
+        fullName: "Super Admin",
+        email: "superadmin@betterinu.com",
+        role: "super_admin",
+        permissions: [],
+      }),
+      {
+        httpOnly: false,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/",
+      }
+    )
     return response
   }
 
