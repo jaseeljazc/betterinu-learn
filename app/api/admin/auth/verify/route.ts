@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { adminAuth } from "@/lib/firebase-admin"
 import { sql } from "@/lib/db"
-import type { AdminRole, Permission } from "@/types"
+import type { AdminRole } from "@/types"
 
 /**
  * POST /api/admin/auth/verify
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       path: "/",
     })
     
-    // Store RBAC payload so the client layout can render the super_admin navs
+    // Store slim RBAC payload (role only — permissions are derived client-side)
     response.cookies.set(
       "__rbac",
       JSON.stringify({
@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
         fullName: "Super Admin",
         email: "superadmin@betterinu.com",
         role: "super_admin",
-        permissions: [],
       }),
       {
         httpOnly: false,
@@ -98,7 +97,8 @@ export async function POST(req: NextRequest) {
   const fullName = rows[0].full_name as string
   const email = rows[0].email as string
   const role = rows[0].role_name as AdminRole
-  const permissions = rows[0].permissions as Permission[]
+  // permissions are derived client-side from role via getDefaultPermissions()
+  // — do NOT store them in the cookie to avoid exceeding the 4KB browser limit.
 
   // Update last_login
   await sql`UPDATE admin_accounts SET last_login = NOW() WHERE id = ${adminId}`
@@ -111,10 +111,12 @@ export async function POST(req: NextRequest) {
     path: "/",
   })
 
-  // Store RBAC payload in a separate readable cookie for the client layout
+  // Store slim RBAC payload for the client sidebar — just role + identity.
+  // The client reads this and calls getDefaultPermissions(role) to build
+  // the nav. Keeping permissions out avoids 4KB cookie truncation.
   response.cookies.set(
     "__rbac",
-    JSON.stringify({ adminId, fullName, email, role, permissions }),
+    JSON.stringify({ adminId, fullName, email, role }),
     {
       httpOnly: false,
       sameSite: "lax",
