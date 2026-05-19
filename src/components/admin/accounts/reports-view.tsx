@@ -230,7 +230,7 @@ export function ReportsView() {
       </div>
 
       {/* Summary */}
-      {report && (
+      {report && !('error' in report) && report.summary && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
@@ -278,6 +278,12 @@ export function ReportsView() {
 
       {loading && (
         <div className="text-center text-muted text-sm py-8">Loading report…</div>
+      )}
+
+      {report && 'error' in report && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 font-medium">
+          Failed to load report: {(report as any).error}
+        </div>
       )}
     </div>
   );

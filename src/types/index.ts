@@ -292,4 +292,103 @@ export interface AccountTransaction {
   attachments?: AccountAttachment[]
   createdBy?: { id: string; fullName: string }; createdAt: string
   voidedBy?: { id: string; fullName: string }; voidedAt?: string
+  /** Optional — links a salary expense transaction to an employee */
+  employeeId?: string
+  employee?: { id: string; fullName: string; employeeCode: string }
+}
+
+// ── Employee / HR types ───────────────────────────────────────
+
+export type EmploymentType = 'full_time' | 'part_time' | 'contractual'
+export type EmployeeStatus = 'active' | 'inactive' | 'on_notice' | 'resigned'
+export type PayrollRunStatus = 'draft' | 'approved' | 'disbursed' | 'on_hold'
+
+export interface Department {
+  id: string
+  name: string
+  description?: string
+  headEmployee?: Pick<Employee, 'id' | 'fullName'>
+  isActive: boolean
+  employeeCount?: number
+}
+
+export interface Employee {
+  id: string
+  adminAccountId?: string
+  employeeCode: string
+  fullName: string
+  email: string
+  phone?: string
+  dateOfBirth?: string
+  gender?: string
+  address?: string
+  profilePhotoKey?: string
+  /** Presigned GET URL — never stored, fetched on demand */
+  profilePhotoUrl?: string
+  department?: Department
+  designation?: string
+  employmentType: EmploymentType
+  reportingManager?: Pick<Employee, 'id' | 'fullName'>
+  monthlySalary: number
+  dateOfJoining?: string
+  status: EmployeeStatus
+  adminAccount?: { id: string; status: "active" | "inactive" | "pending"; role: string }
+  createdAt: string
+}
+
+export interface PayrollRun {
+  id: string
+  employeeId: string
+  employee: Pick<Employee, 'id' | 'fullName' | 'employeeCode' | 'designation'> & {
+    department?: Pick<Department, 'id' | 'name'>
+  }
+  month: string
+  workingDays: number
+  daysPresent: number
+  leaveCount: number
+  absentCount: number
+  halfDayCount: number
+  lopLeaves: number
+  lopAbsences: number
+  lopFullDays: number
+  lopHalfDays: number
+  dailyRate: number
+  lopDeduction: number
+  grossSalary: number
+  netSalary: number
+  status: PayrollRunStatus
+  disbursedAt?: string
+  transactionId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PayslipData {
+  employee: {
+    fullName: string
+    employeeCode: string
+    designation?: string
+    department?: string
+    dateOfJoining?: string
+  }
+  month: string
+  attendance: {
+    workingDays: number
+    daysPresent: number
+    leaveCount: number
+    absentCount: number
+    halfDayCount: number
+    freeCL: number
+    lopLeaves: number
+    lopAbsences: number
+    lopFullDays: number
+    lopHalfDays: number
+  }
+  earnings: { label: string; amount: number }[]
+  deductions: { label: string; amount: number }[]
+  grossSalary: number
+  totalDeductions: number
+  netSalary: number
+  status: PayrollRunStatus
+  disbursedAt?: string
 }

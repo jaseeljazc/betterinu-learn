@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
+  CalendarDays,
   ChevronDown,
   ClipboardList,
   GraduationCap,
@@ -18,23 +19,18 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   User,
+  UserCircle,
   Wallet,
   LibraryBig,
 } from "lucide-react";
 import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 import { clientAuth } from "@/lib/firebase-client";
-import { ChangePasswordModal } from "@/components/shared/change-password-modal";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 /* ------------------------------------------------------------------ */
@@ -88,7 +84,6 @@ export function AdminSidebar({
   const router = useRouter();
   const { isSuperAdmin, role, can, fullName, email } = useAdminPermissions();
   const [mounted, setMounted] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
 
   // Track which expandable sections are open (by href key)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -126,6 +121,23 @@ export function AdminSidebar({
               } satisfies NavItem,
             ]
           : []),
+        ...(can("employees", "view")
+          ? [
+              {
+                href: "/admin/employees",
+                label: "Employees",
+                Icon: Users,
+                subItems: [
+                  { href: "/admin/employees",             label: "Directory",   exact: true },
+                  { href: "/admin/employees/departments", label: "Departments" },
+                  { href: "/admin/employees/payroll",     label: "Payroll" },
+                  ...(can("attendance", "view")
+                    ? [{ href: "/admin/employees/attendance", label: "Attendance" }]
+                    : []),
+                ],
+              } satisfies NavItem,
+            ]
+          : []),
         ...(can("accounts", "view")
           ? [
               {
@@ -144,7 +156,7 @@ export function AdminSidebar({
           : []),
         ...(isSuperAdmin
           ? [
-              { href: "/admin/admins", label: "Employees",          Icon: UsersRound  },
+              { href: "/admin/admins", label: "Admins",              Icon: UsersRound  },
               { href: "/admin/roles",  label: "Roles & Permissions", Icon: ShieldCheck },
             ]
           : []),
@@ -176,11 +188,7 @@ export function AdminSidebar({
     });
   }
 
-  async function handleLogout() {
-    await clientAuth.signOut();
-    document.cookie = "__session=; path=/; max-age=0";
-    router.push("/admin/login");
-  }
+
 
   /* ---------------------------------------------------------------- */
   /*  Render helpers                                                    */
@@ -336,27 +344,28 @@ export function AdminSidebar({
       </button>
     ) : isExpandable ? (
       // Real link that also toggles
-      <div className="flex items-center rounded-lg overflow-hidden">
+      <div
+        className={[
+          "flex items-center justify-between rounded-lg transition-colors w-full",
+          active
+            ? "bg-primary/10 text-primary font-bold"
+            : "text-secondary font-medium hover:bg-subtle hover:text-primary",
+        ].join(" ")}
+      >
         <Link
           href={href}
-          className={[
-            "flex flex-1 items-center gap-3 px-3 py-2.5 transition-colors",
-            active
-              ? "bg-primary/10 text-primary font-bold"
-              : "text-secondary font-medium hover:bg-subtle hover:text-primary",
-          ].join(" ")}
+          className="flex flex-1 items-center gap-3 px-3 py-2.5"
         >
           <Icon className="size-5 shrink-0" />
           <span className="text-sm">{label}</span>
         </Link>
         <button
-          onClick={() => toggleSection(href)}
-          className={[
-            "px-2 py-2.5 transition-colors",
-            active
-              ? "bg-primary/10 text-primary hover:bg-primary/20"
-              : "text-secondary hover:bg-subtle hover:text-primary",
-          ].join(" ")}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSection(href);
+          }}
+          className="px-3 py-2.5 text-secondary hover:text-primary transition-colors flex items-center justify-center"
           aria-label={`${isOpen ? "Collapse" : "Expand"} ${label}`}
         >
           <ChevronDown
@@ -459,76 +468,40 @@ export function AdminSidebar({
             collapsed ? "px-2" : "px-3"
           }`}
         >
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className={`flex w-full items-center rounded-lg text-secondary transition-colors hover:bg-subtle hover:text-primary ${
-                  collapsed
-                    ? "justify-center p-2.5"
-                    : "gap-3 px-3 py-2 text-sm font-medium"
-                }`}
-              >
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <User className="size-3.5" />
-                </div>
-                {!collapsed && (
-                  <div className="flex flex-1 flex-col items-start overflow-hidden text-left">
-                    <span className="truncate w-full font-semibold text-foreground text-sm leading-tight">
-                      {mounted ? fullName || "Admin" : ""}
-                    </span>
-                    <span className="truncate w-full text-[11px] text-muted">
-                      {mounted ? email || "Loading..." : ""}
-                    </span>
-                  </div>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="right"
-              align="end"
-              className="w-60 p-5 rounded-2xl"
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/profile"
+                  className={[
+                    "mb-2 flex items-center justify-center rounded-lg p-2.5 transition-colors",
+                    pathname.startsWith("/admin/profile")
+                      ? "bg-primary/10 text-primary"
+                      : "text-secondary hover:bg-subtle hover:text-primary",
+                  ].join(" ")}
+                >
+                  <UserCircle className="size-5 shrink-0" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">My Profile</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Link
+              href="/admin/profile"
+              className={[
+                "mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                pathname.startsWith("/admin/profile")
+                  ? "bg-primary/10 font-bold text-primary"
+                  : "font-medium text-secondary hover:bg-subtle hover:text-primary",
+              ].join(" ")}
             >
-              <div className="flex flex-col items-center gap-3 text-center mb-5">
-                <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <User className="size-7" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground text-base leading-tight">
-                    {mounted ? fullName || "Admin" : ""}
-                  </h4>
-                  <p className="text-[13px] text-secondary mt-0.5">
-                    {mounted ? email : ""}
-                  </p>
-                  <span className="mt-2 inline-block rounded-md bg-subtle px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
-                    {mounted && role ? role.replace(/_/g, " ") : ""}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowChangePassword(true)}
-                className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-subtle text-secondary px-4 py-2.5 text-sm font-bold transition-colors hover:bg-primary/10 hover:text-primary"
-              >
-                <KeyRound className="size-4 shrink-0" />
-                Change Password
-              </button>
-
-              <button
-                onClick={() => handleLogout()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 text-red-600 px-4 py-2.5 text-sm font-bold transition-colors hover:bg-red-100"
-              >
-                <LogOut className="size-4 shrink-0" />
-                Sign out
-              </button>
-            </PopoverContent>
-          </Popover>
+              <UserCircle className="size-5 shrink-0" />
+              My Profile
+            </Link>
+          )}
         </div>
       </aside>
     </TooltipProvider>
-
-    {/* Change Password Modal */}
-    {showChangePassword && (
-      <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
-    )}
   </>
   );
 }

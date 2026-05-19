@@ -7,6 +7,14 @@ import { ChevronLeft, AlertCircle, CheckCircle2, Info } from "lucide-react"
 import { getDefaultPermissions } from "@/lib/permissions"
 import type { AdminRole, PermissionModule, PermissionAction } from "@/types"
 import RoboLoader from "@/components/loading/robo-loader"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 
 type Role = { id: string; name: AdminRole; label: string; description: string }
 type PermPair = { module: PermissionModule; action: PermissionAction }
@@ -147,7 +155,7 @@ export default function NewAdminPage() {
 
   return (
     <div className="min-h-screen bg-subtle px-6 lg:px-10 py-10">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-center gap-3">
           <Link href="/admin/admins" className="rounded-lg border border-default p-2 hover:bg-subtle">
             <ChevronLeft className="size-4" />
@@ -158,150 +166,159 @@ export default function NewAdminPage() {
           </div>
         </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic info */}
-        <div className="rounded-2xl border border-default bg-white p-6 space-y-5 shadow-sm">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-semibold mb-1.5">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                minLength={2}
-                placeholder="e.g. Sara Ahmed"
-                className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold mb-1.5">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="sara@betterinu.com"
-                className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label htmlFor="role" className="block text-sm font-semibold mb-1.5">
-                Role <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="role"
-                value={selectedRoleId}
-                onChange={(e) => onRoleChange(e.target.value)}
-                required
-                className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">-- Select role --</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-              {selectedRoleName && (
-                <p className={`mt-1.5 text-xs ${ROLE_COLORS[selectedRoleName] ?? "text-secondary"}`}>
-                  {roles.find((r) => r.name === selectedRoleName)?.description}
-                </p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-semibold mb-1.5">
-                Status
-              </label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="pending">Pending</option>
-                <option value="active">Active</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Permissions */}
-        <div className="rounded-2xl border border-default bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-base font-bold text-foreground">Permissions</h2>
-            <Info className="size-3.5 text-secondary" />
-          </div>
-          <p className="text-xs text-secondary mb-5">
-            Auto-populated from the selected role. You can override per-module below.
-          </p>
-
-          <div className="space-y-4">
-            {MODULES.map((module) => (
-              <div key={module} className="rounded-xl border border-default overflow-hidden">
-                {/* Module header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-subtle">
-                  <span className="text-sm font-bold capitalize text-foreground">{module}</span>
-                  <label className="flex items-center gap-2 text-xs text-secondary cursor-pointer select-none">
-                    <span>Select all</span>
-                    <input
-                      type="checkbox"
-                      checked={isModuleAllSelected(module)}
-                      onChange={() => toggleModule(module)}
-                      className="size-4 rounded border-default text-primary focus:ring-primary"
-                    />
-                  </label>
-                </div>
-                {/* Actions */}
-                <div className="flex divide-x divide-default">
-                  {ACTIONS.map((action) => {
-                    const key = `${module}:${action}`
-                    const checked = permissions.has(key)
-                    return (
-                      <label
-                        key={action}
-                        className="flex flex-1 flex-col items-center gap-1.5 py-3 cursor-pointer hover:bg-subtle/50 transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => togglePermission(module, action)}
-                          className="size-4 rounded border-default text-primary focus:ring-primary"
-                        />
-                        <span className="text-xs capitalize text-secondary">{action}</span>
-                      </label>
-                    )
-                  })}
-                </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Side: Form Details */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="rounded-2xl border border-default bg-white p-6 space-y-5 shadow-sm">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-semibold mb-1.5">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  required
+                  minLength={2}
+                  placeholder="e.g. Sara Ahmed"
+                  className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
               </div>
-            ))}
-          </div>
-        </div>
 
-        {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            <AlertCircle className="size-4 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold mb-1.5">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="sara@betterinu.com"
+                  className="w-full rounded-lg border border-default bg-subtle px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
 
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-all min-w-[180px]"
-          >
-            {isPending ? "Creating…" : "Create Admin Account"}
-          </button>
-          <Link href="/admin/admins" className="text-sm text-secondary hover:text-foreground">
-            Cancel
-          </Link>
-        </div>
-      </form>
+              <div>
+                <label htmlFor="role" className="block text-sm font-semibold mb-1.5">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedRoleId} onValueChange={onRoleChange} required>
+                  <SelectTrigger id="role" className="w-full h-10 border-default bg-subtle text-sm">
+                    <SelectValue placeholder="-- Select role --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedRoleName && (
+                  <p className={`mt-1.5 text-xs ${ROLE_COLORS[selectedRoleName] ?? "text-secondary"}`}>
+                    {roles.find((r) => r.name === selectedRoleName)?.description}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="status" className="block text-sm font-semibold mb-1.5">
+                  Status
+                </label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger id="status" className="w-full h-10 border-default bg-subtle text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                <AlertCircle className="size-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-all min-w-[180px] w-full sm:w-auto"
+              >
+                {isPending ? "Creating…" : "Create Admin Account"}
+              </button>
+              <Link href="/admin/admins" className="text-sm text-secondary hover:text-foreground">
+                Cancel
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Side: Permissions Table */}
+          <div className="lg:col-span-8">
+            <div className="rounded-2xl border border-default bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-base font-bold text-foreground">Permissions</h2>
+                <Info className="size-3.5 text-secondary" />
+              </div>
+              <p className="text-xs text-secondary mb-5">
+                Auto-populated from the selected role. You can override per-module below.
+              </p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="pb-3 font-semibold border-b border-default text-foreground">Module</th>
+                      {ACTIONS.map((action) => (
+                        <th key={action} className="pb-3 font-semibold border-b border-default text-center capitalize text-foreground">
+                          {action}
+                        </th>
+                      ))}
+                      <th className="pb-3 font-semibold border-b border-default text-center text-foreground">All</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MODULES.map((module) => (
+                      <tr key={module} className="border-b border-default last:border-0 hover:bg-subtle/30 transition-colors">
+                        <td className="py-3 font-medium capitalize text-foreground">{module}</td>
+                        {ACTIONS.map((action) => {
+                          const key = `${module}:${action}`
+                          const checked = permissions.has(key)
+                          return (
+                            <td key={action} className="py-3 text-center">
+                              <div className="flex justify-center">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={() => togglePermission(module, action)}
+                                  className="border-default text-primary"
+                                />
+                              </div>
+                            </td>
+                          )
+                        })}
+                        <td className="py-3 text-center">
+                          <div className="flex justify-center">
+                            <Checkbox
+                              checked={isModuleAllSelected(module)}
+                              onCheckedChange={() => toggleModule(module)}
+                              className="border-default text-primary"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   )

@@ -19,20 +19,22 @@ export async function GET(req: NextRequest) {
 
   const rows = await sql`
     SELECT
-      t.id, t.type, t.amount, t.date, t.description,
+      t.id, t.type, t.amount, t.date::text AS date, t.description,
       t.reference_number, t.status,
-      t.voided_at, t.created_at,
+      t.voided_at::text AS voided_at, t.created_at::text AS created_at,
       a.id AS acc_id, a.name AS acc_name, a.type AS acc_type,
       ta.id AS to_acc_id, ta.name AS to_acc_name, ta.type AS to_acc_type,
       c.id AS cat_id, c.name AS cat_name, c.type AS cat_type,
       c.color AS cat_color, c.icon AS cat_icon,
       aa.id AS cb_id, aa.full_name AS cb_name,
+      t.employee_id, emp.full_name AS employee_name, emp.employee_code AS employee_code,
       (SELECT COUNT(*) FROM account_attachments att WHERE att.transaction_id = t.id) AS attachment_count
     FROM account_transactions t
     LEFT JOIN accounts a ON a.id = t.account_id
     LEFT JOIN accounts ta ON ta.id = t.to_account_id
     LEFT JOIN account_categories c ON c.id = t.category_id
     LEFT JOIN admin_accounts aa ON aa.id = t.created_by
+    LEFT JOIN employees emp ON emp.id = t.employee_id
     WHERE 1=1
       ${type ? sql`AND t.type = ${type}` : sql``}
       ${accountId ? sql`AND (t.account_id = ${accountId} OR t.to_account_id = ${accountId})` : sql``}
@@ -59,6 +61,9 @@ export async function GET(req: NextRequest) {
     toAccount: r.to_acc_id ? { id: r.to_acc_id, name: r.to_acc_name, type: r.to_acc_type } : null,
     category: r.cat_id
       ? { id: r.cat_id, name: r.cat_name, type: r.cat_type, color: r.cat_color, icon: r.cat_icon }
+      : null,
+    employee: r.employee_id
+      ? { id: r.employee_id, fullName: r.employee_name, employeeCode: r.employee_code }
       : null,
     createdBy: r.cb_id ? { id: r.cb_id, fullName: r.cb_name } : null,
   }));
@@ -104,6 +109,7 @@ export async function POST(req: NextRequest) {
     amount, date, description, referenceNumber,
     status = "confirmed",
     pendingS3Keys,
+    employeeId,
   } = body;
 
   if (!["income", "expense", "transfer"].includes(type)) {
@@ -122,11 +128,11 @@ export async function POST(req: NextRequest) {
     INSERT INTO account_transactions (
       type, account_id, to_account_id, category_id,
       amount, date, description, reference_number,
-      status, created_by
+      status, created_by, employee_id
     ) VALUES (
       ${type}, ${accountId}, ${toAccountId || null}, ${categoryId || null},
       ${amount}, ${date}, ${description || null}, ${referenceNumber || null},
-      ${status}, ${adminId}
+      ${status}, ${adminId}, ${employeeId || null}
     )
     RETURNING id
   `;

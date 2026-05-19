@@ -37,6 +37,8 @@ interface TransactionFormProps {
     referenceNumber: string;
     status: string;
     attachments: AccountAttachment[];
+    employeeId: string;
+    employee?: { id: string; fullName: string; employeeCode: string };
   }>;
   mode?: "create" | "edit";
   onSuccess?: () => void;
@@ -54,6 +56,7 @@ export function TransactionForm({
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<AccountCategory[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; fullName: string; employeeCode: string }[]>([]);
   const [mounted, setMounted] = useState(false);
 
   // Form state
@@ -79,6 +82,9 @@ export function TransactionForm({
   const [attachments, setAttachments] = useState<AccountAttachment[]>(
     initialData?.attachments ?? [],
   );
+  const [employeeId, setEmployeeId] = useState(
+    initialData?.employeeId ?? initialData?.employee?.id ?? "",
+  );
   const [createdTxId, setCreatedTxId] = useState<string | null>(
     transactionId ?? null,
   );
@@ -98,11 +104,15 @@ export function TransactionForm({
       fetch("/api/admin/accounts/categories", { credentials: "include" }).then(
         (r) => r.json(),
       ),
-    ]).then(([accountsData, catsData]) => {
+      fetch("/api/admin/employees", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : { employees: [] }))
+        .catch(() => ({ employees: [] })),
+    ]).then(([accountsData, catsData, employeesData]) => {
       setAccounts(
         (accountsData.accounts ?? []).filter((a: Account) => a.isActive),
       );
       setCategories(catsData.categories ?? []);
+      setEmployees(employeesData.employees ?? []);
     });
   }, []);
 
@@ -114,6 +124,9 @@ export function TransactionForm({
   );
   const currentCategories =
     type === "income" ? incomeCategories : expenseCategories;
+
+  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const isSalaryCategory = selectedCategory?.name?.toLowerCase().includes("salar") ?? false;
 
   const activeAccounts = accounts.filter((a) => a.isActive);
   const toAccounts = activeAccounts.filter((a) => a.id !== accountId);
@@ -139,6 +152,11 @@ export function TransactionForm({
       return;
     }
 
+    if (type === "expense" && isSalaryCategory && !employeeId) {
+      setError("Please select an employee");
+      return;
+    }
+
     setSaving(true);
     const body = {
       type,
@@ -150,6 +168,7 @@ export function TransactionForm({
       description,
       referenceNumber,
       status,
+      employeeId: (type === "expense" && isSalaryCategory) ? (employeeId || null) : null,
       // Pass s3Keys of pending attachments (uploaded before tx existed) so the API can link them
       pendingS3Keys: mode === "create"
         ? attachments.filter((a) => !a.transactionId || a.transactionId === "").map((a) => a.s3Key)
@@ -294,21 +313,41 @@ export function TransactionForm({
             />
           </div>
         ) : (
-          /* Category */
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground">
-              Category
-            </label>
-            <FormSelect
-              value={categoryId}
-              onChange={setCategoryId}
-              placeholder="Select category"
-              options={currentCategories.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-            />
-          </div>
+          <>
+            {/* Category */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">
+                Category
+              </label>
+              <FormSelect
+                value={categoryId}
+                onChange={setCategoryId}
+                placeholder="Select category"
+                options={currentCategories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+              />
+            </div>
+
+            {/* Employee (only for expense of category salary) */}
+            {type === "expense" && isSalaryCategory && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">
+                  Employee *
+                </label>
+                <FormSelect
+                  value={employeeId}
+                  onChange={setEmployeeId}
+                  placeholder="Select employee"
+                  options={employees.map((e) => ({
+                    value: e.id,
+                    label: `${e.fullName} (${e.employeeCode})`,
+                  }))}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {/* Amount */}

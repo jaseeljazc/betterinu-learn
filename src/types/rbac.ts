@@ -1,5 +1,5 @@
 export type AdminRole = "super_admin" | "admin" | "instructor" | "support" | "account_manager"
-export type PermissionModule = "students" | "courses" | "curriculum" | "tasks" | "admins" | "accounts"
+export type PermissionModule = "students" | "courses" | "curriculum" | "tasks" | "admins" | "accounts" | "employees" | "payroll" | "payroll_runs" | "attendance"
 export type PermissionAction = "view" | "create" | "edit" | "delete"
 
 export interface Permission {

@@ -8,7 +8,7 @@ import { sql } from "@/lib/db"
 import { hasPermission } from "@/lib/permissions"
 import type { AdminRole, Permission, PermissionModule, PermissionAction } from "@/types"
 
-type RbacSession = {
+export type RbacSession = {
   adminId: string
   role: AdminRole
   permissions: Permission[]
@@ -19,7 +19,7 @@ type RbacSession = {
  * admin_accounts record, and returns the RBAC session payload.
  * Returns null if unauthenticated or unauthorised.
  */
-async function resolveSession(req: NextRequest): Promise<RbacSession | null> {
+export async function resolveSession(req: NextRequest): Promise<RbacSession | null> {
   const token = req.cookies.get("__session")?.value
   if (!token) return null
 
@@ -88,6 +88,18 @@ export async function requirePermission(
 
   if (!hasPermission(session.role, session.permissions, module, action)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+  }
+
+  return session
+}
+
+export async function requireAdminSession(
+  req: NextRequest
+): Promise<RbacSession | NextResponse> {
+  const session = await resolveSession(req)
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   return session

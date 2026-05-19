@@ -116,12 +116,21 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
       header: "Category",
       size: 140,
       enableSorting: false,
-      cell: ({ getValue }) => {
-        const v = getValue() as string;
-        return v ? (
-          <span className="text-secondary">{v}</span>
-        ) : (
-          <span className="text-muted italic text-xs">—</span>
+      cell: ({ row }) => {
+        const catName = (row.original.category as { name?: string } | undefined)?.name ?? "";
+        const emp = row.original.employee;
+        if (!catName) {
+          return <span className="text-muted italic text-xs">—</span>;
+        }
+        return (
+          <div className="flex flex-col">
+            <span className="text-secondary text-sm font-medium">{catName}</span>
+            {emp && (
+              <span className="text-[10px] text-muted truncate max-w-[130px]" title={`${emp.fullName} (${emp.employeeCode})`}>
+                {emp.fullName} ({emp.employeeCode})
+              </span>
+            )}
+          </div>
         );
       },
     },

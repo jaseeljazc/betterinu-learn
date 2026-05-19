@@ -36,22 +36,24 @@ export async function GET(
 
   const rows = await sql`
     SELECT
-      t.id, t.type, t.amount, t.date, t.description,
+      t.id, t.type, t.amount, t.date::text AS date, t.description,
       t.reference_number, t.status,
       t.account_id, t.to_account_id, t.category_id,
-      t.voided_at, t.voided_by, t.created_by, t.created_at,
+      t.voided_at::text AS voided_at, t.voided_by, t.created_by, t.created_at::text AS created_at,
       a.id AS acc_id, a.name AS acc_name, a.type AS acc_type,
       ta.id AS to_acc_id, ta.name AS to_acc_name, ta.type AS to_acc_type,
       c.id AS cat_id, c.name AS cat_name, c.type AS cat_type,
       c.color AS cat_color, c.icon AS cat_icon,
       cb.id AS cb_id, cb.full_name AS cb_name,
-      vb.id AS vb_id, vb.full_name AS vb_name
+      vb.id AS vb_id, vb.full_name AS vb_name,
+      t.employee_id, emp.full_name AS employee_name, emp.employee_code AS employee_code
     FROM account_transactions t
     LEFT JOIN accounts a ON a.id = t.account_id
     LEFT JOIN accounts ta ON ta.id = t.to_account_id
     LEFT JOIN account_categories c ON c.id = t.category_id
     LEFT JOIN admin_accounts cb ON cb.id = t.created_by
     LEFT JOIN admin_accounts vb ON vb.id = t.voided_by
+    LEFT JOIN employees emp ON emp.id = t.employee_id
     WHERE t.id = ${id}
   `;
 
@@ -77,6 +79,7 @@ export async function GET(
       account: r.acc_id ? { id: r.acc_id, name: r.acc_name, type: r.acc_type } : null,
       toAccount: r.to_acc_id ? { id: r.to_acc_id, name: r.to_acc_name, type: r.to_acc_type } : null,
       category: r.cat_id ? { id: r.cat_id, name: r.cat_name, type: r.cat_type, color: r.cat_color, icon: r.cat_icon } : null,
+      employee: r.employee_id ? { id: r.employee_id, fullName: r.employee_name, employeeCode: r.employee_code } : null,
       createdBy: r.cb_id ? { id: r.cb_id, fullName: r.cb_name } : null,
       voidedBy: r.vb_id ? { id: r.vb_id, fullName: r.vb_name } : null,
       attachments: attachments.map((a) => ({
@@ -106,7 +109,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { amount, date, description, referenceNumber, status, categoryId } = body;
+  const { amount, date, description, referenceNumber, status, categoryId, employeeId } = body;
   const adminId = auth.adminId === "super_admin_bootstrap" ? null : auth.adminId;
 
   await sql`
@@ -117,6 +120,7 @@ export async function PATCH(
       reference_number = COALESCE(${referenceNumber ?? null}, reference_number),
       status = COALESCE(${status ?? null}, status),
       category_id = COALESCE(${categoryId ?? null}, category_id),
+      employee_id = CASE WHEN ${employeeId === undefined} THEN employee_id ELSE ${employeeId || null} END,
       updated_at = NOW()
     WHERE id = ${id}
   `;

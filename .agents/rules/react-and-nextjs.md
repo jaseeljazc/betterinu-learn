@@ -1,7 +1,7 @@
 ---
+trigger: always_on
 description: React 19 / Next.js 16 component, hook, layout, and tenant-routing patterns
 globs: app/**/*.{ts,tsx},components/**/*.{ts,tsx},hooks/**/*.{ts,tsx},context/**/*.{ts,tsx},middleware/**/*.{ts,tsx},middleware.ts
-alwaysApply: false
 ---
 
 # React & Next.js Patterns
@@ -245,3 +245,4 @@ available at the root.
   `@/lib/auth/firebase-admin` — never `initializeApp` inline.
 - Read DB through `prisma` from `@/lib/db` — do not instantiate `PrismaClient`
   ad-hoc (it would break the dev hot-reload singleton).
+

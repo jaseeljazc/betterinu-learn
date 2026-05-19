@@ -128,6 +128,7 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
           referenceNumber: transaction.referenceNumber,
           status:          transaction.status,
           attachments,
+          employeeId:      transaction.employee?.id,
         }}
       />
     );
@@ -252,6 +253,18 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
               <div className="px-4 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-0.5">Category</p>
                 <p className="text-sm font-medium text-foreground">{transaction.category.name}</p>
+              </div>
+            )}
+
+            {transaction.employee && (
+              <div className="px-4 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-0.5">Employee</p>
+                <Link
+                  href={`/admin/employees/${transaction.employee.id}`}
+                  className="text-sm font-semibold text-primary hover:underline block truncate"
+                >
+                  {transaction.employee.fullName} ({transaction.employee.employeeCode})
+                </Link>
               </div>
             )}
 
