@@ -23,8 +23,8 @@ import Link from "next/link";
 import { QuizBuilder } from "@/components/admin/quiz-builder";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { CurriculumGuide } from "@/components/admin/curriculum-guide";
-import { LessonSectionEditor } from "@/components/admin/lesson-section-editor";
 import { SortableDayItem } from "@/components/admin/sortable-day-item";
+import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 import { ThreePanelCurriculumBuilder } from "@/components/admin/three-panel-curriculum-builder"; // ADDED
 import { FileUploader } from "@/components/ui/FileUploader";
 import type { AttachedFile } from "@/components/ui/FileUploader";
@@ -133,6 +133,12 @@ function WeekJsonEditor({
 export default function CourseCurriculumPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { can } = useAdminPermissions();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const canEditCourse = mounted ? can("courses", "edit") : false;
+  const canEditCurriculum = mounted ? can("curriculum", "edit") : false;
   const [form, setForm] = useState<
     (Partial<CourseRow> & { curriculum?: any[] }) | null
   >(null);
@@ -163,7 +169,7 @@ export default function CourseCurriculumPage() {
     fetch("/api/admin/courses", { credentials: "include" })
       .then(async (r) => {
         if (!r.ok) {
-          if (r.status === 401) router.push("/login");
+          if (r.status === 401 || r.status === 403) router.push("/admin/login");
           throw new Error("Failed to fetch courses");
         }
         return r.json();
@@ -320,18 +326,22 @@ export default function CourseCurriculumPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-subtle p-1">
-          <Link
-            href={`/admin/courses/${id}/edit`}
-            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-all ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-muted hover:text-primary"}`}
-          >
-            Settings
-          </Link>
-          <Link
-            href={`/admin/courses/${id}/curriculum`}
-            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-all ${activeTab === "curriculum" ? "bg-white text-primary shadow-sm" : "text-muted hover:text-primary"}`}
-          >
-            Curriculum
-          </Link>
+          {canEditCourse && (
+            <Link
+              href={`/admin/courses/${id}/edit`}
+              className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-all ${activeTab === "settings" ? "bg-white text-primary shadow-sm" : "text-muted hover:text-primary"}`}
+            >
+              Settings
+            </Link>
+          )}
+          {canEditCurriculum && (
+            <Link
+              href={`/admin/courses/${id}/curriculum`}
+              className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-all ${activeTab === "curriculum" ? "bg-white text-primary shadow-sm" : "text-muted hover:text-primary"}`}
+            >
+              Curriculum
+            </Link>
+          )}
         </div>
       </div>
 

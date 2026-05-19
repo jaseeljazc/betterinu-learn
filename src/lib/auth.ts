@@ -24,7 +24,7 @@ export async function verifyAdminToken(token: string) {
   try {
     const decoded = await adminAuth.verifyIdToken(token);
     const rows = await sql`
-      SELECT id FROM admins WHERE firebase_uid = ${decoded.uid} LIMIT 1
+      SELECT id FROM admin_accounts WHERE firebase_uid = ${decoded.uid} LIMIT 1
     `;
     if (!rows.length) return null;
     return { adminId: rows[0].id as string, uid: decoded.uid };

@@ -1,0 +1,1 @@
+const fs = require('fs'); const t = fs.readFileSync('error.html', 'utf8'); const m = t.match(/self\.__next_f\.push\(\[1,\"(.*?)"\]\)/g); if(m) { m.forEach(x => { try { const str = x.match(/push\(\[1,\"(.*?)"\]\)/)[1]; const unescaped = str.replace(/\\\\n/g, '\n').replace(/\\\\\"/g, '\"'); console.log(unescaped.substring(0, 1000)); } catch(e){} }) }
