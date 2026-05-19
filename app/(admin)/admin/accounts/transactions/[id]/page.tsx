@@ -23,7 +23,7 @@ export default async function TransactionDetailPage({
   }
   const canEdit = hasPermission(payload.role, payload.permissions ?? [], "accounts", "edit");
   const { id } = await params;
-
+//hiii
 return (
   <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-6">
     <TransactionDetailPageClient transactionId={id} canEdit={canEdit} />
