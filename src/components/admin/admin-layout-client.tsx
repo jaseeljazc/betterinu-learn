@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { onIdTokenChanged } from "firebase/auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { clientAuth } from "@/lib/firebase-client";
+import { ReactQueryProvider } from "@/components/providers/query-provider";
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -63,11 +64,13 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`min-h-screen bg-subtle transition-all duration-300 ${collapsed ? "pl-16" : "pl-60"}`}>
-      <AdminSidebar collapsed={collapsed} onToggle={toggle} isMobile={isMobile} />
-      <main className="min-h-screen flex flex-col">
-        {children}
-      </main>
-    </div>
+    <ReactQueryProvider>
+      <div className={`min-h-screen bg-subtle transition-all duration-300 ${collapsed ? "pl-16" : "pl-60"}`}>
+        <AdminSidebar collapsed={collapsed} onToggle={toggle} isMobile={isMobile} />
+        <main className="min-h-screen flex flex-col">
+          {children}
+        </main>
+      </div>
+    </ReactQueryProvider>
   );
 }
