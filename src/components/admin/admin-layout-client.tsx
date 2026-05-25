@@ -26,8 +26,8 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
           // Network error — non-fatal, will retry on next rotation
         }
       } else {
-        // Signed out — clear the session cookie.
-        document.cookie = `__session=; path=/; max-age=0; SameSite=Lax`;
+        // Signed out — clear the session cookie on the server.
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
       }
     });
 

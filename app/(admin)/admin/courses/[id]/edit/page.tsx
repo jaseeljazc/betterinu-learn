@@ -476,7 +476,7 @@ export default function CourseEditPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-semibold mb-1.5">
                   Color CSS Variable
                 </label>
@@ -486,7 +486,7 @@ export default function CourseEditPage() {
                   className={inputClass}
                   placeholder="e.g. --course-mern"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 

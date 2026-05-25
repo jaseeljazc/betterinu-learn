@@ -342,7 +342,7 @@ function SortableLessonItem({
         />
       ) : (
         <TruncatedText
-          text={mod.title || "Untitled Lesson"}
+          text={mod.title || `Untitled ${meta.label}`}
           className="flex-1 text-xs"
         />
       )}
@@ -1373,7 +1373,7 @@ export function ThreePanelCurriculumBuilder({
                 })()}
               <h2 className="text-lg font-display font-bold">
                 {activeDay && activeModule
-                  ? `${activeDay.title || activeDay.label} / ${activeModule.title}`
+                  ? `${activeDay.title || activeDay.label} / ${activeModule.title || `Untitled ${getModuleTypeMeta(activeModule.type).label}`}`
                   : activeDay
                     ? `${activeDay.title || activeDay.label} - Content`
                     : "Select a Lesson"}
@@ -1700,10 +1700,9 @@ export function ThreePanelCurriculumBuilder({
                   next[activeNode.wIdx].days[activeNode.dIdx].subModules[
                     activeNode.mIdx ?? 0
                   ].assignmentData = data;
-                  if (data.title)
-                    next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-                      activeNode.mIdx ?? 0
-                    ].title = data.title;
+                  next[activeNode.wIdx].days[activeNode.dIdx].subModules[
+                    activeNode.mIdx ?? 0
+                  ].title = data.title;
                   update("curriculum", next);
                 }}
               />

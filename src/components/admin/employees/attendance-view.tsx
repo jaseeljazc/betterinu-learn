@@ -371,11 +371,11 @@ export function AttendanceView({ canMark, canEdit }: Props) {
                   return (
                     <tr
                       key={emp.id}
-                      className={idx % 2 === 0 ? "bg-white" : "bg-subtle/20"}
+                      className={idx % 2 === 0 ? "bg-white" : "bg-elevated"}
                     >
                       {/* Employee name — sticky first column */}
                       <td
-                        className={`sticky left-0 z-10 border-r border-default px-4 py-2 ${idx % 2 === 0 ? "bg-white" : "bg-subtle/20"}`}
+                        className={`sticky left-0 z-10 border-r border-default px-4 py-2 ${idx % 2 === 0 ? "bg-white" : "bg-elevated"}`}
                       >
                         <div className="flex items-center gap-1.5">
                           <p className="font-semibold text-foreground truncate max-w-[140px]">

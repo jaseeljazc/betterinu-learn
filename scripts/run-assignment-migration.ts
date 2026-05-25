@@ -19,7 +19,7 @@ async function run() {
       status          TEXT        DEFAULT 'pending',
       feedback        TEXT,
       reviewed_at     TIMESTAMP,
-      reviewed_by     UUID        REFERENCES admins(id),
+      reviewed_by     UUID        REFERENCES admin_accounts(id),
       UNIQUE(assignment_id, student_id)
     )
   `;

@@ -14,7 +14,7 @@ export function Navbar() {
 
   async function handleSignOut() {
     await clientAuth.signOut();
-    document.cookie = "__session=; path=/; max-age=0";
+    await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   }
 

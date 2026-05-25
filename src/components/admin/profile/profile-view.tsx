@@ -69,7 +69,7 @@
     const handleLogout = async () => {
       try {
         await fetch("/api/auth/logout", { method: "POST" });
-        router.push("/admin/login");
+        window.location.href = "/admin/login";
       } catch (error) {
         console.error("Logout failed:", error);
       }

@@ -358,7 +358,10 @@ export default function CourseCurriculumPage() {
               {/* ADDED */}
               <button
                 type="button"
-                onClick={() => setUseThreePanel(!useThreePanel)}
+                onClick={() => {
+                  setUseThreePanel(!useThreePanel);
+                  setShowJson(false);
+                }}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                   useThreePanel
                     ? "bg-primary text-white border-primary"

@@ -319,7 +319,7 @@ console.log("permission", can)
             {/* Right side: Detailed Grid + Delete Button */}
             <div className="flex flex-col md:flex-row md:items-start gap-10 lg:gap-16">
               {/* Detailed Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
                 {[
                   { label: "Email Address", value: student.email, Icon: Mail },
                   { label: "Phone Number", value: student.phone_number || "Not provided", Icon: PlusCircle },
@@ -328,12 +328,12 @@ console.log("permission", can)
                   { label: "Enrollment Date", value: student.enrollment_date ? fmtDate(student.enrollment_date) : fmtDate(student.created_at), Icon: Clock },
                   { label: "Address", value: student.address || "Not provided", Icon: Award },
                 ].map((item) => (
-                  <div key={item.label} className="space-y-1">
+                  <div key={item.label} className="space-y-1 min-w-0">
                     <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted">
                       <item.Icon className="size-3" />
                       {item.label}
                     </p>
-                    <p className="text-sm font-semibold text-foreground whitespace-nowrap">{item.value}</p>
+                    <p className="text-sm font-semibold text-foreground break-words">{item.value}</p>
                   </div>
                 ))}
               </div>

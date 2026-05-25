@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
   status          TEXT        DEFAULT 'pending', -- pending | approved | rejected
   feedback        TEXT,
   reviewed_at     TIMESTAMP,
-  reviewed_by     UUID        REFERENCES admins(id),
+  reviewed_by     UUID        REFERENCES admin_accounts(id),
   UNIQUE(assignment_id, student_id)
 );
 

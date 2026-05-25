@@ -29,7 +29,7 @@ export async function sendWelcomeEmail({
   });
 
   const fromName = process.env.EMAIL_FROM_NAME || "Betterinu";
-  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  const loginUrl = `"https://betterinu-learn.vercel.app/login"|| ${process.env.NEXT_PUBLIC_APP_URL }/login`;
 
   const mailOptions = {
     from: `"${fromName}" <${process.env.EMAIL_USER}>`,
