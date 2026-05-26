@@ -1,7 +1,5 @@
 ---
-description: Tailwind v4, theme tokens, shadcn UI, navbar/main/form layouts, icons
-globs: **/*.{tsx,jsx,css}
-alwaysApply: false
+trigger: always_on
 ---
 
 # Tailwind, Theming & UI
@@ -120,3 +118,7 @@ respect `prefers-reduced-motion`.
 The `min-h-0 min-w-0 flex-1 overflow-y-auto` pattern (see `FormLayout` and
 `NavbarLayout`) keeps the body scrollable while the navbar / breadcrumb /
 footer stay sticky. Preserve it when editing scroll containers.
+
+## border radius 
+
+Use border radius rounded-md for almost every cards and buttons.

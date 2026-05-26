@@ -393,11 +393,14 @@ export function AttendanceView({ canMark, canEdit }: Props) {
                       {/* Day cells */}
                       {days.map((day) => {
                         const weekend = isWeekend(day);
+                        const isSunday = new Date(y, m - 1, day).getDay() === 0;
                         const rec = getRecord(emp.id, day);
                         const dateStr = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                        const cfg = rec
-                          ? STATUS_CFG[rec.status as keyof typeof STATUS_CFG]
-                          : null;
+                        const cfg = isSunday
+                          ? STATUS_CFG["Holiday"]
+                          : rec
+                            ? STATUS_CFG[rec.status as keyof typeof STATUS_CFG]
+                            : null;
 
                         const isLocked = lockedEmployeeIds.has(emp.id);
 
@@ -406,17 +409,19 @@ export function AttendanceView({ canMark, canEdit }: Props) {
                             key={day}
                             className="px-0.5 py-1 text-center border-r border-default/50 last:border-r-0"
                             title={
-                              isLocked 
-                                ? "Payroll disbursed (Locked)" 
-                                : rec 
-                                  ? `${rec.status}${rec.note ? ` — ${rec.note}` : ""}` 
-                                  : weekend ? "Click to mark (Weekend)" : "Click to mark"
+                              isSunday
+                                ? "Sunday (Holiday)"
+                                : isLocked 
+                                  ? "Payroll disbursed (Locked)" 
+                                  : rec 
+                                    ? `${rec.status}${rec.note ? ` — ${rec.note}` : ""}` 
+                                    : weekend ? "Click to mark (Weekend)" : "Click to mark"
                             }
                           >
                             <button
-                              disabled={!canMark || isLocked}
+                              disabled={!canMark || isLocked || isSunday}
                               onClick={() =>
-                                canMark && !isLocked &&
+                                canMark && !isLocked && !isSunday &&
                                 setModal({
                                   open: true,
                                   employeeId: emp.id,
@@ -426,7 +431,7 @@ export function AttendanceView({ canMark, canEdit }: Props) {
                               }
                               className={[
                                 "mx-auto size-[26px] rounded flex items-center justify-center text-[11px] font-bold transition-all",
-                                isLocked 
+                                isLocked || isSunday
                                   ? (cfg ? `${cfg.cls} opacity-80 cursor-not-allowed` : "border border-dashed border-default/40 text-muted/40 cursor-not-allowed")
                                   : cfg
                                     ? `${cfg.cls} hover:opacity-75 cursor-pointer`

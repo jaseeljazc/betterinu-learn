@@ -246,3 +246,6 @@ available at the root.
 - Read DB through `prisma` from `@/lib/db` — do not instantiate `PrismaClient`
   ad-hoc (it would break the dev hot-reload singleton).
 
+
+
+Always use Tailwind CSS and shadcn components for all styling and components. 

@@ -62,26 +62,26 @@ export default async function EmployeesPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/employees/departments"
-            className="flex items-center gap-2 rounded-xl border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
+            className="flex items-center gap-2 rounded-md border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
           >
             <Building2 className="size-4" /> Departments
           </Link>
           <Link
             href="/admin/employees/payroll"
-            className="flex items-center gap-2 rounded-xl border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
+            className="flex items-center gap-2 rounded-md border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
           >
             <Wallet className="size-4" /> Payroll
           </Link>
           <Link
             href="/admin/employees/attendance"
-            className="flex items-center gap-2 rounded-xl border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
+            className="flex items-center gap-2 rounded-md border border-default bg-white px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle hover:text-primary transition-colors"
           >
             <CalendarDays className="size-4" /> Attendance
           </Link>
           {canEdit && (
             <Link
               href="/admin/employees/new"
-              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm"
+              className="flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm"
             >
               <Plus className="size-4" /> Add Employee
             </Link>

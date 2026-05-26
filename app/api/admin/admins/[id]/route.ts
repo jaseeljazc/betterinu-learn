@@ -25,6 +25,7 @@ export async function GET(
       aa.status,
       aa.last_login,
       aa.created_at,
+      aa.temp_password,
       ar.id          AS role_id,
       ar.name        AS role_name,
       ar.label       AS role_label,
@@ -64,6 +65,7 @@ export async function GET(
       status: r.status,
       lastLogin: r.last_login,
       createdAt: r.created_at,
+      tempPassword: r.temp_password,
       role: {
         id: r.role_id,
         name: r.role_name,

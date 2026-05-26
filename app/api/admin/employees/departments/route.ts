@@ -8,36 +8,42 @@ import { requirePermission } from "@/lib/admin-rbac"
  * Requires: employees/view
  */
 export async function GET(req: NextRequest) {
-  const auth = await requirePermission(req, "employees", "view")
-  if (auth instanceof NextResponse) return auth
+  try {
+    const auth = await requirePermission(req, "employees", "view")
+    if (auth instanceof NextResponse) return auth
 
-  const { searchParams } = new URL(req.url)
-  const all = searchParams.get("all") === "1"
+    const { searchParams } = new URL(req.url)
+    const all = searchParams.get("all") === "1"
 
-  const rows = await sql`
-    SELECT
-      d.id, d.name, d.description, d.is_active, d.created_at,
-      e.id AS head_id, e.full_name AS head_name,
-      COUNT(emp.id)::int AS employee_count
-    FROM departments d
-    LEFT JOIN employees e ON e.id = d.head_employee_id
-    LEFT JOIN employees emp ON emp.department_id = d.id AND emp.status = 'active'
-    WHERE ${all ? sql`TRUE` : sql`d.is_active = TRUE`}
-    GROUP BY d.id, e.id
-    ORDER BY d.name ASC
-  `
+    const rows = await sql`
+      SELECT
+        d.id, d.name, d.description, d.is_active, d.created_at,
+        e.id AS head_id, e.full_name AS head_name,
+        COUNT(emp.id)::int AS employee_count
+      FROM departments d
+      LEFT JOIN employees e ON e.id = d.head_employee_id
+      LEFT JOIN employees emp ON emp.department_id = d.id AND emp.status = 'active'
+      WHERE (${all} = TRUE OR d.is_active = TRUE)
+      GROUP BY d.id, e.id
+      ORDER BY d.name ASC
+    `
 
-  const departments = rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    description: r.description ?? undefined,
-    isActive: r.is_active,
-    employeeCount: r.employee_count,
-    headEmployee: r.head_id ? { id: r.head_id, fullName: r.head_name } : undefined,
-  }))
+    const departments = rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description ?? undefined,
+      isActive: r.is_active,
+      employeeCount: r.employee_count,
+      headEmployee: r.head_id ? { id: r.head_id, fullName: r.head_name } : undefined,
+    }))
 
-  return NextResponse.json({ departments })
+    return NextResponse.json({ departments })
+  } catch (err: any) {
+    console.error("GET departments failed:", err);
+    return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 })
+  }
 }
+
 
 /**
  * POST /api/admin/employees/departments

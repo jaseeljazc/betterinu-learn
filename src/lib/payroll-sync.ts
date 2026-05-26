@@ -30,8 +30,8 @@ export async function syncExistingPayrollRunFromAttendance(employeeId: string, m
     SELECT date::text as date, status
     FROM attendance
     WHERE employee_id = ${employeeId}
-      AND date >= ${monthStart}
-      AND date <= ${monthEnd}
+      AND date >= ${monthStart}::date - INTERVAL '7 days'
+      AND date <= ${monthEnd}::date + INTERVAL '7 days'
   `;
 
   const payroll = calculatePayrollFromAttendance(

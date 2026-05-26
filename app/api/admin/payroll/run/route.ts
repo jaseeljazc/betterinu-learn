@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const attendanceRecords = await sql`
     SELECT employee_id, date::text as date, status 
     FROM attendance 
-    WHERE date >= ${monthStart} AND date <= ${monthEnd}
+    WHERE date >= ${monthStart}::date - INTERVAL '7 days' AND date <= ${monthEnd}::date + INTERVAL '7 days'
   `
 
   const creatorId = auth.adminId === "super_admin_bootstrap" ? null : auth.adminId

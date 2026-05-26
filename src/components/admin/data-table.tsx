@@ -30,10 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                               */
-/* ------------------------------------------------------------------ */
-
 export interface DataTableFilter {
   column: string;
   label: string;
@@ -55,19 +51,11 @@ export interface DataTableProps<TData, TValue> {
   actions?: React.ReactNode;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Sort icon helper                                                    */
-/* ------------------------------------------------------------------ */
-
 function SortIcon({ direction }: { direction: "asc" | "desc" | false }) {
   if (direction === "asc") return <ArrowUp className="ml-1.5 inline size-3.5 shrink-0 text-primary" />;
   if (direction === "desc") return <ArrowDown className="ml-1.5 inline size-3.5 shrink-0 text-primary" />;
   return <ArrowUpDown className="ml-1.5 inline size-3.5 shrink-0 opacity-40" />;
 }
-
-/* ------------------------------------------------------------------ */
-/*  DataTable                                                           */
-/* ------------------------------------------------------------------ */
 
 export function DataTable<TData, TValue>({
   columns,
@@ -91,7 +79,6 @@ export function DataTable<TData, TValue>({
 
   React.useEffect(() => { setMounted(true); }, []);
 
-  // Reset visible rows when filters or sorting change
   React.useEffect(() => {
     setVisibleRows(pageSize);
   }, [globalFilter, columnFilters, sorting, pageSize]);
@@ -117,7 +104,6 @@ export function DataTable<TData, TValue>({
     (node: HTMLTableRowElement | null) => {
       if (loading) return;
       if (observerRef.current) observerRef.current.disconnect();
-
       observerRef.current = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting) {
@@ -126,7 +112,6 @@ export function DataTable<TData, TValue>({
         },
         { root: scrollContainerRef.current, rootMargin: "100px", threshold: 0 }
       );
-
       if (node) observerRef.current.observe(node);
     },
     [loading, pageSize]
@@ -136,11 +121,9 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-3">
-      {/* ---- Toolbar ---- */}
       {(searchable || filters.length > 0 || actions) && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
             {searchable && (
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted pointer-events-none" />
@@ -159,12 +142,11 @@ export function DataTable<TData, TValue>({
                       setGlobalFilter(e.target.value);
                     }
                   }}
-                  className="h-9 w-56 rounded-lg border border-default bg-white pl-8 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                  className="h-9 w-56 rounded-md border border-default bg-white pl-8 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                 />
               </div>
             )}
 
-            {/* Filter selects */}
             {filters.map((f) =>
               mounted ? (
                 <Select
@@ -174,7 +156,7 @@ export function DataTable<TData, TValue>({
                     table.getColumn(f.column)?.setFilterValue(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-9 w-40 rounded-lg border-default bg-white text-sm [&>span]:flex-1 [&>span]:text-center">
+                  <SelectTrigger className="h-9 w-40 rounded-md border-default bg-white text-sm [&>span]:flex-1 [&>span]:text-center">
                     <SelectValue placeholder={f.label} />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,21 +169,28 @@ export function DataTable<TData, TValue>({
                   </SelectContent>
                 </Select>
               ) : (
-                <div key={f.column} className="h-9 w-40 rounded-lg border border-default bg-white" />
+                <div key={f.column} className="h-9 w-40 rounded-md border border-default bg-white" />
               )
             )}
           </div>
 
-          {/* Actions slot */}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       )}
 
-      {/* ---- Table ---- */}
-      <div className="overflow-hidden rounded-xl border border-default bg-white">
+      <div className="overflow-hidden rounded-md border border-default bg-white">
         <div
           ref={scrollContainerRef}
-          className="overflow-y-auto max-h-[480px] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 hover:[&::-webkit-scrollbar-thumb]:bg-black/25"
+  className="overflow-auto max-h-[480px]
+  [&::-webkit-scrollbar]:h-[3px]
+  [&::-webkit-scrollbar]:w-[3px]
+  [&::-webkit-scrollbar-track]:bg-transparent
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-black/10
+  hover:[&::-webkit-scrollbar-thumb]:bg-black/20
+  [&::-webkit-scrollbar-button]:hidden
+  [scrollbar-width:thin]
+  [scrollbar-color:rgba(0,0,0,0.05)_transparent]"
         >
           <Table>
             {caption && (
@@ -234,7 +223,6 @@ export function DataTable<TData, TValue>({
             </TableHeader>
 
             <TableBody>
-              {/* Loading skeletons */}
               {loading ? (
                 skeletonRows.map((_, i) => (
                   <TableRow key={i} className="border-b border-default">
@@ -246,7 +234,6 @@ export function DataTable<TData, TValue>({
                   </TableRow>
                 ))
               ) : rowsToRender.length === 0 ? (
-                /* Empty state */
                 <TableRow>
                   <TableCell colSpan={columns.length} className="py-16 text-center">
                     {EmptyIcon && <EmptyIcon className="mx-auto mb-3 size-9 text-muted" />}
@@ -266,7 +253,7 @@ export function DataTable<TData, TValue>({
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
-                          className="h-5 border-r  border-default px-3  text-sm last:border-r-0"
+                          className="h-5 border-r border-default px-3 text-sm last:border-r-0"
                         >
                           {cell.column.id === "actions" ? (
                             <div className="flex items-center justify-center w-full h-full">

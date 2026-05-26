@@ -195,7 +195,7 @@ export function EmployeeDirectory({ canEdit }: EmployeeDirectoryProps) {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-default bg-white p-5 animate-pulse">
+            <div key={i} className="rounded-md border border-default bg-white p-5 animate-pulse">
               <div className="flex gap-3 mb-4">
                 <div className="size-14 rounded-full bg-subtle" />
                 <div className="flex-1 space-y-2 pt-1">
@@ -225,7 +225,7 @@ export function EmployeeDirectory({ canEdit }: EmployeeDirectoryProps) {
               <button
                 key={emp.id}
                 onClick={() => router.push(`/admin/employees/${emp.id}`)}
-                className="text-left rounded-2xl border border-default bg-white p-5 hover:border-primary hover:shadow-md transition-all group"
+                className="text-left rounded-md border border-default bg-white p-5 hover:border-primary hover:shadow-md transition-all group"
               >
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-4">

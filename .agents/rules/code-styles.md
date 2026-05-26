@@ -1,6 +1,5 @@
 ---
-description: Formatting, naming, imports, and TypeScript conventions
-alwaysApply: true
+trigger: always_on
 ---
 
 # Code Style

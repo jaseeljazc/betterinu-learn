@@ -44,6 +44,42 @@ export function calculatePayrollFromAttendance(
   const { year, monthNum, daysInMonth } = getPayrollMonthRange(month);
   const attendanceByDate = new Map(attendanceRecords.map((record) => [record.date, record.status]));
 
+  function isSandwiched(targetDate: Date): boolean {
+    // 1. Look left for the closest active working day
+    let leftDate = new Date(targetDate);
+    let leftStatus: string | undefined;
+    let limit = 0;
+    while (limit < 10) {
+      limit++;
+      leftDate.setDate(leftDate.getDate() - 1);
+      const leftDateStr = format(leftDate, "yyyy-MM-dd");
+      const leftStatusTemp = attendanceByDate.get(leftDateStr);
+      if (isSunday(leftDate) || leftStatusTemp === "Holiday") {
+        continue;
+      }
+      leftStatus = leftStatusTemp;
+      break;
+    }
+
+    // 2. Look right for the closest active working day
+    let rightDate = new Date(targetDate);
+    let rightStatus: string | undefined;
+    limit = 0;
+    while (limit < 10) {
+      limit++;
+      rightDate.setDate(rightDate.getDate() + 1);
+      const rightDateStr = format(rightDate, "yyyy-MM-dd");
+      const rightStatusTemp = attendanceByDate.get(rightDateStr);
+      if (isSunday(rightDate) || rightStatusTemp === "Holiday") {
+        continue;
+      }
+      rightStatus = rightStatusTemp;
+      break;
+    }
+
+    return leftStatus === "Leave" && rightStatus === "Leave";
+  }
+
   let workingDays = 0;
   let daysPresent = 0;
   let leaveCount = 0;
@@ -56,6 +92,9 @@ export function calculatePayrollFromAttendance(
     const status = attendanceByDate.get(dateStr);
 
     if (isSunday(date) || status === "Holiday") {
+      if (isSandwiched(date)) {
+        leaveCount++;
+      }
       continue;
     }
 

@@ -14,10 +14,9 @@ export async function sendWelcomeEmail({
   password: string;
 }) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
-    console.warn(
-      "Skipping welcome email: EMAIL_USER or EMAIL_APP_PASSWORD missing.",
-    );
-    return;
+    throw new Error(
+      "SMTP email configuration is missing: EMAIL_USER or EMAIL_APP_PASSWORD not set."
+    )
   }
 
   const transporter = nodemailer.createTransport({
@@ -28,8 +27,9 @@ export async function sendWelcomeEmail({
     },
   });
 
-  const fromName = process.env.EMAIL_FROM_NAME || "Betterinu";
-  const loginUrl = `"https://betterinu-learn.vercel.app/login"|| ${process.env.NEXT_PUBLIC_APP_URL }/login`;
+  const fromName = process.env.EMAIL_FROM_NAME || "Betterinu"
+  const appUrl = process.env.NEXT_PUBLIC_STUDENT_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://betterinu-learn.vercel.app"
+  const loginUrl = `${appUrl}/login`
 
   const mailOptions = {
     from: `"${fromName}" <${process.env.EMAIL_USER}>`,
@@ -55,9 +55,10 @@ export async function sendWelcomeEmail({
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✓ Welcome email sent to ${email}`);
+    await transporter.sendMail(mailOptions)
+    console.log(`✓ Welcome email sent to ${email}`)
   } catch (error) {
-    console.error("Error sending welcome email:", error);
+    console.error("Error sending welcome email:", error)
+    throw error
   }
 }

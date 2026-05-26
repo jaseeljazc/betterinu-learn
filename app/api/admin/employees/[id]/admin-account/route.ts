@@ -60,8 +60,8 @@ export async function POST(
   let adminId: string
   try {
     const inserted = await sql`
-      INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by)
-      VALUES (${firebaseUid}, ${emp.full_name}, ${(emp.email as string).toLowerCase()}, ${roleId}, 'active', ${creatorId})
+      INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by, temp_password)
+      VALUES (${firebaseUid}, ${emp.full_name}, ${(emp.email as string).toLowerCase()}, ${roleId}, 'active', ${creatorId}, ${password})
       RETURNING id
     `
     adminId = inserted[0].id as string
@@ -78,7 +78,8 @@ export async function POST(
     await sendWelcomeEmail({ name: emp.full_name as string, email: (emp.email as string).toLowerCase(), password })
     emailSent = true
     tempPassword = null
-  } catch {
+  } catch (err) {
+    console.error("Failed to send welcome email when granting admin access:", err)
     // best-effort — return tempPassword as fallback
   }
 

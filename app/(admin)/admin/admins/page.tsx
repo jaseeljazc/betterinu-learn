@@ -3,32 +3,24 @@ import { cookies } from "next/headers"
 import Link from "next/link"
 import { UsersRound, Plus } from "lucide-react"
 import { sql } from "@/lib/db"
-import { adminAuth } from "@/lib/firebase-admin"
 import { AdminsTable } from "@/components/admin/admins-table"
 import type { AdminRole } from "@/types"
 
+/**
+ * Read identity from the __rbac cookie (set at login, 7-day TTL).
+ * This avoids re-verifying the short-lived Firebase ID token (1-hour TTL)
+ * on every Server Component render, which caused spurious redirects to
+ * /admin/dashboard after the first hour of a session.
+ */
 async function getCurrentAdminRole(): Promise<{ adminId: string; role: AdminRole } | null> {
   const cookieStore = await cookies()
-  const token = cookieStore.get("__session")?.value
-  if (!token) return null
+  const rbac = cookieStore.get("__rbac")?.value
+  if (!rbac) return null
 
   try {
-    const decoded = await adminAuth.verifyIdToken(token)
-    const uid = decoded.uid
-
-    if (process.env.SUPER_ADMIN_UID && uid === process.env.SUPER_ADMIN_UID) {
-      return { adminId: "super_admin_bootstrap", role: "super_admin" }
-    }
-
-    const rows = await sql`
-      SELECT aa.id, ar.name AS role_name
-      FROM admin_accounts aa
-      JOIN admin_roles ar ON ar.id = aa.role_id
-      WHERE aa.firebase_uid = ${uid} AND aa.status = 'active'
-      LIMIT 1
-    `
-    if (!rows.length) return null
-    return { adminId: rows[0].id as string, role: rows[0].role_name as AdminRole }
+    const parsed = JSON.parse(rbac) as { adminId: string; role: AdminRole }
+    if (!parsed.adminId || !parsed.role) return null
+    return { adminId: parsed.adminId, role: parsed.role }
   } catch {
     return null
   }
@@ -43,6 +35,7 @@ async function getAdmins() {
       aa.status,
       aa.last_login,
       aa.created_at,
+      aa.temp_password,
       ar.id          AS role_id,
       ar.name        AS role_name,
       ar.label       AS role_label,
@@ -72,6 +65,7 @@ export default async function AdminsPage() {
     roleName: r.role_name as AdminRole,
     roleLabel: r.role_label as string,
     createdByName: r.created_by_name as string | null,
+    tempPassword: r.temp_password as string | null,
   }))
 
   return (

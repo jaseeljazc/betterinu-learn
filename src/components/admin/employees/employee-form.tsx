@@ -7,6 +7,7 @@ import {
   User, Mail, Phone, MapPin, Briefcase, DollarSign,
   Shield, CheckCircle2, ChevronDown, ChevronUp, Plus,
   X, Upload, Eye, Trash2, Search, Sparkles, FileText,
+  Loader2,
 } from "lucide-react"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -19,6 +20,7 @@ import { clientAuth } from "@/lib/firebase-client"
 import { useDepartments } from "@/lib/hooks/useDepartments"
 import { useManagers } from "@/lib/hooks/useManagers"
 import type { Employee } from "@/types"
+import { ImageCropper } from "@/components/ui/image-cropper"
 
 const PREDEFINED_SKILLS = [
   "JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Python", "Java",
@@ -67,11 +69,15 @@ type OtherDoc = {
   id: string
   name: string
   file: File | null
+  s3Key?: string
+  status?: "idle" | "uploading" | "done" | "error"
   error?: string
 }
 
 type FileSlot = {
   file: File | null
+  s3Key?: string
+  status?: "idle" | "uploading" | "done" | "error"
   error?: string
 }
 
@@ -88,13 +94,18 @@ function OptionalTag() {
   return <span className="text-xs font-normal text-muted ml-1">(optional)</span>
 }
 
+function isImageFile(file: File) {
+  return /\.(jpg|jpeg|png)$/i.test(file.name)
+}
+
 export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
   const router = useRouter()
   const isEdit = !!employee
   const isDraftRef = useRef(false)
+  const submittingRef = useRef(false)
 
-  const inputCls = "w-full h-10 rounded-lg border border-default bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
-  const textareaCls = "w-full rounded-lg border border-default bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+  const inputCls = "w-full h-10 rounded-md border border-default bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+  const textareaCls = "w-full rounded-md border border-default bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
   const labelCls = "block text-sm font-semibold text-foreground mb-1.5"
 
   const [fullName, setFullName]   = useState(employee?.fullName ?? "")
@@ -119,19 +130,91 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
   const [dateOfJoining, setDateOfJoining]     = useState(employee?.dateOfJoining?.slice(0, 10) ?? "")
   const [status, setStatus]                   = useState(employee?.status ?? "active")
 
-  const [skills, setSkills] = useState<string[]>([])
+  const [skills, setSkills] = useState<string[]>(employee?.skills ?? [])
   const [skillInput, setSkillInput] = useState("")
   const [skillDropOpen, setSkillDropOpen] = useState(false)
 
-  const [qualification, setQualification] = useState<Qualification | "">("")
-  const [certFiles, setCertFiles] = useState<Record<string, FileSlot>>({})
-  const [mandatoryFiles, setMandatoryFiles] = useState<Record<string, FileSlot>>({})
-  const [otherDocs, setOtherDocs] = useState<OtherDoc[]>([{ id: crypto.randomUUID(), name: "", file: null }])
+  const [qualification, setQualification] = useState<Qualification | "">(() => {
+    const q = employee?.qualification as string | undefined;
+    if (!q) return "";
+    return (QUALIFICATION_LEVELS.find((level) => level.toLowerCase() === q.toLowerCase()) as Qualification) ?? "";
+  })
+  
+  const [certFiles, setCertFiles] = useState<Record<string, FileSlot>>(() => {
+    const res: Record<string, FileSlot> = {}
+    if (employee?.documents) {
+      for (const doc of employee.documents) {
+        if (["sslc", "plusTwo", "degree", "pg"].includes(doc.docType)) {
+          res[doc.docType] = {
+            file: null,
+            s3Key: doc.s3Key,
+            status: "done",
+            fileName: doc.fileName,
+            presignedUrl: doc.presignedUrl,
+          } as any
+        }
+      }
+    }
+    return res
+  })
+
+  const [mandatoryFiles, setMandatoryFiles] = useState<Record<string, FileSlot>>(() => {
+    const res: Record<string, FileSlot> = {}
+    if (employee?.documents) {
+      for (const doc of employee.documents) {
+        if (["aadhaar", "pan", "passbook"].includes(doc.docType)) {
+          res[doc.docType] = {
+            file: null,
+            s3Key: doc.s3Key,
+            status: "done",
+            fileName: doc.fileName,
+            presignedUrl: doc.presignedUrl,
+          } as any
+        }
+      }
+    }
+    return res
+  })
+
+  const [otherDocs, setOtherDocs] = useState<OtherDoc[]>(() => {
+    if (employee?.documents) {
+      const others = employee.documents.filter(d => d.docType === "other")
+      if (others.length > 0) {
+        return others.map(doc => ({
+          id: doc.id,
+          name: doc.docName ?? "",
+          file: null,
+          s3Key: doc.s3Key,
+          status: "done",
+          fileName: doc.fileName,
+          presignedUrl: doc.presignedUrl,
+        } as any))
+      }
+    }
+    return [{ id: crypto.randomUUID(), name: "", file: null }]
+  })
+
+  const [docsToDelete, setDocsToDelete] = useState<string[]>([])
+  const [profilePhotoKey, setProfilePhotoKey] = useState(employee?.profilePhotoKey ?? "")
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(employee?.profilePhotoUrl ?? "")
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [originalFile, setOriginalFile] = useState<File | null>(null)
 
   const [hasAdminAccess, setHasAdminAccess] = useState(!!employee?.adminAccount)
   const [roleId, setRoleId] = useState("")
   const [saving, setSaving] = useState(false)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
+
+  const isUploading = useMemo(() => {
+    const checkSlot = (s: FileSlot | undefined) => s?.status === "uploading"
+    const certsUploading = Object.values(certFiles).some(checkSlot)
+    const mandUploading = Object.values(mandatoryFiles).some(checkSlot)
+    const othersUploading = otherDocs.some((d) => d.status === "uploading")
+    return certsUploading || mandUploading || othersUploading
+  }, [certFiles, mandatoryFiles, otherDocs])
 
   const { data: departments = [], isLoading: deptLoading } = useDepartments()
   const { managers, isLoading: managersLoading } = useManagers(employee?.id)
@@ -140,9 +223,9 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
     const required = [
       fullName.trim() !== "",
       email.trim() !== "",
-      !!mandatoryFiles["aadhaar"]?.file,
-      !!mandatoryFiles["pan"]?.file,
-      !!mandatoryFiles["passbook"]?.file,
+      !!(mandatoryFiles["aadhaar"]?.file || mandatoryFiles["aadhaar"]?.s3Key),
+      !!(mandatoryFiles["pan"]?.file || mandatoryFiles["pan"]?.s3Key),
+      !!(mandatoryFiles["passbook"]?.file || mandatoryFiles["passbook"]?.s3Key),
     ]
     const filled = required.filter(Boolean).length
     return Math.round((filled / required.length) * 100)
@@ -182,25 +265,192 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
     if (file.size > MAX_BYTES) return "File exceeds 5 MB limit."
     return undefined
   }
-  function handleCertFile(key: string, file: File | null) {
-    if (!file) { setCertFiles((prev) => ({ ...prev, [key]: { file: null } })); return }
-    const error = validateFile(file)
-    setCertFiles((prev) => ({ ...prev, [key]: { file: error ? null : file, error } }))
+
+  async function uploadSingleFile(file: File, docType: string): Promise<{ s3Key: string; error?: string }> {
+    try {
+      const presignRes = await fetch("/api/admin/employees/documents/presign", {
+        method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ employeeId: null, docType, fileName: file.name, fileType: file.type, fileSize: file.size }),
+      })
+      if (!presignRes.ok) {
+        const d = await presignRes.json()
+        throw new Error(d.error ?? "Failed to get upload URL")
+      }
+      const { presignedUrl, s3Key } = await presignRes.json()
+      const uploadRes = await fetch(presignedUrl, {
+        method: "PUT", headers: { "Content-Type": file.type }, body: file, redirect: "error", mode: "cors",
+      })
+      if (!uploadRes.ok && uploadRes.status !== 0) throw new Error(`S3 upload failed: HTTP ${uploadRes.status}`)
+      return { s3Key }
+    } catch (err) {
+      console.error(`[uploadSingleFile] ${docType}:`, err)
+      return { s3Key: "", error: err instanceof Error ? err.message : "Upload failed" }
+    }
   }
-  function handleMandatoryFile(key: string, file: File | null) {
-    if (!file) { setMandatoryFiles((prev) => ({ ...prev, [key]: { file: null } })); return }
-    const error = validateFile(file)
-    setMandatoryFiles((prev) => ({ ...prev, [key]: { file: error ? null : file, error } }))
+
+  async function deleteSingleFile(s3Key?: string) {
+    if (!s3Key) return
+    try {
+      await fetch("/api/admin/employees/documents/delete-pending", {
+        method: "DELETE", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ s3Key }),
+      })
+    } catch (err) { console.error("[deleteSingleFile] Error:", err) }
   }
+
+  async function handleCertFile(key: string, file: File | null) {
+    const existing = certFiles[key]
+    if (!file) {
+      if (existing?.s3Key) {
+        if (existing.file === null) {
+          setDocsToDelete((prev) => [...prev, existing.s3Key!])
+        } else {
+          await deleteSingleFile(existing.s3Key)
+        }
+      }
+      setCertFiles((prev) => ({ ...prev, [key]: { file: null } }));
+      return
+    }
+
+    if (existing?.s3Key) {
+      if (existing.file === null) {
+        setDocsToDelete((prev) => [...prev, existing.s3Key!])
+      } else {
+        await deleteSingleFile(existing.s3Key)
+      }
+    }
+
+    const error = validateFile(file)
+    if (error) { setCertFiles((prev) => ({ ...prev, [key]: { file, error, status: "error" } })); return }
+    setCertFiles((prev) => ({ ...prev, [key]: { file, status: "uploading" } }))
+    const res = await uploadSingleFile(file, key)
+    setCertFiles((prev) => ({ ...prev, [key]: { file, ...res, status: res.error ? "error" : "done" } }))
+  }
+
+  async function handleMandatoryFile(key: string, file: File | null) {
+    const existing = mandatoryFiles[key]
+    if (!file) {
+      if (existing?.s3Key) {
+        if (existing.file === null) {
+          setDocsToDelete((prev) => [...prev, existing.s3Key!])
+        } else {
+          await deleteSingleFile(existing.s3Key)
+        }
+      }
+      setMandatoryFiles((prev) => ({ ...prev, [key]: { file: null } }));
+      return
+    }
+
+    if (existing?.s3Key) {
+      if (existing.file === null) {
+        setDocsToDelete((prev) => [...prev, existing.s3Key!])
+      } else {
+        await deleteSingleFile(existing.s3Key)
+      }
+    }
+
+    const error = validateFile(file)
+    if (error) { setMandatoryFiles((prev) => ({ ...prev, [key]: { file, error, status: "error" } })); return }
+    setMandatoryFiles((prev) => ({ ...prev, [key]: { file, status: "uploading" } }))
+    const res = await uploadSingleFile(file, key)
+    setMandatoryFiles((prev) => ({ ...prev, [key]: { file, ...res, status: res.error ? "error" : "done" } }))
+  }
+
   function addOtherDoc() { setOtherDocs((prev) => [...prev, { id: crypto.randomUUID(), name: "", file: null }]) }
-  function removeOtherDoc(id: string) { setOtherDocs((prev) => prev.filter((d) => d.id !== id)) }
-  function updateOtherDoc(id: string, field: "name" | "file", value: string | File | null) {
-    setOtherDocs((prev) => prev.map((d) => {
-      if (d.id !== id) return d
-      if (field === "file" && value instanceof File) { const error = validateFile(value); return { ...d, file: error ? null : value, error } }
-      if (field === "file") return { ...d, file: null, error: undefined }
-      return { ...d, name: value as string }
-    }))
+  
+  async function removeOtherDoc(id: string) {
+    const existing = otherDocs.find(d => d.id === id)
+    if (existing?.s3Key) {
+      if (existing.file === null) {
+        setDocsToDelete((prev) => [...prev, existing.s3Key!])
+      } else {
+        await deleteSingleFile(existing.s3Key)
+      }
+    }
+    setOtherDocs((prev) => prev.filter((d) => d.id !== id))
+  }
+
+  async function updateOtherDoc(id: string, field: "name" | "file", value: string | File | null) {
+    if (field === "file") {
+      const existing = otherDocs.find(d => d.id === id)
+      if (existing?.s3Key) {
+        if (existing.file === null) {
+          setDocsToDelete((prev) => [...prev, existing.s3Key!])
+        } else {
+          await deleteSingleFile(existing.s3Key)
+        }
+      }
+      if (value instanceof File) {
+        const error = validateFile(value)
+        if (error) { setOtherDocs((prev) => prev.map((d) => d.id === id ? { ...d, file: value, error, status: "error" } : d)); return }
+        setOtherDocs((prev) => prev.map((d) => d.id === id ? { ...d, file: value, status: "uploading" } : d))
+        const res = await uploadSingleFile(value, "other")
+        setOtherDocs((prev) => prev.map((d) => d.id === id ? { ...d, file: value, ...res, status: res.error ? "error" : "done" } : d))
+        return
+      }
+      setOtherDocs((prev) => prev.map((d) => d.id === id ? { ...d, file: null, error: undefined, status: "idle", s3Key: undefined } : d))
+      return
+    }
+    setOtherDocs((prev) => prev.map((d) => d.id === id ? { ...d, name: value as string } : d))
+  }
+
+  function handlePhotoChange(file: File | null) {
+    if (!file) return
+    const error = validateFile(file)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSrc(reader.result as string)
+      setOriginalFile(file)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function handleCropSave(croppedBlob: Blob) {
+    if (!originalFile) return
+    setCropSrc(null)
+    setPhotoUploading(true)
+    try {
+      const croppedFile = new File([croppedBlob], originalFile.name, { type: "image/jpeg" })
+      
+      // Defer delete or delete immediately previous upload
+      if (profilePhotoKey) {
+        if (employee?.profilePhotoKey === profilePhotoKey) {
+          setDocsToDelete((prev) => [...prev, profilePhotoKey])
+        } else {
+          await deleteSingleFile(profilePhotoKey)
+        }
+      }
+
+      const res = await uploadSingleFile(croppedFile, "profile-photo")
+      if (res.error) throw new Error(res.error)
+
+      setProfilePhotoKey(res.s3Key)
+      setProfilePhotoUrl(URL.createObjectURL(croppedFile))
+      toast.success("Profile photo cropped and uploaded successfully.")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload cropped photo")
+    } finally {
+      setPhotoUploading(false)
+      setOriginalFile(null)
+    }
+  }
+
+  async function handleRemovePhoto() {
+    if (!profilePhotoKey) return
+    if (employee?.profilePhotoKey === profilePhotoKey) {
+      setDocsToDelete((prev) => [...prev, profilePhotoKey])
+    } else {
+      await deleteSingleFile(profilePhotoKey)
+    }
+    setProfilePhotoKey("")
+    setProfilePhotoUrl("")
+    if (photoInputRef.current) photoInputRef.current.value = ""
+    toast.success("Profile photo removed.")
   }
 
   async function doSaveRequest(payload: object) {
@@ -221,9 +471,61 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
     return res
   }
 
+  async function confirmAllDocs(employeeId: string) {
+    const queue: { key: string; docType: string; docName?: string; file: File; s3Key: string }[] = []
+    for (const doc of MANDATORY_DOCS) {
+      const slot = mandatoryFiles[doc.key]
+      if (slot?.file && slot.s3Key && slot.status === "done") queue.push({ key: doc.key, docType: doc.key, file: slot.file, s3Key: slot.s3Key })
+    }
+    for (const slot of CERT_SLOTS) {
+      const certSlot = certFiles[slot.key]
+      if (certSlot?.file && certSlot.s3Key && certSlot.status === "done") queue.push({ key: slot.key, docType: slot.key, file: certSlot.file, s3Key: certSlot.s3Key })
+    }
+    for (const doc of otherDocs) {
+      if (doc.file && doc.s3Key && doc.status === "done") queue.push({ key: doc.id, docType: "other", docName: doc.name || undefined, file: doc.file, s3Key: doc.s3Key })
+    }
+    if (queue.length === 0) return
+
+    let failCount = 0
+    for (const item of queue) {
+      try {
+        const confirmRes = await fetch("/api/admin/employees/documents/confirm", {
+          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+          body: JSON.stringify({ employeeId, docType: item.docType, docName: item.docName, s3Key: item.s3Key, fileName: item.file.name, fileType: item.file.type, fileSize: item.file.size }),
+        })
+        if (!confirmRes.ok) throw new Error((await confirmRes.json()).error ?? "Failed to confirm upload")
+      } catch (err) {
+        console.error(`[employee-doc-confirm] ${item.docType}:`, err)
+        failCount++
+      }
+    }
+    if (failCount > 0) toast.warning(`${failCount} document(s) failed to confirm in database.`)
+  }
+
   async function handleSubmit(e: React.FormEvent, draft = false) {
-    e.preventDefault(); setSaving(true)
+    e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setSaving(true)
     try {
+      // Validate phone number formatting (10 to 15 digits) if not draft
+      if (!draft && phone) {
+        const cleanPhone = phone.replace(/[\s\-()]/g, "")
+        const phoneRegex = /^\+?[0-9]{10,15}$/
+        if (!phoneRegex.test(cleanPhone)) {
+          throw new Error("Invalid phone number format. It must be a 10 to 15 digit number.")
+        }
+      }
+
+      // Validate emergency contact phone number formatting if provided
+      if (!draft && emergency.phone) {
+        const cleanEmergPhone = emergency.phone.replace(/[\s\-()]/g, "")
+        const phoneRegex = /^\+?[0-9]{10,15}$/
+        if (!phoneRegex.test(cleanEmergPhone)) {
+          throw new Error("Invalid emergency contact phone number. It must be a 10 to 15 digit number.")
+        }
+      }
+
       const payload = {
         fullName, email,
         phone: phone || undefined, dateOfBirth: dob || undefined, gender: gender || undefined, address: address || undefined,
@@ -235,18 +537,40 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
         skills: skills.length ? skills : undefined, qualification: qualification || undefined,
         hasAdminAccess: hasAdminAccess && !employee?.adminAccount,
         roleId: hasAdminAccess && !employee?.adminAccount ? roleId : undefined,
+        profilePhotoKey: profilePhotoKey || null,
       }
       const res = await doSaveRequest(payload)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Failed to save employee")
       if (!isEdit && data.tempPassword) setTempPassword(data.tempPassword)
+
+      const resolvedEmployeeId: string = isEdit ? employee!.id : data.employeeId
+      await confirmAllDocs(resolvedEmployeeId)
+
+      // Perform bulk deletion of removed existing documents
+      if (docsToDelete.length > 0) {
+        try {
+          const deleteRes = await fetch("/api/admin/employees/documents/delete", {
+            method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+            body: JSON.stringify({ s3Keys: docsToDelete })
+          });
+          if (!deleteRes.ok) throw new Error("Failed to delete removed documents");
+        } catch (delErr) {
+          console.error("[handleSubmit] Bulk delete error:", delErr);
+        }
+      }
+
       if (draft) { toast.success("Draft saved successfully.") }
       else {
         toast.success(isEdit ? "Employee updated." : `Employee created — code: ${data.employeeCode}`)
-        if (!isEdit) setTimeout(() => router.push(`/admin/employees/${data.employeeId}`), 1500)
+        setTimeout(() => router.push("/admin/employees"), 1500)
       }
-    } catch (err) { toast.error(err instanceof Error ? err.message : "An unexpected error occurred") }
-    finally { setSaving(false) }
+    } catch (err) { 
+      toast.error(err instanceof Error ? err.message : "An unexpected error occurred") 
+      submittingRef.current = false
+    } finally { 
+      setSaving(false) 
+    }
   }
 
   async function handleGrantAdminAccess() {
@@ -291,19 +615,52 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
 
   function FileSlotField({ label, required, slot, onChange }: { label: string; required?: boolean; slot: FileSlot | undefined; onChange: (file: File | null) => void }) {
     const inputRef = useRef<HTMLInputElement>(null)
-    const objUrl = slot?.file ? URL.createObjectURL(slot.file) : null
+    const uploadStatus = slot?.status
+    
+    const hasFile = !!slot?.file
+    const hasS3Key = !!slot?.s3Key
+    const isUploaded = uploadStatus === "done"
+
+    const objUrl = hasFile ? URL.createObjectURL(slot.file!) : (slot as any)?.presignedUrl || null
+    const fileName = hasFile ? slot.file!.name : (slot as any)?.fileName || "Uploaded Document"
+    const isImage = hasFile ? isImageFile(slot.file!) : /\.(jpg|jpeg|png)$/i.test((slot as any)?.fileName ?? "")
+
     return (
       <div className="space-y-1.5">
         <label className={labelCls}>{label}{required ? " *" : <OptionalTag />}</label>
-        {slot?.file ? (
-          <div className="flex items-center gap-2 rounded-lg border border-default bg-elevated px-3 py-2 text-sm">
-            <FileText className="size-4 text-muted shrink-0" />
-            <span className="flex-1 truncate text-foreground">{slot.file.name}</span>
-            <a href={objUrl!} target="_blank" rel="noreferrer" className="text-primary hover:opacity-70 transition-opacity" title="Preview"><Eye className="size-4" /></a>
-            <button type="button" onClick={() => onChange(null)} className="text-muted hover:text-danger-500 transition-colors" title="Remove"><X className="size-4" /></button>
+        {(hasFile || (hasS3Key && isUploaded)) ? (
+          <div className="rounded-md border border-default bg-elevated overflow-hidden">
+            {/* Image preview strip */}
+            {isImage && objUrl && (
+              <div className="relative w-full h-28 bg-black/5 overflow-hidden border-b border-default">
+                <img
+                  src={objUrl}
+                  alt={fileName}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            {/* File info row */}
+            <div className="flex items-center gap-2 px-3 py-2 text-sm">
+              <FileText className="size-4 text-muted shrink-0" />
+              <span className="flex-1 truncate text-foreground">{fileName}</span>
+              {objUrl && (
+                <a href={objUrl} target="_blank" rel="noreferrer" className="text-primary hover:opacity-70 transition-opacity" title="Preview">
+                  <Eye className="size-4" />
+                </a>
+              )}
+              {uploadStatus === "uploading" && <Loader2 className="size-4 animate-spin text-primary shrink-0" />}
+              {uploadStatus === "done" && <CheckCircle2 className="size-4 text-green-600 shrink-0" />}
+              {uploadStatus === "error" && <span className="text-xs text-red-500 shrink-0">failed</span>}
+              {(!uploadStatus || uploadStatus === "error" || uploadStatus === "done") && (
+                <button type="button" onClick={() => onChange(null)} className="text-muted hover:text-danger-500 transition-colors" title="Remove">
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
           </div>
         ) : (
-          <button type="button" onClick={() => inputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-dashed border-default bg-white px-3 py-2.5 text-sm text-muted hover:border-primary hover:text-primary transition-colors w-full">
+          <button type="button" onClick={() => inputRef.current?.click()} className="flex items-center gap-2 rounded-md border border-dashed border-default bg-white px-3 py-2.5 text-sm text-muted hover:border-primary hover:text-primary transition-colors w-full">
             <Upload className="size-4 shrink-0" />Upload file (PDF, JPG, PNG · max 5 MB)
           </button>
         )}
@@ -313,10 +670,29 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
     )
   }
 
+  async function handleCancel() {
+    const s3KeysToDelete: string[] = []
+    // Only clean up newly uploaded files (having a local File object)
+    for (const slot of Object.values(mandatoryFiles)) if (slot?.s3Key && slot.file !== null) s3KeysToDelete.push(slot.s3Key)
+    for (const slot of Object.values(certFiles)) if (slot?.s3Key && slot.file !== null) s3KeysToDelete.push(slot.s3Key)
+    for (const doc of otherDocs) if (doc.s3Key && doc.file !== null) s3KeysToDelete.push(doc.s3Key)
+    
+    if (profilePhotoKey && employee?.profilePhotoKey !== profilePhotoKey) {
+      s3KeysToDelete.push(profilePhotoKey)
+    }
+    
+    if (s3KeysToDelete.length > 0) {
+      toast.info("Cleaning up uploaded files...")
+      setSaving(true)
+      await Promise.allSettled(s3KeysToDelete.map(key => deleteSingleFile(key)))
+    }
+    router.back()
+  }
+
   return (
     <form onSubmit={(e) => handleSubmit(e, isDraftRef.current)} className="space-y-8 mx-auto">
       {/* Profile Completion Bar */}
-      <div className="sticky top-4 z-30 rounded-lg border border-default bg-white px-5 py-4 space-y-2 shadow-sm">
+      <div className="sticky top-4 z-30 rounded-md border border-default bg-white px-5 py-4 space-y-2 shadow-sm">
         <div className="flex items-center justify-between text-sm">
           <span className="font-semibold text-foreground">Profile Completion</span>
           <span className="font-bold" style={{ color: "var(--color-primary)" }}>{completionPercent}%</span>
@@ -324,12 +700,62 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
         <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border-default)" }}>
           <div className="h-full transition-all duration-500" style={{ width: `${completionPercent}%`, background: "var(--green-700)" }} />
         </div>
-        {/* <p className="text-xs text-muted">Based on required fields: Full Name, Email, Aadhaar Card, PAN Card, Bank Passbook.</p> */}
       </div>
 
       {/* Personal Information */}
-      <section className="rounded-2xl border border-default bg-white p-6 space-y-5">
+      <section className="rounded-md border border-default bg-white p-6 space-y-5">
         <SectionHeader icon={User} title="Personal Information" />
+
+        {/* Profile Photo Upload */}
+        <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-default border-dashed">
+          <div className="relative group">
+            {profilePhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profilePhotoUrl} alt="Profile Photo" className="size-24 rounded-full object-cover ring-4 ring-white shadow-md" />
+            ) : (
+              <div className="size-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-md">
+                {fullName ? fullName.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase() : <User className="size-8" />}
+              </div>
+            )}
+            {photoUploading && (
+              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center text-white">
+                <Loader2 className="size-6 animate-spin" />
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5 text-center sm:text-left">
+            <h4 className="font-bold text-sm text-foreground">Profile Photo</h4>
+            <p className="text-xs text-muted">JPEG, PNG or WEBP · max 5 MB</p>
+            <div className="flex items-center justify-center sm:justify-start gap-2.5 mt-2">
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={photoUploading}
+                className="rounded-md border border-default bg-white px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Upload Photo
+              </button>
+              {profilePhotoKey && (
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  disabled={photoUploading}
+                  className="rounded-md border border-default bg-white px-3 py-1.5 text-xs font-semibold text-danger-500 hover:bg-danger-50 hover:border-danger-100 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-5">
           <div className="sm:col-span-3">
             <label className={labelCls}>Full Name *</label>
@@ -378,7 +804,7 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
               <input ref={managerInputRef} type="text" value={managerSearch} onChange={(e) => { setManagerSearch(e.target.value); setManagerOpen(true); if (!e.target.value) setReportingManagerId("") }} onFocus={() => setManagerOpen(true)} onBlur={() => setTimeout(() => setManagerOpen(false), 150)} className={`${inputCls} pl-8 pr-8`} placeholder={managersLoading ? "Loading employees…" : "Search by name…"} />
               {reportingManagerId && <button type="button" onClick={clearManager} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"><X className="size-3.5" /></button>}
               {managerOpen && filteredManagers.length > 0 && (
-                <ul className="absolute z-20 left-0 right-0 top-full mt-1 rounded-lg border border-default bg-white shadow-md max-h-48 overflow-y-auto">
+                <ul className="absolute z-20 left-0 right-0 top-full mt-1 rounded-md border border-default bg-white shadow-md max-h-48 overflow-y-auto">
                   {filteredManagers.map((m) => (<li key={m.id}><button type="button" onMouseDown={() => selectManager(m.id, m.fullName)} className="w-full text-left px-3 py-2 text-sm hover:bg-elevated transition-colors">{m.fullName}</button></li>))}
                 </ul>
               )}
@@ -391,7 +817,7 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
               Emergency Contact<OptionalTag />
             </button>
             {emergencyOpen && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-lg border border-default bg-elevated p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-md border border-default bg-elevated p-4">
                 <div>
                   <label className={labelCls}>Contact Name<OptionalTag /></label>
                   <input value={emergency.name} onChange={(e) => setEmergency((p) => ({ ...p, name: e.target.value }))} className={inputCls} placeholder="e.g. Ahmed Ali" />
@@ -414,7 +840,7 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
       </section>
 
       {/* Employment Details */}
-      <section className="rounded-2xl border border-default bg-white p-6 space-y-5">
+      <section className="rounded-md border border-default bg-white p-6 space-y-5">
         <SectionHeader icon={Briefcase} title="Employment Details" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div>
@@ -456,35 +882,8 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
         </div>
       </section>
 
-      {/* Skills */}
-      {/* <section className="rounded-2xl border border-default bg-white p-6 space-y-5">
-        <SectionHeader icon={Sparkles} title="Skills" />
-        {skills.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <span key={skill} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border border-default text-foreground" style={{ borderRadius: 0, background: "var(--bg-subtle)" }}>
-                {skill}
-                <button type="button" onClick={() => removeSkill(skill)} className="text-muted hover:text-foreground transition-colors"><X className="size-3" /></button>
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="relative">
-          <input type="text" value={skillInput} onChange={(e) => { setSkillInput(e.target.value); setSkillDropOpen(true) }} onFocus={() => setSkillDropOpen(true)} onBlur={() => setTimeout(() => setSkillDropOpen(false), 150)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (skillInput.trim()) addSkill(skillInput) } }} className={inputCls} placeholder="Type to search or add a custom skill, press Enter to add" />
-          {skillDropOpen && (filteredSkills.length > 0 || skillInput.trim()) && (
-            <ul className="absolute z-20 left-0 right-0 top-full mt-1 rounded-lg border border-default bg-white shadow-md max-h-48 overflow-y-auto">
-              {filteredSkills.map((s) => (<li key={s}><button type="button" onMouseDown={() => addSkill(s)} className="w-full text-left px-3 py-2 text-sm hover:bg-elevated transition-colors">{s}</button></li>))}
-              {skillInput.trim() && !PREDEFINED_SKILLS.map((s) => s.toLowerCase()).includes(skillInput.toLowerCase()) && (
-                <li><button type="button" onMouseDown={() => addSkill(skillInput)} className="w-full text-left px-3 py-2 text-sm text-primary font-semibold hover:bg-elevated transition-colors flex items-center gap-1.5"><Plus className="size-3.5" /> Add &ldquo;{skillInput.trim()}&rdquo;</button></li>
-              )}
-            </ul>
-          )}
-        </div>
-        <p className="text-xs text-muted">Search from the list or type a custom skill and press Enter.</p>
-      </section> */}
-
       {/* Documents */}
-      <section className="rounded-2xl border border-default bg-white p-6 space-y-6">
+      <section className="rounded-md border border-default bg-white p-6 space-y-6">
         <SectionHeader icon={FileText} title="Documents" />
         <div className="max-w-xs">
           <label className={labelCls}>Highest Qualification<OptionalTag /></label>
@@ -511,21 +910,43 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
           <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Other Documents<span className="text-xs font-normal normal-case ml-1 text-muted">(optional)</span></p>
           <div className="space-y-3">
             {otherDocs.map((doc) => (
-              <div key={doc.id} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-3 items-start rounded-lg border border-default bg-elevated p-3">
+              <div key={doc.id} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-3 items-start rounded-md border border-default bg-elevated p-3">
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1">Document Name</label>
                   <input value={doc.name} onChange={(e) => updateOtherDoc(doc.id, "name", e.target.value)} className={inputCls} placeholder="e.g. Experience Certificate" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted mb-1">File</label>
-                  {doc.file ? (
-                    <div className="flex items-center gap-2 h-10 rounded-lg border border-default bg-white px-3 text-sm">
-                      <FileText className="size-4 text-muted shrink-0" />
-                      <span className="flex-1 truncate text-foreground">{doc.file.name}</span>
-                      <button type="button" onClick={() => updateOtherDoc(doc.id, "file", null)} className="text-muted hover:text-foreground transition-colors"><X className="size-3.5" /></button>
+                  {(doc.file || (doc.s3Key && doc.status === "done")) ? (
+                    <div className="rounded-md border border-default bg-white overflow-hidden">
+                      {/* Image preview for other docs */}
+                      {(doc.file ? isImageFile(doc.file) : /\.(jpg|jpeg|png)$/i.test((doc as any).fileName ?? "")) && (
+                        <div className="relative w-full h-24 bg-black/5 overflow-hidden border-b border-default">
+                          <img
+                            src={doc.file ? URL.createObjectURL(doc.file) : (doc as any).presignedUrl || ""}
+                            alt={doc.file ? doc.file.name : (doc as any).fileName || ""}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 h-10 px-3 text-sm">
+                        <FileText className="size-4 text-muted shrink-0" />
+                        <span className="flex-1 truncate text-foreground">{doc.file ? doc.file.name : (doc as any).fileName || "Uploaded Document"}</span>
+                        {(doc.file ? URL.createObjectURL(doc.file) : (doc as any).presignedUrl) && (
+                          <a href={doc.file ? URL.createObjectURL(doc.file) : (doc as any).presignedUrl} target="_blank" rel="noreferrer" className="text-primary hover:opacity-70 transition-opacity" title="Preview">
+                            <Eye className="size-4" />
+                          </a>
+                        )}
+                        {doc.status === "uploading" && <Loader2 className="size-4 animate-spin text-primary shrink-0" />}
+                        {doc.status === "done" && <CheckCircle2 className="size-4 text-green-600 shrink-0" />}
+                        {doc.status === "error" && <span className="text-xs text-red-500 shrink-0">failed</span>}
+                        {(!doc.status || doc.status === "error" || doc.status === "done") && (
+                          <button type="button" onClick={() => updateOtherDoc(doc.id, "file", null)} className="text-muted hover:text-foreground transition-colors"><X className="size-3.5" /></button>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <label className="flex items-center gap-2 h-10 rounded-lg border border-dashed border-default bg-white px-3 text-sm text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                    <label className="flex items-center gap-2 h-10 rounded-md border border-dashed border-default bg-white px-3 text-sm text-muted hover:border-primary hover:text-primary transition-colors cursor-pointer">
                       <Upload className="size-4 shrink-0" /><span>Upload file</span>
                       <input type="file" accept={ACCEPTED} className="sr-only" onChange={(e) => updateOtherDoc(doc.id, "file", e.target.files?.[0] ?? null)} />
                     </label>
@@ -533,7 +954,7 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
                   {doc.error && <p className="text-xs text-danger-500 mt-1">{doc.error}</p>}
                 </div>
                 <div className="flex items-end h-10">
-                  <button type="button" onClick={() => removeOtherDoc(doc.id)} disabled={otherDocs.length === 1} className="h-10 w-10 flex items-center justify-center rounded-lg border border-default text-muted hover:text-danger-500 hover:border-danger-500 transition-colors disabled:opacity-30" title="Remove row"><Trash2 className="size-4" /></button>
+                  <button type="button" onClick={() => removeOtherDoc(doc.id)} disabled={otherDocs.length === 1} className="h-10 w-10 flex items-center justify-center rounded-md border border-default text-muted hover:text-danger-500 hover:border-danger-500 transition-colors disabled:opacity-30" title="Remove row"><Trash2 className="size-4" /></button>
                 </div>
               </div>
             ))}
@@ -543,10 +964,10 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
       </section>
 
       {/* Admin Panel Access */}
-      <section className="rounded-2xl border border-default bg-white p-6 space-y-5">
+      <section className="rounded-md border border-default bg-white p-6 space-y-5">
         <SectionHeader icon={Shield} title="Admin Panel Access" />
         {employee?.adminAccount ? (
-          <div className="rounded-lg border px-4 py-3 flex items-center gap-3" style={{ background: "var(--success-50)", borderColor: "var(--success-100)" }}>
+          <div className="rounded-md border px-4 py-3 flex items-center gap-3" style={{ background: "var(--success-50)", borderColor: "var(--success-100)" }}>
             <CheckCircle2 className="size-4 shrink-0" style={{ color: "var(--success-600)" }} />
             <div>
               <p className="text-sm font-semibold" style={{ color: "var(--success-700)" }}>Admin access active</p>
@@ -578,17 +999,30 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
       </section>
 
       {tempPassword && (
-        <div className="rounded-lg border px-4 py-3" style={{ background: "var(--amber-50)", borderColor: "var(--amber-200)" }}>
+        <div className="rounded-md border px-4 py-3" style={{ background: "var(--amber-50)", borderColor: "var(--amber-200)" }}>
           <p className="text-sm font-semibold mb-1" style={{ color: "var(--amber-700)" }}>⚠ Email delivery failed — share this password manually:</p>
           <p className="font-mono text-sm font-bold tracking-widest" style={{ color: "var(--amber-700)" }}>{tempPassword}</p>
         </div>
       )}
 
-      <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-default bg-white/80 p-2 backdrop-blur-md shadow-sm">
-        <button type="button" onClick={() => router.back()} className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors">Cancel</button>
-        <button type="submit" disabled={saving} onClick={() => { isDraftRef.current = true }} className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-60">{saving ? "Saving…" : "Save as Draft"}</button>
-        <button type="submit" disabled={saving} onClick={() => { isDraftRef.current = false }} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60 transition-opacity">{saving ? "Saving…" : isEdit ? "Save Changes" : "Create Employee"}</button>
+      <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-md border border-default bg-white/80 p-2 backdrop-blur-md shadow-sm">
+        <button type="button" onClick={handleCancel} disabled={saving || isUploading} className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors">Cancel</button>
+        <button type="submit" disabled={saving || isUploading} onClick={() => { isDraftRef.current = true }} className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-60">{saving ? "Saving…" : "Save as Draft"}</button>
+        <button type="submit" disabled={saving || isUploading} onClick={() => { isDraftRef.current = false }} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60 transition-opacity">{saving ? "Saving…" : isUploading ? "Uploading..." : isEdit ? "Save Changes" : "Create Employee"}</button>
       </div>
+      {cropSrc && originalFile && (
+        <ImageCropper
+          src={cropSrc}
+          fileName={originalFile.name}
+          onCrop={handleCropSave}
+          onCancel={() => {
+            setCropSrc(null)
+            setOriginalFile(null)
+            if (photoInputRef.current) photoInputRef.current.value = ""
+          }}
+          circular
+        />
+      )}
     </form>
   )
 }

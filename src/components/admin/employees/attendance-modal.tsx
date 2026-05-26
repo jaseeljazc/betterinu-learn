@@ -108,24 +108,67 @@ export function AttendanceModal({
     }
   }
 
+  async function handleDelete() {
+    if (!existingRecord?.id) return;
+    if (!confirm("Are you sure you want to unmark this day's attendance?")) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const doPostDelete = async () => {
+        return fetch("/api/admin/employees/attendance", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: existingRecord.id }),
+        });
+      };
+
+      let res = await doPostDelete();
+
+      // Retry flow for expired tokens
+      if (res.status === 401) {
+        const user = clientAuth.currentUser;
+        if (user) {
+          const freshToken = await user.getIdToken(true);
+          await fetch("/api/auth/refresh-session", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken: freshToken }),
+          });
+          res = await doPostDelete();
+        }
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to delete");
+      toast.success("Attendance unmarked", { position: "top-right" });
+      onSaved();
+    } catch (e: any) {
+      setError(e.message);
+      setSaving(false);
+    }
+  }
+
 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-default">
           <h2 className="text-base font-bold text-foreground">
             {isEdit ? "Edit Attendance" : "Mark Attendance"}
           </h2>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-muted hover:text-primary hover:bg-subtle transition-colors">
+          <button onClick={onClose} className="rounded-md p-1.5 text-muted hover:text-primary hover:bg-subtle transition-colors">
             <X className="size-4" />
           </button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 font-medium">
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 font-medium">
               {error}
             </div>
           )}
@@ -134,12 +177,12 @@ export function AttendanceModal({
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Employee *</label>
             {initEmpId ? (
-              <p className="rounded-xl border border-default bg-subtle px-4 py-2.5 text-sm font-medium text-foreground">
+              <p className="rounded-md border border-default bg-subtle px-4 py-2.5 text-sm font-medium text-foreground">
                 {initEmpName}
               </p>
             ) : (
               <Select value={empId || ALL} onValueChange={(v) => setEmpId(v === ALL ? "" : v)}>
-                <SelectTrigger className="w-full h-[42px] rounded-xl border-default">
+                <SelectTrigger className="w-full h-[42px] rounded-md border-default">
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
@@ -158,7 +201,7 @@ export function AttendanceModal({
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-foreground">Date *</label>
             {initDate ? (
-              <p className="rounded-xl border border-default bg-subtle px-4 py-2.5 text-sm font-medium text-foreground">
+              <p className="rounded-md border border-default bg-subtle px-4 py-2.5 text-sm font-medium text-foreground">
                 {initDate}
               </p>
             ) : (
@@ -167,7 +210,7 @@ export function AttendanceModal({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 disabled={readonly}
-                className="w-full rounded-xl border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 h-[42px]"
+                className="w-full rounded-md border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 h-[42px]"
               />
             )}
           </div>
@@ -183,7 +226,7 @@ export function AttendanceModal({
                   disabled={readonly}
                   onClick={() => !readonly && setStatus(s)}
                   className={[
-                    "rounded-xl border-2 px-4 py-2.5 text-sm font-bold transition-all",
+                    "rounded-md border-2 px-4 py-2.5 text-sm font-bold transition-all",
                     status === s ? STATUS_STYLE[s] : `bg-white ${STATUS_INACTIVE[s]}`,
                     readonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
                   ].join(" ")}
@@ -202,28 +245,39 @@ export function AttendanceModal({
               onChange={(e) => setNote(e.target.value)}
               disabled={readonly}
               placeholder="e.g. Medical leave, sick day…"
-              className="w-full rounded-xl border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-md border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-default">
-          {!readonly && (
+        <div className="flex flex-col sm:flex-row gap-3 px-6 py-4 border-t border-default">
+          {isEdit && canEdit && (
             <button
-              onClick={handleSave}
+              onClick={handleDelete}
               disabled={saving}
-              className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 shadow-sm transition-all"
+              className="rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-all text-center"
             >
-              {saving ? "Saving…" : isEdit ? "Update" : "Save"}
+              Unmark
             </button>
           )}
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-default py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
-          >
-            {readonly ? "Close" : "Cancel"}
-          </button>
+          <div className="flex-1 flex gap-3">
+            {!readonly && (
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 rounded-md bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 shadow-xs transition-all"
+              >
+                {saving ? "Saving…" : isEdit ? "Update" : "Save"}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-md border border-default py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
+            >
+              {readonly ? "Close" : "Cancel"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

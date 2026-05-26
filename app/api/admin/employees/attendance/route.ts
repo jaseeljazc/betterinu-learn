@@ -82,6 +82,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `status must be one of: ${validStatuses.join(", ")}` }, { status: 400 });
   }
 
+  // Block marking attendance on Sundays
+  const [yr, mo, dy] = date.split("-").map(Number);
+  const parsedDate = new Date(yr, mo - 1, dy);
+  if (parsedDate.getDay() === 0) {
+    return NextResponse.json({ error: "Cannot mark attendance on Sundays; Sundays are auto-marked holidays" }, { status: 400 });
+  }
+
   const adminId = auth.adminId === "super_admin_bootstrap" ? null : auth.adminId;
 
   try {

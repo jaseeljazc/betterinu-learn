@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       aa.status,
       aa.last_login,
       aa.created_at,
+      aa.temp_password,
       ar.id   AS role_id,
       ar.name AS role_name,
       ar.label AS role_label,
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
     status: r.status,
     lastLogin: r.last_login,
     createdAt: r.created_at,
+    tempPassword: r.temp_password,
     role: {
       id: r.role_id,
       name: r.role_name,
@@ -147,14 +149,15 @@ export async function POST(req: NextRequest) {
   let adminId: string
   try {
     const inserted = await sql`
-      INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by)
+      INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by, temp_password)
       VALUES (
         ${firebaseUid},
         ${fullName.trim()},
         ${email.toLowerCase()},
         ${roleId},
         ${status},
-        ${auth.adminId === "super_admin_bootstrap" ? null : auth.adminId}
+        ${auth.adminId === "super_admin_bootstrap" ? null : auth.adminId},
+        ${password}
       )
       RETURNING id
     `

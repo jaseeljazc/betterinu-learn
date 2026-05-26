@@ -21,7 +21,7 @@ export async function GET(
       e.id, e.employee_code, e.full_name, e.email, e.phone,
       e.date_of_birth, e.gender, e.address, e.profile_photo_key,
       e.designation, e.employment_type, e.monthly_salary, e.date_of_joining,
-      e.status, e.admin_account_id, e.created_at,
+      e.status, e.admin_account_id, e.created_at, e.qualification, e.skills,
       d.id AS dept_id, d.name AS dept_name, d.is_active AS dept_active,
       rm.id AS manager_id, rm.full_name AS manager_name,
       aa.status AS admin_status, ar.name AS admin_role
@@ -67,6 +67,8 @@ export async function GET(
     profilePhotoUrl: r.profile_photo_key
       ? await generateViewPresignedUrl(r.profile_photo_key as string)
       : undefined,
+    qualification: r.qualification ?? undefined,
+    skills: r.skills ?? undefined,
   }
 
   return NextResponse.json({ employee })
@@ -89,7 +91,7 @@ export async function PATCH(
   const {
     fullName, phone, dateOfBirth, gender, address, profilePhotoKey,
     departmentId, designation, employmentType, reportingManagerId,
-    monthlySalary, dateOfJoining, status,
+    monthlySalary, dateOfJoining, status, qualification, skills,
   } = body
 
   await sql`
@@ -107,6 +109,8 @@ export async function PATCH(
       monthly_salary        = COALESCE(${monthlySalary ?? null}, monthly_salary),
       date_of_joining       = ${dateOfJoining ?? null},
       status                = COALESCE(${status ?? null}, status),
+      qualification         = ${qualification ?? null},
+      skills                = ${skills ?? null},
       updated_at            = NOW()
     WHERE id = ${id}
   `

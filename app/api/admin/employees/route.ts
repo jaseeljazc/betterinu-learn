@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/admin-rbac"
 import { adminAuth } from "@/lib/firebase-admin"
 import { sendWelcomeEmail } from "@/lib/email"
 import { generatePassword } from "@/lib/password"
+import { generateViewPresignedUrl } from "@/lib/s3-private"
 
 /**
  * GET /api/admin/employees
@@ -37,6 +38,8 @@ export async function GET(req: NextRequest) {
       e.status,
       e.admin_account_id,
       e.created_at,
+      e.qualification,
+      e.skills,
       d.id   AS dept_id,
       d.name AS dept_name,
       rm.id        AS manager_id,
@@ -55,7 +58,15 @@ export async function GET(req: NextRequest) {
     ORDER BY e.full_name ASC
   `
 
-  const employees = rows.map(mapEmployee)
+  const employees = await Promise.all(
+    rows.map(async (r) => {
+      const mapped = mapEmployee(r)
+      if (r.profile_photo_key) {
+        mapped.profilePhotoUrl = await generateViewPresignedUrl(r.profile_photo_key as string)
+      }
+      return mapped
+    })
+  )
   return NextResponse.json({ employees })
 }
 
@@ -74,7 +85,7 @@ export async function POST(req: NextRequest) {
     fullName, email, phone, dateOfBirth, gender, address,
     departmentId, designation, employmentType = "full_time",
     reportingManagerId, monthlySalary = 0, dateOfJoining, status = "active",
-    hasAdminAccess = false, roleId,
+    hasAdminAccess = false, roleId, qualification, skills, profilePhotoKey,
   } = body
 
   if (!fullName?.trim() || !email?.trim()) {
@@ -85,10 +96,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
   }
 
-  // Check uniqueness
+  // Check uniqueness across employees
   const existing = await sql`SELECT id FROM employees WHERE email = ${email.toLowerCase()}`
   if (existing.length) {
     return NextResponse.json({ error: "An employee with this email already exists" }, { status: 409 })
+  }
+
+  // Check uniqueness across admin accounts
+  const existingAdmin = await sql`SELECT id FROM admin_accounts WHERE email = ${email.toLowerCase()}`
+  if (existingAdmin.length) {
+    return NextResponse.json({ error: "An admin account with this email already exists" }, { status: 409 })
+  }
+
+  // Check uniqueness in Firebase Auth
+  try {
+    await adminAuth.getUserByEmail(email.toLowerCase())
+    return NextResponse.json({ error: "This email is already registered in the authentication system" }, { status: 409 })
+  } catch (err: any) {
+    if (err.code !== "auth/user-not-found") {
+      const msg = err instanceof Error ? err.message : "Firebase auth check failed"
+      return NextResponse.json({ error: msg }, { status: 500 })
+    }
+  }
+
+  // Phone number format validation (10 to 15 digits, optional + prefix)
+  if (phone && phone.trim().length > 0) {
+    const cleanPhone = phone.replace(/[\s\-()]/g, "")
+    const phoneRegex = /^\+?[0-9]{10,15}$/
+    if (!phoneRegex.test(cleanPhone)) {
+      return NextResponse.json({ error: "Invalid phone number format. It must be a 10 to 15 digit number." }, { status: 400 })
+    }
   }
 
   // Generate employee code: EMP + next padded number
@@ -104,13 +141,15 @@ export async function POST(req: NextRequest) {
     INSERT INTO employees (
       employee_code, full_name, email, phone, date_of_birth, gender, address,
       department_id, designation, employment_type, reporting_manager_id,
-      monthly_salary, date_of_joining, status, created_by
+      monthly_salary, date_of_joining, status, created_by, qualification, skills,
+      profile_photo_key
     ) VALUES (
       ${employeeCode}, ${fullName.trim()}, ${email.toLowerCase()},
       ${phone || null}, ${dateOfBirth || null}, ${gender || null}, ${address || null},
       ${departmentId || null}, ${designation || null}, ${employmentType},
       ${reportingManagerId || null}, ${monthlySalary}, ${dateOfJoining || null},
-      ${status}, ${creatorId}
+      ${status}, ${creatorId}, ${qualification || null}, ${skills || null},
+      ${profilePhotoKey || null}
     )
     RETURNING id
   `
@@ -149,8 +188,8 @@ export async function POST(req: NextRequest) {
 
       try {
         const inserted = await sql`
-          INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by)
-          VALUES (${firebaseUid}, ${fullName.trim()}, ${email.toLowerCase()}, ${roleId}, 'active', ${creatorId})
+          INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by, temp_password)
+          VALUES (${firebaseUid}, ${fullName.trim()}, ${email.toLowerCase()}, ${roleId}, 'active', ${creatorId}, ${tempPassword})
           RETURNING id
         `
         adminId = inserted[0].id as string
@@ -165,7 +204,8 @@ export async function POST(req: NextRequest) {
         await sendWelcomeEmail({ name: fullName.trim(), email: email.toLowerCase(), password: tempPassword })
         emailSent = true
         tempPassword = null  // clear after email sent
-      } catch {
+      } catch (err) {
+        console.error("Failed to send welcome email to new employee admin:", err)
         // Best-effort — tempPassword returned to caller as fallback
       }
     }
@@ -200,5 +240,8 @@ function mapEmployee(r: Record<string, unknown>) {
     department: r.dept_id ? { id: r.dept_id, name: r.dept_name, isActive: true } : undefined,
     reportingManager: r.manager_id ? { id: r.manager_id, fullName: r.manager_name } : undefined,
     adminAccount: r.admin_status ? { id: r.admin_account_id, status: r.admin_status, role: r.admin_role } : undefined,
+    qualification: r.qualification ?? undefined,
+    skills: r.skills ?? undefined,
+    profilePhotoUrl: undefined as string | undefined,
   }
 }

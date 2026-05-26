@@ -312,6 +312,20 @@ export interface Department {
   employeeCount?: number
 }
 
+export interface EmployeeDocument {
+  id: string
+  employeeId: string
+  docType: string
+  docName?: string
+  s3Key: string
+  fileName: string
+  fileType: string
+  fileSize: number
+  uploadedBy?: string
+  uploadedAt: string
+  presignedUrl?: string
+}
+
 export interface Employee {
   id: string
   adminAccountId?: string
@@ -334,6 +348,9 @@ export interface Employee {
   status: EmployeeStatus
   adminAccount?: { id: string; status: "active" | "inactive" | "pending"; role: string }
   createdAt: string
+  qualification?: string
+  skills?: string[]
+  documents?: EmployeeDocument[]
 }
 
 export interface PayrollRun {

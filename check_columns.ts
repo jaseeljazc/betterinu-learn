@@ -4,16 +4,17 @@ dotenv.config({ path: ".env.local" });
 
 const sql = neon(process.env.NEON_DATABASE_URL!);
 
+
 async function checkColumns() {
   try {
-    const rows = await sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'courses'
+    const tables = await sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
     `;
-    console.log("Columns in 'courses':", rows.map(r => r.column_name));
+    console.log("Tables in DB:", tables.map(r => r.table_name));
   } catch (err) {
-    console.error("Error checking columns:", err);
+    console.error("Error checking tables:", err);
   }
 }
 

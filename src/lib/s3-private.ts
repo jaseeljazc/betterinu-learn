@@ -1,5 +1,6 @@
 /**
- * lib/s3-private.ts — Private S3 bucket helpers for account attachments.
+ * lib/s3-private.ts — Private S3 bucket helpers for account attachments
+ *                      and employee documents.
  * Server-only — never import from client components.
  */
 import {
@@ -39,12 +40,21 @@ function getClient() {
 /**
  * Validates file type and size, then generates a presigned PUT URL
  * and the final S3 key.
+ *
+ * @param entityId    - Optional entity id used to organise keys within the folder.
+ *                      For accounts: a transactionId (or null for pending).
+ *                      For employees: an employeeId (or null for pending).
+ * @param fileName    - Original file name (used to derive the extension).
+ * @param fileType    - MIME type of the file.
+ * @param fileSize    - File size in bytes.
+ * @param folderRoot  - S3 key prefix root. Defaults to 'account-attachments'.
  */
 export async function generateUploadPresignedUrl(
-  transactionId: string | null,
+  entityId: string | null,
   fileName: string,
   fileType: string,
-  fileSize: number
+  fileSize: number,
+  folderRoot = "account-attachments"
 ): Promise<{ presignedUrl: string; s3Key: string }> {
   if (!ALLOWED_TYPES.includes(fileType)) {
     throw new Error(
@@ -57,9 +67,9 @@ export async function generateUploadPresignedUrl(
 
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "bin";
   const safeUuid = uuidv4();
-  const folder = transactionId
-    ? `account-attachments/${transactionId}`
-    : `account-attachments/pending`;
+  const folder = entityId
+    ? `${folderRoot}/${entityId}`
+    : `${folderRoot}/pending`;
   const s3Key = `${folder}/${safeUuid}.${ext}`;
 
   const client = getClient();
@@ -138,6 +148,14 @@ export async function deletePrivateObject(s3Key: string): Promise<void> {
  */
 export function validateS3Key(s3Key: string): boolean {
   return /^account-attachments\/[a-zA-Z0-9_\-./]+$/.test(s3Key);
+}
+
+/**
+ * Validates that a key matches the expected pattern for employee documents.
+ * Prevents path-traversal attacks.
+ */
+export function validateEmployeeDocS3Key(s3Key: string): boolean {
+  return /^employee-documents\/[a-zA-Z0-9_\-./]+$/.test(s3Key);
 }
 
 export { ALLOWED_TYPES, MAX_FILE_SIZE };

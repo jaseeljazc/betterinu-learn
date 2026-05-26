@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
-import Link from "next/link"
-import { ArrowLeft, Pencil } from "lucide-react"
 import { sql } from "@/lib/db"
 import { adminAuth } from "@/lib/firebase-admin"
 import { hasPermission } from "@/lib/permissions"
 import { generateViewPresignedUrl } from "@/lib/s3-private"
-import { EmployeeForm } from "@/components/admin/employees/employee-form"
+import { EmployeeDetailView } from "@/components/admin/employees/employee-detail-view"
 import type { AdminRole, Permission, Employee } from "@/types"
 
 async function getSession() {
@@ -59,6 +57,7 @@ export default async function EmployeeDetailPage({
       e.date_of_joining::text AS date_of_joining,
       e.status, e.admin_account_id, 
       e.created_at::text AS created_at,
+      e.qualification, e.skills,
       d.id AS dept_id, d.name AS dept_name, d.is_active AS dept_active,
       rm.id AS manager_id, rm.full_name AS manager_name,
       aa.status AS admin_status, ar.name AS admin_role
@@ -72,6 +71,28 @@ export default async function EmployeeDetailPage({
   `
 
   if (!rows.length) redirect("/admin/employees")
+
+  const docRows = await sql`
+    SELECT id, doc_type, doc_name, s3_key, file_name, file_type, file_size, uploaded_at::text AS uploaded_at
+    FROM employee_documents
+    WHERE employee_id = ${id}
+    ORDER BY uploaded_at ASC
+  `
+
+  const documents = await Promise.all(
+    docRows.map(async (row) => ({
+      id: row.id as string,
+      employeeId: id,
+      docType: row.doc_type as string,
+      docName: (row.doc_name as string | null) ?? undefined,
+      s3Key: row.s3_key as string,
+      fileName: row.file_name as string,
+      fileType: row.file_type as string,
+      fileSize: Number(row.file_size),
+      uploadedAt: row.uploaded_at as string,
+      presignedUrl: await generateViewPresignedUrl(row.s3_key as string),
+    }))
+  )
 
   const r = rows[0]
   const employee: Employee = {
@@ -103,6 +124,9 @@ export default async function EmployeeDetailPage({
     adminAccount: r.admin_status
       ? { id: r.admin_account_id as string, status: r.admin_status as "active" | "inactive" | "pending", role: r.admin_role as string }
       : undefined,
+    qualification: (r.qualification as string | null) ?? undefined,
+    skills: (r.skills as string[] | null) ?? undefined,
+    documents,
   }
 
   const canEdit = session.role === "super_admin" ||
@@ -111,29 +135,5 @@ export default async function EmployeeDetailPage({
   const roleRows = await sql`SELECT id, name, label FROM admin_roles ORDER BY name`
   const roles = roleRows.map((row) => ({ id: row.id as string, name: row.name as string, label: row.label as string }))
 
-  return (
-    <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-10">
-      <div className="mb-8">
-        <Link href="/admin/employees" className="inline-flex items-center gap-2 text-sm text-secondary hover:text-primary mb-4 transition-colors">
-          <ArrowLeft className="size-4" /> Back to Employees
-        </Link>
-        <div className="flex items-center gap-3 mb-1">
-          <Pencil className="size-5 text-primary" />
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
-            {employee.fullName}
-          </h1>
-          <span className="text-sm text-muted font-mono">{employee.employeeCode}</span>
-        </div>
-        <p className="text-sm text-secondary">{employee.designation ?? "Employee"}</p>
-      </div>
-
-      {canEdit ? (
-        <EmployeeForm employee={employee} roles={roles} />
-      ) : (
-        <div className="w-full rounded-2xl border border-default bg-white p-6">
-          <p className="text-sm text-secondary">You have read-only access to employee profiles.</p>
-        </div>
-      )}
-    </div>
-  )
+  return <EmployeeDetailView employee={employee} canEdit={canEdit} roles={roles} />
 }

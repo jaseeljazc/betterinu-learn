@@ -253,7 +253,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
       <div className="flex items-center gap-3">
         <button
           onClick={() => setMonth(prevMonth(month))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-default bg-white text-secondary hover:text-primary hover:border-primary transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-default bg-white text-secondary hover:text-primary hover:border-primary transition-colors"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -262,7 +262,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
         </span>
         <button
           onClick={() => setMonth(nextMonth(month))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-default bg-white text-secondary hover:text-primary hover:border-primary transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-default bg-white text-secondary hover:text-primary hover:border-primary transition-colors"
         >
           <ChevronRight className="size-4" />
         </button>
@@ -271,8 +271,8 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={handleRunPayroll}
-              disabled={running || hasDisbursed}
-              className="flex items-center gap-2 rounded-xl bg-white border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary disabled:opacity-50 whitespace-nowrap shadow-sm"
+              disabled={running}
+              className="flex items-center gap-2 rounded-md bg-white border border-default px-4 py-2 text-sm font-semibold text-secondary hover:text-primary disabled:opacity-50 whitespace-nowrap shadow-xs"
             >
               <PlayCircle className="size-4" />
               {running ? "Running…" : "Run Payroll"}
@@ -283,7 +283,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
             <select
               value={disburseAccountId}
               onChange={(e) => setDisburseAccountId(e.target.value)}
-              className="h-9 rounded-lg border border-default bg-white px-3 text-sm text-secondary outline-none focus:border-primary"
+              className="h-9 rounded-md border border-default bg-white px-3 text-sm text-secondary outline-none focus:border-primary"
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -292,7 +292,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
             <button
               onClick={handleDisburse}
               disabled={disbursing || !approvedCount || !disburseAccountId}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 whitespace-nowrap shadow-sm"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 whitespace-nowrap shadow-xs"
             >
               <Wallet className="size-4" />
               {disbursing ? "Disbursing…" : `Disburse Approved (${approvedCount})`}
@@ -308,7 +308,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
           { label: "LOP Deductions", value: totalDeductions, color: "text-red-600" },
           { label: "Net Payable", value: totalNet, color: "text-green-700" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border border-default bg-white px-5 py-4 shadow-sm">
+          <div key={label} className="rounded-md border border-default bg-white px-5 py-4 shadow-xs">
             <p className="text-xs font-semibold text-muted mb-1">{label}</p>
             <p className={`text-xl font-extrabold tracking-tight ${color}`}>{fmtCurrency(value)}</p>
           </div>
@@ -316,7 +316,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-default bg-white shadow-sm overflow-hidden">
+      <div className="rounded-md border border-default bg-white shadow-xs overflow-hidden">
         <DataTable
           columns={columns}
           data={runs}

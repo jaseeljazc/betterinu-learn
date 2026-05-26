@@ -28,6 +28,7 @@ type AdminRow = {
   createdByName: string | null;
   createdAt: string;
   lastLogin: string | null;
+  tempPassword: string | null;
 };
 
 type AdminsTableProps = {
@@ -101,6 +102,21 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       cell: ({ getValue }) => (
         <span className="text-secondary text-xs">{getValue() as string}</span>
       ),
+    },
+    {
+      accessorKey: "tempPassword",
+      header: "Temp Password",
+      size: 130,
+      cell: ({ getValue }) => {
+        const val = getValue() as string | null;
+        return val ? (
+          <code className="rounded px-1.5 py-0.5 font-mono text-xs font-semibold text-muted dark:text-white">
+            {val}
+          </code>
+        ) : (
+          <span className="text-secondary text-xs">—</span>
+        );
+      },
     },
     {
       accessorKey: "roleName",

@@ -3,32 +3,22 @@ import { cookies } from "next/headers"
 import Link from "next/link"
 import { Plus, ShieldCheck } from "lucide-react"
 import { sql } from "@/lib/db"
-import { adminAuth } from "@/lib/firebase-admin"
 import { RolesTable } from "@/components/admin/roles-table"
 import type { AdminRole, AdminRoleRecord } from "@/types"
 
+/**
+ * Read role from the __rbac cookie (7-day TTL) instead of re-verifying the
+ * short-lived Firebase ID token (1-hour TTL) to prevent spurious redirects.
+ */
 async function getSessionRole(): Promise<{ role: AdminRole } | null> {
   const cookieStore = await cookies()
-  const token = cookieStore.get("__session")?.value
-  if (!token) return null
+  const rbac = cookieStore.get("__rbac")?.value
+  if (!rbac) return null
 
   try {
-    const decoded = await adminAuth.verifyIdToken(token)
-    const uid = decoded.uid
-
-    if (process.env.SUPER_ADMIN_UID && uid === process.env.SUPER_ADMIN_UID) {
-      return { role: "super_admin" }
-    }
-
-    const rows = await sql`
-      SELECT ar.name AS role_name
-      FROM admin_accounts aa
-      JOIN admin_roles ar ON ar.id = aa.role_id
-      WHERE aa.firebase_uid = ${uid} AND aa.status = 'active'
-      LIMIT 1
-    `
-    if (!rows.length) return null
-    return { role: rows[0].role_name as AdminRole }
+    const parsed = JSON.parse(rbac) as { role: AdminRole }
+    if (!parsed.role) return null
+    return { role: parsed.role }
   } catch {
     return null
   }
