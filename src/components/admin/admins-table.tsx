@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog } from "@/components/ui/dialog"
 import { AdminForm } from "./admin-form"
 import type { AdminFormRole, AdminFormData, AdminFormInitialData } from "./admin-form"
+import RoboLoader from "@/components/loading/robo-loader"
 import { toast } from "sonner"
 import {
   DropdownMenu,
@@ -403,8 +404,8 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
           scrollable={false}
         >
           {rolesLoading ? (
-            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-              Loading roles…
+            <div className="flex items-center justify-center py-16">
+              <RoboLoader caption="Loading roles…" />
             </div>
           ) : (
             <AdminForm
@@ -427,8 +428,8 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
           scrollable={false}
         >
           {rolesLoading ? (
-            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-              Loading roles…
+            <div className="flex items-center justify-center py-16">
+              <RoboLoader caption="Loading roles…" />
             </div>
           ) : (
             <AdminForm
