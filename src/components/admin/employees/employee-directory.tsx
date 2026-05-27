@@ -56,13 +56,13 @@ function Avatar({ url, name }: { url?: string; name: string }) {
       <img
         src={url}
         alt={name}
-        className="size-14 rounded-full object-cover ring-2 ring-white shadow-sm"
+        className="size-14 rounded-lg object-fit ring-2 ring-white shadow-sm"
       />
     )
   }
 
   return (
-    <div className="size-14 rounded-full bg-primary/10 text-primary font-bold text-lg flex items-center justify-center ring-2 ring-white shadow-sm">
+    <div className="size-14 rounded-md bg-primary/10 text-primary font-bold text-lg flex items-center justify-center ring-2 ring-white shadow-sm">
       {initials}
     </div>
   )
@@ -197,7 +197,7 @@ export function EmployeeDirectory({ canEdit }: EmployeeDirectoryProps) {
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="rounded-md border border-default bg-white p-5 animate-pulse">
               <div className="flex gap-3 mb-4">
-                <div className="size-14 rounded-full bg-subtle" />
+                <div className="size-14 rounded-md bg-subtle" />
                 <div className="flex-1 space-y-2 pt-1">
                   <div className="h-4 bg-subtle rounded w-3/4" />
                   <div className="h-3 bg-subtle rounded w-1/2" />

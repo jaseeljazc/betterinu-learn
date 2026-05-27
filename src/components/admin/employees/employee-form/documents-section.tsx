@@ -87,10 +87,14 @@ export function DocumentsSection({
       {visibleCertSlots.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
-            Educational Certificates
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {visibleCertSlots.map((slot) => (
+            Educational Certificates  
+          </p> 
+<div className={`grid grid-cols-1 gap-4 ${
+  visibleCertSlots.length === 1 ? 'sm:grid-cols-1' :
+  visibleCertSlots.length === 2 ? 'sm:grid-cols-2' :
+  visibleCertSlots.length === 3 ? 'sm:grid-cols-3' :
+  'sm:grid-cols-2'
+}`}>            {visibleCertSlots.map((slot) => (
               <FileSlotField
                 key={slot.key}
                 label={slot.label}

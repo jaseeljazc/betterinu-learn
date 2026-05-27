@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Pencil, ShieldOff, ShieldCheck, MoreHorizontal } from "lucide-react";
+import { Pencil, ShieldOff, ShieldCheck, MoreHorizontal, Plus } from "lucide-react";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { AdminRoleRecord } from "@/types";
 import { DataTable } from "./data-table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
+import { RoleForm } from "./role-form";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +27,37 @@ export function RolesTable({ roles }: RolesTableProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+
+  async function handleCreateRole(data: {
+    name: string;
+    label: string;
+    description: string;
+    permissions: Array<{ module: string; action: string }>;
+  }) {
+    setCreateLoading(true);
+    try {
+      const res = await fetch("/api/admin/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to create role.");
+        return;
+      }
+      toast.success("Role created successfully");
+      setIsCreateOpen(false);
+      window.location.reload();
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setCreateLoading(false);
+    }
+  }
 
   async function handleDelete(id: string) {
     setDeleting(id);
@@ -88,18 +122,17 @@ export function RolesTable({ roles }: RolesTableProps) {
         const permSummary = isSuperAdmin
           ? "Full access"
           : permCount === 0
-          ? "No permissions"
-          : `${permCount} permission${permCount !== 1 ? "s" : ""}`;
+            ? "No permissions"
+            : `${permCount} permission${permCount !== 1 ? "s" : ""}`;
         return (
           <span
             title={modules.length ? `Modules: ${modules.join(", ")}` : "No permissions assigned"}
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              isSuperAdmin
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${isSuperAdmin
                 ? "bg-primary/10 text-primary"
                 : permCount === 0
-                ? "bg-gray-50 text-gray-600"
-                : "bg-subtle text-foreground"
-            }`}
+                  ? "bg-gray-50 text-gray-600"
+                  : "bg-subtle text-foreground"
+              }`}
           >
             {permSummary}
           </span>
@@ -114,9 +147,8 @@ export function RolesTable({ roles }: RolesTableProps) {
         const n = getValue() as number;
         return (
           <span
-            className={`inline-flex size-7 items-center justify-center rounded-full text-xs font-bold ${
-              n > 0 ? "bg-primary/10 text-primary" : "bg-subtle text-secondary"
-            }`}
+            className={`inline-flex size-7 items-center justify-center rounded-full text-xs font-bold ${n > 0 ? "bg-primary/10 text-primary" : "bg-subtle text-secondary"
+              }`}
           >
             {n}
           </span>
@@ -134,8 +166,8 @@ export function RolesTable({ roles }: RolesTableProps) {
         const deleteTooltip = role.isSystem
           ? "System roles cannot be deleted"
           : role.adminCount > 0
-          ? `${role.adminCount} admin(s) use this role — reassign first`
-          : undefined;
+            ? `${role.adminCount} admin(s) use this role — reassign first`
+            : undefined;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -168,7 +200,28 @@ export function RolesTable({ roles }: RolesTableProps) {
   ];
 
   return (
-    <>
+    <div className="w-full min-h-screen bg-subtle px-6 py-10 lg:px-10">
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <div className="mb-1 flex items-center gap-3">
+            <ShieldCheck className="size-6 text-primary" />
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+              Roles &amp; Permissions
+            </h1>
+          </div>
+          <p className="text-sm text-secondary">
+            Manage roles and their permission sets.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md cursor-pointer"
+        >
+          <Plus className="size-4" />
+          Create New Role
+        </button>
+      </div>
+
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -203,12 +256,29 @@ export function RolesTable({ roles }: RolesTableProps) {
         </div>
       )}
 
+      {/* Create role modal */}
+      {isCreateOpen && (
+        <Dialog
+          open={isCreateOpen}
+          title="Create New Role"
+          onClose={() => setIsCreateOpen(false)}
+          size="4xl"
+          scrollable={false}
+        >
+          <RoleForm
+            onSubmit={handleCreateRole}
+            onCancel={() => setIsCreateOpen(false)}
+            loading={createLoading}
+          />
+        </Dialog>
+      )}
+
       <DataTable
         columns={columns}
         data={sorted}
         emptyMessage="No roles found."
         emptyIcon={ShieldCheck}
       />
-    </>
+    </div>
   );
 }

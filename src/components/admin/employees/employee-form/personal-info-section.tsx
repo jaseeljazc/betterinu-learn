@@ -188,7 +188,7 @@ export function PersonalInfoSection({
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className={inputCls}
-            placeholder="e.g. Jaseel Mohammed"
+            placeholder="Enter your full name"
           />
         </div>
         <div className="sm:col-span-3">
@@ -334,7 +334,7 @@ export function PersonalInfoSection({
                   value={emergency.name}
                   onChange={(e) => setEmergency((p) => ({ ...p, name: e.target.value }))}
                   className={inputCls}
-                  placeholder="e.g. Ahmed Ali"
+                  placeholder="Enter the name "
                 />
               </div>
               <div>

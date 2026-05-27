@@ -28,6 +28,7 @@ import {
   OtherDoc,
   FileSlot,
 } from "./types"
+import { Button } from "@/components/ui/button"
 
 type EmployeeFormProps = {
   employee?: Employee
@@ -582,33 +583,30 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
         </div>
       )}
 
-      <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-md border border-default bg-white/80 p-2 backdrop-blur-md shadow-sm">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={saving || isUploading}
-          className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={saving || isUploading}
-          onClick={() => {
-            isDraftRef.current = true
-          }}
-          className="rounded-xl border border-default px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-60"
-        >
-          {saving && isDraftRef.current ? "Saving…" : "Save as Draft"}
-        </button>
-        <button
-          type="submit"
-          disabled={saving || isUploading}
-          className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
-        >
-          {saving && !isDraftRef.current ? "Saving…" : isUploading ? "Uploading..." : isEdit ? "Save Changes" : "Create Employee"}
-        </button>
-      </div>
+  <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-md border border-default bg-white/80 p-2 backdrop-blur-md shadow-sm">
+  <Button
+    type="button"
+    variant="outline"
+    onClick={onCancel}
+    disabled={saving || isUploading}
+  >
+    Cancel
+  </Button>
+  <Button
+    type="submit"
+    variant="outline"
+    disabled={saving || isUploading}
+    onClick={() => { isDraftRef.current = true }}
+  >
+    {saving && isDraftRef.current ? "Saving…" : "Save as Draft"}
+  </Button>
+  <Button
+    type="submit"
+    disabled={saving || isUploading}
+  >
+    {saving && !isDraftRef.current ? "Saving…" : isUploading ? "Uploading..." : isEdit ? "Save Changes" : "Create Employee"}
+  </Button>
+</div>
       {cropSrc && originalFile && (
         <ImageCropper
           src={cropSrc}

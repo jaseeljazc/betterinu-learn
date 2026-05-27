@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
-import Link from "next/link"
-import { Plus, ShieldCheck } from "lucide-react"
 import { sql } from "@/lib/db"
 import { RolesTable } from "@/components/admin/roles-table"
 import type { AdminRole, AdminRoleRecord } from "@/types"
@@ -69,30 +67,5 @@ export default async function RolesPage() {
     permissions: r.permissions as AdminRoleRecord["permissions"],
   }))
 
-  return (
-    <div className="w-full min-h-screen bg-subtle px-6 py-10 lg:px-10">
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <div className="mb-1 flex items-center gap-3">
-            <ShieldCheck className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
-              Roles &amp; Permissions
-            </h1>
-          </div>
-          <p className="text-sm text-secondary">
-            Manage roles and their permission sets.
-          </p>
-        </div>
-        <Link
-          href="/admin/roles/new"
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
-        >
-          <Plus className="size-4" />
-          Create New Role
-        </Link>
-      </div>
-
-      <RolesTable roles={roles} />
-    </div>
-  )
+  return <RolesTable roles={roles} />
 }

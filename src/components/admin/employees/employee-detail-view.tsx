@@ -6,9 +6,11 @@ import Link from "next/link"
 import {
   ArrowLeft, Pencil, X, Mail, Phone, MapPin, Briefcase,
   Calendar, DollarSign, Building2, User, Shield, CheckCircle2,
-  Clock, UserCheck, FileText,
+  Clock, UserCheck, FileText, CalendarDays,
 } from "lucide-react"
 import { EmployeeForm } from "@/components/admin/employees/employee-form"
+import { EmployeeAttendanceMini } from "@/components/admin/profile/employee-attendance-mini"
+import { Dialog } from "@/components/ui/dialog"
 import type { Employee } from "@/types"
 
 const STATUS_CFG = {
@@ -88,6 +90,7 @@ type Props = {
 export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
+  const [attendanceOpen, setAttendanceOpen] = useState(false)
 
   const statusCfg = STATUS_CFG[employee.status] ?? STATUS_CFG.active
   const typeCfg = EMP_TYPE_CFG[employee.employmentType] ?? EMP_TYPE_CFG.full_time
@@ -201,14 +204,22 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
                 </div>
               </div>
             </div>
-            {canEdit && (
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity shadow-sm"
+                onClick={() => setAttendanceOpen(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-default bg-white px-5 py-2.5 text-sm font-bold text-secondary hover:bg-subtle transition-colors "
               >
-                <Pencil className="size-4" /> Edit Employee
+                <CalendarDays className="size-4" /> View Attendance
               </button>
-            )}
+              {canEdit && (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity shadow-sm"
+                >
+                  <Pencil className="size-4" /> Edit Employee
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Unified Flattened Responsive Grid */}
@@ -272,41 +283,52 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
             </div>
           </div>
 
-          {/* Documents — full width */}
+          {/* Documents */}
           <div className="mt-6">
             <SectionCard title="Documents">
-              {docs.length === 0 ? (
-                <p className="text-sm text-muted py-2">No documents uploaded.</p>
-              ) : (
-                <div className="space-y-5 pt-1">
-                  {mandatoryDocs.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Identity & Banking</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                        {mandatoryDocs.map(renderDocRow)}
+                {docs.length === 0 ? (
+                  <p className="text-sm text-muted py-2">No documents uploaded.</p>
+                ) : (
+                  <div className="space-y-5 pt-1">
+                    {mandatoryDocs.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Identity & Banking</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {mandatoryDocs.map(renderDocRow)}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {certDocs.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Educational Certificates</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                        {certDocs.map(renderDocRow)}
+                    )}
+                    {certDocs.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Educational Certificates</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {certDocs.map(renderDocRow)}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {otherDocs.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Other Attachments</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                        {otherDocs.map(renderDocRow)}
+                    )}
+                    {otherDocs.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Other Attachments</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {otherDocs.map(renderDocRow)}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </SectionCard>
-          </div>
+                    )}
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+
+          <Dialog
+            open={attendanceOpen}
+            title={`${employee.fullName}'s Attendance`}
+            onClose={() => setAttendanceOpen(false)}
+            size="sm"
+          >
+            <div className="py-2">
+              <EmployeeAttendanceMini employeeId={employee.id} />
+            </div>
+          </Dialog>
         </div>
       )}
     </div>

@@ -89,11 +89,113 @@ function isWeekend(date: Date) {
   return d === 0 || d === 6;
 }
 
-function statusCounts(records: ProfileAttendanceRecord[]) {
-  const present = records.filter((r) => r.status === "Present").length;
-  const absent = records.filter((r) => r.status === "Absent").length;
-  const leave = records.filter((r) => r.status === "Leave").length;
-  const halfDay = records.filter((r) => r.status === "Half_Day").length;
+function getDayCategoryForRecord(
+  dateStr: string,
+  byDate: Map<string, ProfileAttendanceRecord>
+): "leave" | "holiday_off" | "working" {
+  const record = byDate.get(dateStr);
+  const status = record?.status;
+  if (status === "Leave") return "leave";
+  if (status === "Present" || status === "Absent" || status === "Half_Day")
+    return "working";
+  // Parse date to check for Sunday
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, mo - 1, d);
+  if (date.getDay() === 0 || status === "Holiday") return "holiday_off";
+  return "working";
+}
+
+function shouldHolidayBeLeave(
+  dateStr: string,
+  byDate: Map<string, ProfileAttendanceRecord>
+): boolean {
+  // Parse the date
+  const [y, mo, d] = dateStr.split("-").map(Number);
+
+  function offsetDate(base: Date, days: number): string {
+    const nd = new Date(base);
+    nd.setDate(nd.getDate() + days);
+    return `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, "0")}-${String(nd.getDate()).padStart(2, "0")}`;
+  }
+
+  // Walk left to find start of contiguous block
+  let startDate = new Date(y, mo - 1, d);
+  for (let i = 0; i < 20; i++) {
+    const prevStr = offsetDate(startDate, -1);
+    const prevCat = getDayCategoryForRecord(prevStr, byDate);
+    if (prevCat === "leave" || prevCat === "holiday_off") {
+      startDate = new Date(startDate);
+      startDate.setDate(startDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Walk right to find end of contiguous block
+  let endDate = new Date(y, mo - 1, d);
+  for (let i = 0; i < 20; i++) {
+    const nextStr = offsetDate(endDate, 1);
+    const nextCat = getDayCategoryForRecord(nextStr, byDate);
+    if (nextCat === "leave" || nextCat === "holiday_off") {
+      endDate = new Date(endDate);
+      endDate.setDate(endDate.getDate() + 1);
+    } else {
+      break;
+    }
+  }
+
+  const blockLength =
+    Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+
+  const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
+  const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+
+  const startsWithLeave = getDayCategoryForRecord(startStr, byDate) === "leave";
+  const endsWithLeave = getDayCategoryForRecord(endStr, byDate) === "leave";
+
+  return (startsWithLeave || endsWithLeave) && blockLength >= 3;
+}
+
+function statusCounts(records: ProfileAttendanceRecord[], month: string) {
+  const [yearStr, monthStr] = month.split("-");
+  const year = Number(yearStr);
+  const monthNum = Number(monthStr);
+  const daysInMonth = new Date(year, monthNum, 0).getDate();
+
+  const byDate = new Map(records.map((r) => [r.date, r]));
+
+  let present = 0;
+  let absent = 0;
+  let leave = 0;
+  let halfDay = 0;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const date = new Date(year, monthNum - 1, day);
+    const record = byDate.get(dateStr);
+    const status = record?.status;
+
+    const isSunday = date.getDay() === 0;
+    const isHolidayOrSunday =
+      (isSunday || status === "Holiday") &&
+      status !== "Present" &&
+      status !== "Absent" &&
+      status !== "Half_Day";
+
+    if (isHolidayOrSunday) {
+      // Apply sandwich rule: this off-day counts as leave if sandwiched
+      if (shouldHolidayBeLeave(dateStr, byDate)) {
+        leave++;
+      }
+      continue;
+    }
+
+    if (status === "Present") present++;
+    else if (status === "Absent") absent++;
+    else if (status === "Leave") leave++;
+    else if (status === "Half_Day") halfDay++;
+  }
+
   const clUsed =
     Math.min(1, leave) +
     (leave === 0 && absent === 0 && halfDay % 2 === 1 ? 0.5 : 0);
@@ -104,6 +206,7 @@ function statusCounts(records: ProfileAttendanceRecord[]) {
     (leave === 0 && absent === 0 && halfDay % 2 === 1
       ? 0
       : (halfDay % 2) * 0.5);
+
   return { present, absent, leave, halfDay, clUsed, lopDays };
 }
 
@@ -226,7 +329,7 @@ export function AttendanceCalendarMini({
   );
 
   const byDate = new Map(records.map((r) => [r.date, r]));
-  const summary = statusCounts(records);
+  const summary = statusCounts(records, month);
 
   // Format month label, e.g. "May 2026"
   const monthLabel = new Date(year, monthNum - 1, 1).toLocaleDateString(
@@ -320,41 +423,58 @@ export function AttendanceCalendarMini({
 
           {/* Current-month days */}
           {days.map((day) => {
-            const date = new Date(year, monthNum - 1, day);
-            const dateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const record = byDate.get(dateStr);
-            const cfg = record ? STATUS_CFG[record.status] : undefined;
-            const weekend = isWeekend(date);
+            const date = new Date(year, monthNum - 1, day)
+            const dateStr = `${year}-${String(monthNum).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+            const record = byDate.get(dateStr)
+
+            const isSunday = date.getDay() === 0
+            const isHolidayOrSunday =
+              (isSunday || record?.status === "Holiday") &&
+              record?.status !== "Present" &&
+              record?.status !== "Absent" &&
+              record?.status !== "Half_Day"
+
+            const isSandwichedLeave =
+              isHolidayOrSunday && shouldHolidayBeLeave(dateStr, byDate)
+
+            const cfg = isSandwichedLeave
+              ? STATUS_CFG.Leave
+              : record
+                ? STATUS_CFG[record.status]
+                : undefined
+            const weekend = isWeekend(date)
 
             // Cell appearance
             const cellBg = cfg
               ? cfg.cellBg
               : weekend
                 ? "bg-slate-100"
-                : "bg-white";
+                : "bg-white"
             const cellBorder = cfg
               ? cfg.cellBorder
-              : "border-default";
+              : "border-default"
             const numCls = cfg
               ? cfg.numCls
               : weekend
                 ? "text-muted/60"
-                : "text-muted";
+                : "text-muted"
             const badgeCls = cfg
               ? cfg.badgeCls
               : weekend
                 ? "text-muted/40"
-                : "text-transparent"; // empty for unmarked weekdays
+                : "text-transparent" // empty for unmarked weekdays
 
             return (
               <div
                 key={dateStr}
                 title={
-                  record
-                    ? `${dateStr} — ${cfg?.label ?? record.status}`
-                    : weekend
-                      ? `${dateStr} — Weekend`
-                      : `${dateStr} — Not marked`
+                  isSandwichedLeave
+                    ? `${dateStr} — Leave (Sandwich)`
+                    : record
+                      ? `${dateStr} — ${cfg?.label ?? record.status}`
+                      : weekend
+                        ? `${dateStr} — Weekend`
+                        : `${dateStr} — Not marked`
                 }
                 className={[
                   "aspect-square rounded-md border flex flex-col items-center justify-between px-0.5 pt-1 pb-1.5",
@@ -377,7 +497,7 @@ export function AttendanceCalendarMini({
                   {cfg ? cfg.label : weekend ? "—" : ""}
                 </span>
               </div>
-            );
+            )
           })}
 
           {/* Next-month leading days */}
