@@ -196,6 +196,16 @@ use `getTenantFromHost(request.headers.get("host"))`.
   </div>
   ```
 
+## Data Fetching & Server State Management (TanStack Query)
+
+- **Use TanStack Query (`@tanstack/react-query`)** for all server state management, data fetching, and side-effects (mutations).
+- **Queries (`useQuery`)**: Use for fetching and caching data from the API (e.g., lists of users, dropdown options). Do not use `useEffect` and `useState` for standard data fetching.
+- **Mutations (`useMutation`)**: Use for all complex API interactions that modify data (e.g., form submissions, file uploads, state transitions). 
+- **Decoupled API Layer**:
+  - `lib/api-client.ts`: Handles base fetch wrapper (credentials, Content-Type, 401 token refreshes).
+  - `lib/services/<domain>-service.ts`: Handles domain-specific API calls (`fetchManagers`, `createEmployee`, `updateEmployee`).
+  - `lib/hooks/use<Feature>.ts`: Uses TanStack Query to orchestrate the services and expose standard states (`data`, `isPending`, `error`, `mutate`) to the UI components.
+
 ## Hooks
 
 - Files in `hooks/` are `use-*.ts(x)` and export the hook as a named export.
