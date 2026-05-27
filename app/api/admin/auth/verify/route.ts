@@ -8,8 +8,12 @@ import type { AdminRole } from "@/types"
  * Body: { idToken: string }
  *
  * Verifies the Firebase ID token, confirms the UID maps to an active
- * admin_accounts row, and mints an httpOnly __session cookie that carries
- * the enriched RBAC payload (role + permissions).
+ * admin_accounts row, mints an httpOnly __session cookie, and writes a
+ * client-readable __rbac cookie that includes the compact permissions array
+ * so custom roles work correctly in the sidebar nav.
+ *
+ * Compact format: [{m, a}] keeps the cookie well under the 4KB browser limit
+ * (max 36 perms × ~20 bytes ≈ 900 bytes).
  */
 export async function POST(req: NextRequest) {
   const { idToken } = await req.json()
@@ -25,9 +29,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 })
   }
 
-  // super_admin bootstrap bypass
+  // super_admin bootstrap bypass — no DB row required
   const superAdminUid = process.env.SUPER_ADMIN_UID
   if (superAdminUid && uid === superAdminUid) {
+    const ALL_MODULES = ["students","courses","curriculum","tasks","admins","accounts","employees","payroll","attendance"]
+    const ALL_ACTIONS = ["view","create","edit","delete"]
+    const permissions = ALL_MODULES.flatMap((m) => ALL_ACTIONS.map((a) => ({ m, a })))
+
     const response = NextResponse.json({
       ok: true,
       adminId: "super_admin_bootstrap",
@@ -39,8 +47,6 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    
-    // Store slim RBAC payload (role only — permissions are derived client-side)
     response.cookies.set(
       "__rbac",
       JSON.stringify({
@@ -48,6 +54,7 @@ export async function POST(req: NextRequest) {
         fullName: "Super Admin",
         email: "superadmin@betterinu.com",
         role: "super_admin",
+        permissions,
       }),
       {
         httpOnly: false,
@@ -59,7 +66,7 @@ export async function POST(req: NextRequest) {
     return response
   }
 
-  // Look up admin_accounts + role + permissions
+  // Look up admin + role + permissions from DB
   const rows = await sql`
     SELECT
       aa.id,
@@ -68,12 +75,7 @@ export async function POST(req: NextRequest) {
       ar.name AS role_name,
       COALESCE(
         json_agg(
-          json_build_object(
-            'id', p.id,
-            'module', p.module,
-            'action', p.action,
-            'description', p.description
-          )
+          json_build_object('module', p.module, 'action', p.action)
         ) FILTER (WHERE p.id IS NOT NULL),
         '[]'
       ) AS permissions
@@ -97,10 +99,22 @@ export async function POST(req: NextRequest) {
   const fullName = rows[0].full_name as string
   const email = rows[0].email as string
   const role = rows[0].role_name as AdminRole
-  // permissions are derived client-side from role via getDefaultPermissions()
-  // — do NOT store them in the cookie to avoid exceeding the 4KB browser limit.
 
-  // Update last_login
+  // Deduplicate (guard against Cartesian product from the GROUP BY join)
+  // and compact to {m, a} to keep cookie size small.
+  const rawPerms = rows[0].permissions as Array<{ module: string; action: string }> || []
+  const seen = new Set<string>()
+  const permissions = rawPerms
+    .filter((p) => {
+      if (!p?.module || !p.action) return false
+      const key = `${p.module}:${p.action}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .map((p) => ({ m: p.module, a: p.action }))
+
+  // Update last_login timestamp
   await sql`UPDATE admin_accounts SET last_login = NOW() WHERE id = ${adminId}`
 
   const response = NextResponse.json({ ok: true, adminId, role })
@@ -110,13 +124,9 @@ export async function POST(req: NextRequest) {
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   })
-
-  // Store slim RBAC payload for the client sidebar — just role + identity.
-  // The client reads this and calls getDefaultPermissions(role) to build
-  // the nav. Keeping permissions out avoids 4KB cookie truncation.
   response.cookies.set(
     "__rbac",
-    JSON.stringify({ adminId, fullName, email, role }),
+    JSON.stringify({ adminId, fullName, email, role, permissions }),
     {
       httpOnly: false,
       sameSite: "lax",

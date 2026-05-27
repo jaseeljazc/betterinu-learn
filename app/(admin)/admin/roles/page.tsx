@@ -64,7 +64,15 @@ export default async function RolesPage() {
     description: r.description as string,
     isSystem: r.is_system as boolean,
     adminCount: r.admin_count as number,
-    permissions: r.permissions as AdminRoleRecord["permissions"],
+    permissions: (() => {
+      const perms = (r.permissions || []) as AdminRoleRecord["permissions"]
+      const seen = new Set<string>()
+      return perms.filter((p) => {
+        if (!p || !p.id || seen.has(p.id)) return false
+        seen.add(p.id)
+        return true
+      })
+    })(),
   }))
 
   return <RolesTable roles={roles} />

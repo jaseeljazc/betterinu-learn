@@ -179,19 +179,7 @@ export function DataTable<TData, TValue>({
       )}
 
       <div className="overflow-hidden rounded-md border border-default bg-white">
-        <div
-          ref={scrollContainerRef}
-  className="overflow-auto max-h-[480px]
-  [&::-webkit-scrollbar]:h-[3px]
-  [&::-webkit-scrollbar]:w-[3px]
-  [&::-webkit-scrollbar-track]:bg-transparent
-  [&::-webkit-scrollbar-thumb]:rounded-full
-  [&::-webkit-scrollbar-thumb]:bg-black/10
-  hover:[&::-webkit-scrollbar-thumb]:bg-black/20
-  [&::-webkit-scrollbar-button]:hidden
-  [scrollbar-width:thin]
-  [scrollbar-color:rgba(0,0,0,0.05)_transparent]"
-        >
+        <div ref={scrollContainerRef}>
           <Table>
             {caption && (
               <caption className="px-4 py-2 text-left text-xs text-muted">{caption}</caption>
@@ -253,6 +241,7 @@ export function DataTable<TData, TValue>({
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
+                          style={{ width: cell.column.columnDef.size ? `${cell.column.columnDef.size}px` : undefined }}
                           className="h-5 border-r border-default px-3 text-sm last:border-r-0"
                         >
                           {cell.column.id === "actions" ? (

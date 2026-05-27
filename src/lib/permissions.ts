@@ -11,15 +11,24 @@ import type {
 /**
  * Returns true when the given role has the requested permission.
  * super_admin always passes — the DB is the fallback, not the gate.
+ *
+ * Accepts both the full Permission shape (from DB queries) and the
+ * compact {m, a} shape (from the __rbac cookie) so callers don't need
+ * to normalise before checking.
  */
 export function hasPermission(
   role: AdminRole,
-  permissions: Permission[],
+  permissions: Array<Permission | { m: string; a: string }>,
   module: PermissionModule,
   action: PermissionAction
 ): boolean {
   if (role === "super_admin") return true
-  return permissions.some((p) => p.module === module && p.action === action)
+  return permissions.some((p) => {
+    // Full shape: { module, action }
+    if ("module" in p) return p.module === module && p.action === action
+    // Compact shape: { m, a }
+    return p.m === module && p.a === action
+  })
 }
 
 type PermissionPair = { module: PermissionModule; action: PermissionAction }

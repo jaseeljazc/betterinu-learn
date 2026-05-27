@@ -50,7 +50,17 @@ async function getRoleRow(id: string) {
     WHERE ar.id = ${id}
     GROUP BY ar.id
   `
-  return rows[0] ?? null
+  const row = rows[0]
+  if (!row) return null
+
+  const seen = new Set<string>()
+  row.permissions = (row.permissions as any[] || []).filter((p) => {
+    if (!p || !p.id || seen.has(p.id)) return false
+    seen.add(p.id)
+    return true
+  })
+
+  return row
 }
 
 /**
@@ -116,59 +126,35 @@ export async function PATCH(
   const body = await req.json()
   const { name, label, description, permissions } = body
 
-  // For system roles: only allow permissions update
-  if (row.is_system) {
-    if (name !== undefined || label !== undefined || description !== undefined) {
-      return NextResponse.json(
-        { error: "Cannot rename or re-describe a system role" },
-        { status: 403 }
-      )
-    }
-  } else {
-    // Custom roles: validate name/label/description if provided
-    if (name !== undefined) {
-      if (typeof name !== "string" || name.trim().length < 2) {
-        return NextResponse.json({ error: "name must be at least 2 characters" }, { status: 400 })
-      }
-      const slugRegex = /^[a-z0-9_-]+$/
-      if (!slugRegex.test(name.trim())) {
-        return NextResponse.json(
-          { error: "name must be lowercase with no spaces" },
-          { status: 400 }
-        )
-      }
-      // Unique check (excluding self)
-      const dup = await sql`
-        SELECT id FROM admin_roles WHERE name = ${name.trim()} AND id != ${id}
-      `
-      if (dup.length) {
-        return NextResponse.json({ error: "A role with this name already exists" }, { status: 409 })
-      }
-    }
-    if (label !== undefined && (typeof label !== "string" || label.trim().length < 2)) {
-      return NextResponse.json({ error: "label must be at least 2 characters" }, { status: 400 })
-    }
-    if (
-      description !== undefined &&
-      (typeof description !== "string" || description.trim().length < 10)
-    ) {
-      return NextResponse.json(
-        { error: "description must be at least 10 characters" },
-        { status: 400 }
-      )
-    }
+  // Validate and update name/label/description for all non-super_admin roles
+  if (name !== undefined && name.trim() !== row.name) {
+    return NextResponse.json(
+      { error: "Role name slug cannot be changed after creation" },
+      { status: 400 }
+    )
+  }
+  if (label !== undefined && (typeof label !== "string" || label.trim().length < 2)) {
+    return NextResponse.json({ error: "label must be at least 2 characters" }, { status: 400 })
+  }
+  if (
+    description !== undefined &&
+    (typeof description !== "string" || description.trim().length < 10)
+  ) {
+    return NextResponse.json(
+      { error: "description must be at least 10 characters" },
+      { status: 400 }
+    )
+  }
 
-    // Update name/label/description if provided
-    if (name !== undefined || label !== undefined || description !== undefined) {
-      await sql`
-        UPDATE admin_roles
-        SET
-          name        = COALESCE(${name?.trim() ?? null}, name),
-          label       = COALESCE(${label?.trim() ?? null}, label),
-          description = COALESCE(${description?.trim() ?? null}, description)
-        WHERE id = ${id}
-      `
-    }
+  if (name !== undefined || label !== undefined || description !== undefined) {
+    await sql`
+      UPDATE admin_roles
+      SET
+        name        = COALESCE(${name?.trim() ?? null}, name),
+        label       = COALESCE(${label?.trim() ?? null}, label),
+        description = COALESCE(${description?.trim() ?? null}, description)
+      WHERE id = ${id}
+    `
   }
 
   // Re-sync permissions if provided

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Pencil, ShieldOff, ShieldCheck, MoreHorizontal, Plus } from "lucide-react";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -30,6 +29,38 @@ export function RolesTable({ roles }: RolesTableProps) {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+
+  const [editingRole, setEditingRole] = useState<RoleRow | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+
+  async function handleEditRole(data: {
+    name: string;
+    label: string;
+    description: string;
+    permissions: Array<{ module: string; action: string }>;
+  }) {
+    if (!editingRole) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/admin/roles/${editingRole.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to update role.");
+        return;
+      }
+      toast.success("Role updated successfully");
+      setEditingRole(null);
+      window.location.reload();
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   async function handleCreateRole(data: {
     name: string;
@@ -83,7 +114,7 @@ export function RolesTable({ roles }: RolesTableProps) {
     {
       accessorKey: "label",
       header: "Role Name",
-      size: 200,
+      size: 160,
       cell: ({ row }) => {
         const role = row.original;
         return (
@@ -106,13 +137,13 @@ export function RolesTable({ roles }: RolesTableProps) {
       header: "Description",
       enableSorting: false,
       cell: ({ getValue }) => (
-        <p className="text-xs text-secondary line-clamp-2 max-w-xs">{getValue() as string}</p>
+        <p className="text-xs text-secondary whitespace-normal">{getValue() as string}</p>
       ),
     },
     {
       id: "permissions",
       header: "Permissions",
-      size: 150,
+      size: 130,
       enableSorting: false,
       cell: ({ row }) => {
         const role = row.original;
@@ -142,7 +173,7 @@ export function RolesTable({ roles }: RolesTableProps) {
     {
       accessorKey: "adminCount",
       header: "Admins",
-      size: 90,
+      size: 80,
       cell: ({ getValue }) => {
         const n = getValue() as number;
         return (
@@ -162,7 +193,9 @@ export function RolesTable({ roles }: RolesTableProps) {
       enableSorting: false,
       cell: ({ row }) => {
         const role = row.original;
+        const canEdit = role.name !== "super_admin";
         const canDelete = !role.isSystem && role.adminCount === 0;
+        const editTooltip = !canEdit ? "The super_admin role cannot be edited" : undefined;
         const deleteTooltip = role.isSystem
           ? "System roles cannot be deleted"
           : role.adminCount > 0
@@ -175,14 +208,14 @@ export function RolesTable({ roles }: RolesTableProps) {
                 <MoreHorizontal className="size-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50 min-w-[160px] overflow-hidden rounded-xl border border-default bg-white shadow-lg">
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/roles/${role.id}`}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-subtle transition-colors cursor-pointer"
-                >
-                  <Pencil className="size-3.5" /> Edit
-                </Link>
+            <DropdownMenuContent align="end" className="z-50 min-w-[160px] overflow-hidden rounded-md border border-default bg-white shadow-lg">
+              <DropdownMenuItem
+                onClick={() => canEdit && setEditingRole(role)}
+                disabled={!canEdit}
+                title={editTooltip}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-subtle transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Pencil className="size-3.5" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => canDelete && setConfirmId(role.id)}
@@ -215,7 +248,7 @@ export function RolesTable({ roles }: RolesTableProps) {
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md cursor-pointer"
+          className="flex shrink-0 items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md cursor-pointer"
         >
           <Plus className="size-4" />
           Create New Role
@@ -262,13 +295,31 @@ export function RolesTable({ roles }: RolesTableProps) {
           open={isCreateOpen}
           title="Create New Role"
           onClose={() => setIsCreateOpen(false)}
-          size="4xl"
+          size="3xl"
           scrollable={false}
         >
           <RoleForm
             onSubmit={handleCreateRole}
             onCancel={() => setIsCreateOpen(false)}
             loading={createLoading}
+          />
+        </Dialog>
+      )}
+
+      {/* Edit role modal */}
+      {editingRole && (
+        <Dialog
+          open={!!editingRole}
+          title="Edit Role"
+          onClose={() => setEditingRole(null)}
+          size="3xl"
+          scrollable={false}
+        >
+          <RoleForm
+            initialData={editingRole}
+            onSubmit={handleEditRole}
+            onCancel={() => setEditingRole(null)}
+            loading={editLoading}
           />
         </Dialog>
       )}

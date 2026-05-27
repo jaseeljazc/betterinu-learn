@@ -63,16 +63,24 @@ export async function GET(req: NextRequest) {
     ORDER BY ar.is_system DESC, ar.created_at ASC
   `
 
-  const roles = rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    label: r.label,
-    description: r.description,
-    isSystem: r.is_system,
-    createdAt: r.created_at,
-    adminCount: r.admin_count,
-    permissions: r.permissions,
-  }))
+  const roles = rows.map((r) => {
+    const seen = new Set<string>()
+    const permissions = (r.permissions as Array<{ id: string }> || []).filter((p) => {
+      if (!p || !p.id || seen.has(p.id)) return false
+      seen.add(p.id)
+      return true
+    })
+    return {
+      id: r.id,
+      name: r.name,
+      label: r.label,
+      description: r.description,
+      isSystem: r.is_system,
+      createdAt: r.created_at,
+      adminCount: r.admin_count,
+      permissions,
+    }
+  })
 
   return NextResponse.json({ roles })
 }

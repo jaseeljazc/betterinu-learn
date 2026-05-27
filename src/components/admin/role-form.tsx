@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import {
   AlertCircle,
@@ -25,8 +25,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
 import {
   Tooltip,
   TooltipContent,
@@ -76,9 +74,8 @@ type RoleFormProps = {
 }
 
 export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormProps) {
-  const isEdit       = !!initialData
-  const isSuperAdmin = initialData?.name === "super_admin"
-  const isSystemRole = initialData?.isSystem === true
+  const isEdit        = !!initialData
+  const isSuperAdmin  = initialData?.name === "super_admin"
 
   const seedPerms = (): PermSet => {
     if (!initialData) return new Set()
@@ -91,10 +88,31 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
   const [permissions, setPermissions] = useState<PermSet>(seedPerms)
   const [error,       setError]       = useState("")
 
-  const metaDisabled   = isEdit && isSystemRole
-  const totalPerms     = MODULES.length * ACTIONS.length
-  const selectedCount  = isSuperAdmin ? totalPerms : permissions.size
-  const progressValue  = (selectedCount / totalPerms) * 100
+  const initialName = initialData?.name ?? ""
+  const initialLabel = initialData?.label ?? ""
+  const initialDescription = initialData?.description ?? ""
+  const initialPermsSorted = useMemo(() => {
+    if (!initialData) return ""
+    const unique = Array.from(new Set(initialData.permissions.map((p) => `${p.module}:${p.action}`)))
+    return unique.sort().join(",")
+  }, [initialData])
+
+  const currentPermsSorted = useMemo(() => {
+    return Array.from(permissions).sort().join(",")
+  }, [permissions])
+
+  const hasChanges =
+    !isEdit ||
+    name !== initialName ||
+    label !== initialLabel ||
+    description !== initialDescription ||
+    currentPermsSorted !== initialPermsSorted
+
+
+
+  const metaDisabled  = isSuperAdmin
+  const totalPerms    = MODULES.length * ACTIONS.length
+  const selectedCount = isSuperAdmin ? totalPerms : permissions.size
 
   function togglePermission(module: PermissionModule, action: PermissionAction) {
     if (isSuperAdmin) return
@@ -163,7 +181,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
   const getModuleBadgeVariant = (module: PermissionModule) => {
     const count = moduleSelectedCount(module)
     if (count === 4) return "default"
-    if (count === 0) return "secondary"
+    if (count === 0) return "outline"
     return "outline"
   }
 
@@ -171,9 +189,9 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
 
   return (
     <TooltipProvider>
-      <form onSubmit={handleSubmit} className="flex flex-col max-h-[75vh] md:max-h-[80vh]">
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         {/* Scrollable Body Content */}
-        <div className="flex-1 overflow-y-auto space-y-6 pr-1.5 pb-4">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-1.5 pb-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/10 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/20 [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.1)_transparent]">
 
           {/* ── Top: Metadata ── */}
           <div className="w-full">
@@ -191,7 +209,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
                   <div className="flex items-center justify-between">
                     <Label htmlFor="role-name" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
                       Role Name {!isEdit && <span className="text-destructive">*</span>}
-                      {metaDisabled && <Lock className="size-3 text-muted-foreground" />}
+                      {(isEdit || metaDisabled) && <Lock className="size-3 text-muted-foreground" />}
                     </Label>
                     {!isEdit && name && (
                       <Badge variant="outline" className="font-mono text-[9px] py-0 px-1.5 h-4">
@@ -203,7 +221,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
                     id="role-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    disabled={metaDisabled}
+                    disabled={isEdit || metaDisabled}
                     placeholder="e.g. content_manager"
                     className="text-sm"
                   />
@@ -247,16 +265,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
                   />
                 </div>
 
-                <Separator />
 
-                {/* Progress */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">Permissions selected</span>
-                    <span className="font-bold tabular-nums">{selectedCount} / {totalPerms}</span>
-                  </div>
-                  <Progress value={progressValue} className="h-1.5" />
-                </div>
 
                 {/* Error */}
                 {error && (
@@ -304,7 +313,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                       <thead>
-                        <tr className="border-b bg-muted/40">
+                        <tr className="border-b bg-subtle">
                           <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground w-[180px] border-r border-border">
                             <div className="flex items-center gap-2">
                               <Checkbox
@@ -396,7 +405,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
                                 <div className="flex justify-center">
                                   <Badge
                                     variant={getModuleBadgeVariant(module)}
-                                    className="text-[10px] tabular-nums px-1.5 py-0.5 min-w-[28px] justify-center"
+                                    className="text-[10px] tabular-nums px-1.5  py-0.5 min-w-[28px] justify-center"
                                   >
                                     {count}/4
                                   </Badge>
@@ -432,7 +441,7 @@ export function RoleForm({ initialData, onSubmit, onCancel, loading }: RoleFormP
             )}
             <Button
               type="submit"
-              disabled={loading || isSuperAdmin}
+              disabled={loading || isSuperAdmin || !hasChanges}
               className="flex-1 sm:flex-initial sm:w-36 cursor-pointer"
             >
               {loading ? "Saving…" : isEdit ? "Save Changes" : "Create Role"}
