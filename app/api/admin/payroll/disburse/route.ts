@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/admin-rbac"
 import { format } from "date-fns"
 
 export async function POST(req: NextRequest) {
-  const auth = await requirePermission(req, "payroll_runs", "create") // Must have create permission to disburse
+  const auth = await requirePermission(req, "payroll", "create") // Must have create permission to disburse
   if (auth instanceof NextResponse) return auth
 
   const { month, runIds, accountId } = await req.json()

@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/admin-rbac"
 import { calculatePayrollFromAttendance, getPayrollMonthRange } from "@/lib/payroll-calculation"
 
 export async function POST(req: NextRequest) {
-  const auth = await requirePermission(req, "payroll_runs", "create")
+  const auth = await requirePermission(req, "payroll", "create")
   if (auth instanceof NextResponse) return auth
 
   const { month, departmentId } = await req.json()

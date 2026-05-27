@@ -9,6 +9,10 @@ const VALID_MODULES: PermissionModule[] = [
   "curriculum",
   "tasks",
   "admins",
+  "accounts",
+  "employees",
+  "payroll",
+  "attendance",
 ]
 const VALID_ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 

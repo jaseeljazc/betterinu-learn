@@ -6,20 +6,78 @@ export type ProfileAttendanceRecord = {
   note?: string;
 };
 
-const STATUS_CFG: Record<string, { short: string; cls: string }> = {
-  Present: { short: "P", cls: "bg-green-500 text-white" },
-  Absent: { short: "A", cls: "bg-red-500 text-white" },
-  Leave: { short: "L", cls: "bg-amber-500 text-white" },
-  Half_Day: { short: "HD", cls: "bg-blue-500 text-white" },
-  Holiday: { short: "Holiday", cls: "bg-purple-500 text-white" },
+// ─── Status config ────────────────────────────────────────────────────────────
+// Each status carries:
+//   label  – human-readable text shown inside the cell
+//   cellBg – full-cell tint (Tailwind bg utility)
+//   cellBorder – subtle border matching the tint
+//   numCls – date number color
+//   badgeCls – label color
+//   dotCls – color for the legend dot and stat card dot
+//   statNum – number color in the stat card
+const STATUS_CFG: Record<
+  string,
+  {
+    label: string;
+    cellBg: string;
+    cellBorder: string;
+    numCls: string;
+    badgeCls: string;
+    dotColor: string;
+    statNumColor: string;
+  }
+> = {
+  Present: {
+    label: "Present",
+    cellBg: "bg-green-50",
+    cellBorder: "border-green-200",
+    numCls: "text-green-700",
+    badgeCls: "text-green-800",
+    dotColor: "#22c55e",
+    statNumColor: "#15803d",
+  },
+  Absent: {
+    label: "Absent",
+    cellBg: "bg-red-50",
+    cellBorder: "border-red-200",
+    numCls: "text-red-700",
+    badgeCls: "text-red-800",
+    dotColor: "#ef4444",
+    statNumColor: "#b91c1c",
+  },
+  Leave: {
+    label: "Leave",
+    cellBg: "bg-amber-50",
+    cellBorder: "border-amber-200",
+    numCls: "text-amber-700",
+    badgeCls: "text-amber-800",
+    dotColor: "#f59e0b",
+    statNumColor: "#b45309",
+  },
+  Half_Day: {
+    label: "Half-day",
+    cellBg: "bg-blue-50",
+    cellBorder: "border-blue-200",
+    numCls: "text-blue-700",
+    badgeCls: "text-blue-800",
+    dotColor: "#3b82f6",
+    statNumColor: "#1d4ed8",
+  },
+  Holiday: {
+    label: "Holiday",
+    cellBg: "bg-purple-50",
+    cellBorder: "border-purple-200",
+    numCls: "text-purple-700",
+    badgeCls: "text-purple-800",
+    dotColor: "#a855f7",
+    statNumColor: "#7e22ce",
+  },
 };
 
-// Day header labels — defined once, reused in both skeleton and real render
 const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const TOTAL_CELLS = 42; // 6 rows × 7 cols — fixed height
 
-// Total cells is always 42 (6 rows × 7 cols) for consistent calendar height
-const TOTAL_CELLS = 42;
-
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function getMonthParts(month: string) {
   const [year, monthNum] = month.split("-").map(Number);
   const daysInMonth = new Date(year, monthNum, 0).getDate();
@@ -27,8 +85,8 @@ function getMonthParts(month: string) {
 }
 
 function isWeekend(date: Date) {
-  const day = date.getDay();
-  return day === 0 || day === 6;
+  const d = date.getDay();
+  return d === 0 || d === 6;
 }
 
 function statusCounts(records: ProfileAttendanceRecord[]) {
@@ -46,10 +104,59 @@ function statusCounts(records: ProfileAttendanceRecord[]) {
     (leave === 0 && absent === 0 && halfDay % 2 === 1
       ? 0
       : (halfDay % 2) * 0.5);
-
   return { present, absent, leave, halfDay, clUsed, lopDays };
 }
 
+// ─── Stat card config ─────────────────────────────────────────────────────────
+const STAT_CARDS = [
+  {
+    key: "present" as const,
+    label: "Present",
+    dotColor: STATUS_CFG.Present.dotColor,
+    numColor: STATUS_CFG.Present.statNumColor,
+  },
+  {
+    key: "absent" as const,
+    label: "Absent",
+    dotColor: STATUS_CFG.Absent.dotColor,
+    numColor: STATUS_CFG.Absent.statNumColor,
+  },
+  {
+    key: "leave" as const,
+    label: "Leave",
+    dotColor: STATUS_CFG.Leave.dotColor,
+    numColor: STATUS_CFG.Leave.statNumColor,
+  },
+  {
+    key: "halfDay" as const,
+    label: "Half-day",
+    dotColor: STATUS_CFG.Half_Day.dotColor,
+    numColor: STATUS_CFG.Half_Day.statNumColor,
+  },
+  {
+    key: "lopDays" as const,
+    label: "LOP Days",
+    dotColor: "#D4537E",
+    numColor: "#993556",
+  },
+  {
+    key: "clUsed" as const,
+    label: "CL Used",
+    dotColor: STATUS_CFG.Holiday.dotColor,
+    numColor: STATUS_CFG.Holiday.statNumColor,
+  },
+];
+
+// ─── Legend items shown in the calendar header ────────────────────────────────
+const LEGEND_ITEMS = [
+  { status: "Present", label: "Present" },
+  { status: "Absent", label: "Absent" },
+  { status: "Leave", label: "Leave" },
+  { status: "Half_Day", label: "Half-day" },
+  { status: "Holiday", label: "Holiday" },
+];
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export function AttendanceCalendarMini({
   month,
   records,
@@ -59,30 +166,32 @@ export function AttendanceCalendarMini({
   records: ProfileAttendanceRecord[];
   loading?: boolean;
 }) {
-  // ─── Skeleton ────────────────────────────────────────────────────────────
-  // Uses the same grid structure and fixed cell height (h-9) as the real
-  // calendar so the layout doesn't shift when data loads.
+  // ── Skeleton ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        {/* Stat cards — fixed height matches actual card */}
-        <div className="grid grid-cols-3 gap-2.5">
+        {/* Stat cards skeleton */}
+        <div className="grid grid-cols-3 gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={`stat-${i}`} className="h-[60px] rounded-xl bg-slate-200" />
+            <div key={`stat-${i}`} className="h-[68px] rounded-xl bg-slate-200" />
           ))}
         </div>
 
-        {/* Calendar — same padding/gap/height as real render */}
-        <div className="border border-default rounded-xl p-4 bg-subtle/10">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+        {/* Calendar skeleton */}
+        <div className="border border-default rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-default">
+            <div className="h-4 w-24 rounded bg-slate-200" />
+            <div className="h-3 w-48 rounded bg-slate-200" />
+          </div>
+          {/* Day labels */}
+          <div className="grid grid-cols-7 gap-1 px-3 pt-3 pb-1">
             {DAY_LABELS.map((d) => (
-              <div key={d} className="h-6 bg-slate-200 rounded mx-1" />
+              <div key={d} className="h-4 rounded bg-slate-200" />
             ))}
           </div>
-
-          {/* 42 cells with aspect-square */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* Cells */}
+          <div className="grid grid-cols-7 gap-1 px-3 pb-3">
             {Array.from({ length: TOTAL_CELLS }).map((_, i) => (
               <div key={`cell-${i}`} className="aspect-square rounded-md bg-slate-200" />
             ))}
@@ -92,68 +201,120 @@ export function AttendanceCalendarMini({
     );
   }
 
-  // ─── Real render ─────────────────────────────────────────────────────────
+  // ── Real render ───────────────────────────────────────────────────────────
   const { year, monthNum, daysInMonth } = getMonthParts(month);
   const firstDay = new Date(year, monthNum - 1, 1).getDay();
 
   // Previous-month trailing days
-  const prevMonthNum = monthNum === 1 ? 12 : monthNum - 1;
-  const prevYear = monthNum === 1 ? year - 1 : year;
-  const prevMonthDays = new Date(prevYear, prevMonthNum, 0).getDate();
-  const prevDaysStart = prevMonthDays - firstDay + 1;
-  const prevMonthDaysList = Array.from({ length: firstDay }, (_, i) => prevDaysStart + i);
+  const prevMonthDays = new Date(
+    monthNum === 1 ? year - 1 : year,
+    monthNum === 1 ? 12 : monthNum - 1,
+    0
+  ).getDate();
+  const prevDaysList = Array.from(
+    { length: firstDay },
+    (_, i) => prevMonthDays - firstDay + 1 + i
+  );
 
   // Current-month days
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Next-month leading days — always pad to exactly TOTAL_CELLS
-  const nextMonthCellsCount = TOTAL_CELLS - firstDay - daysInMonth;
-  const nextMonthDaysList = Array.from({ length: nextMonthCellsCount }, (_, i) => i + 1);
+  // Next-month leading days — fills remaining cells to exactly TOTAL_CELLS
+  const nextDaysList = Array.from(
+    { length: TOTAL_CELLS - firstDay - daysInMonth },
+    (_, i) => i + 1
+  );
 
   const byDate = new Map(records.map((r) => [r.date, r]));
   const summary = statusCounts(records);
 
+  // Format month label, e.g. "May 2026"
+  const monthLabel = new Date(year, monthNum - 1, 1).toLocaleDateString(
+    "en-US",
+    { month: "long", year: "numeric" }
+  );
+
   return (
     <div className="space-y-4">
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-3 gap-2.5">
-        {[
-          { label: "Present", value: summary.present, border: "border-green-200", bg: "bg-green-50/40", hover: "hover:bg-green-50", text: "text-green-600/80", num: "text-green-700" },
-          { label: "Absent",  value: summary.absent,  border: "border-red-200",   bg: "bg-red-50/40",   hover: "hover:bg-red-50",   text: "text-red-600/80",   num: "text-red-700"   },
-          { label: "Leave",   value: summary.leave,   border: "border-amber-200", bg: "bg-amber-50/40", hover: "hover:bg-amber-50", text: "text-amber-600/80", num: "text-amber-700" },
-          { label: "Half-Day",value: summary.halfDay, border: "border-blue-200",  bg: "bg-blue-50/40",  hover: "hover:bg-blue-50",  text: "text-blue-600/80",  num: "text-blue-700"  },
-          { label: "LOP Days",value: summary.lopDays, border: "border-rose-200",  bg: "bg-rose-50/40",  hover: "hover:bg-rose-50",  text: "text-rose-600/80",  num: "text-rose-700"  },
-          { label: "CL Used", value: summary.clUsed,  border: "border-violet-200",bg: "bg-violet-50/40",hover: "hover:bg-violet-50",text: "text-violet-600/80",num: "text-violet-700"},
-        ].map(({ label, value, border, bg, hover, text, num }) => (
-          // h-[60px] gives a stable height regardless of content
-          <div key={label} className={`h-[60px] rounded-xl border ${border} ${bg} p-2 text-center transition-all ${hover} flex flex-col items-center justify-center gap-0.5`}>
-            <div className={`text-[9px] ${text} font-bold uppercase tracking-wider`}>{label}</div>
-            <div className={`text-base font-extrabold ${num}`}>{value}</div>
+      {/* ── Stat cards ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-2">
+        {STAT_CARDS.map(({ key, label, dotColor, numColor }) => (
+          <div
+            key={key}
+            className="flex flex-col items-center justify-center gap-1 rounded-xl border border-default bg-white px-2 py-2.5 h-[68px]"
+          >
+            {/* Colored dot — matches calendar cell color */}
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ background: dotColor }}
+            />
+            <span className="text-[9px] font-semibold uppercase tracking-widest text-muted">
+              {label}
+            </span>
+            <span
+              className="text-lg font-semibold leading-none"
+              style={{ color: numColor }}
+            >
+              {summary[key]}
+            </span>
           </div>
         ))}
       </div>
 
-      {/* ── Calendar grid ── */}
-      <div className="border border-default rounded-xl p-4 bg-subtle/10">
+      {/* ── Calendar ───────────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-default overflow-hidden bg-white">
+        {/* Header: month name + inline legend */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-default px-4 py-3">
+          <span className="text-sm font-medium text-primary">{monthLabel}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {LEGEND_ITEMS.map(({ status, label }) => {
+              const cfg = STATUS_CFG[status];
+              return (
+                <span
+                  key={status}
+                  className="flex items-center gap-1 text-[10px] text-muted"
+                >
+                  <span
+                    className="inline-block h-2 w-2 rounded-[2px]"
+                    style={{ background: cfg.dotColor }}
+                  />
+                  {label}
+                </span>
+              );
+            })}
+            {/* Weekend indicator */}
+            <span className="flex items-center gap-1 text-[10px] text-muted">
+              <span className="inline-block h-2 w-2 rounded-[2px] bg-slate-200" />
+              Weekend
+            </span>
+          </div>
+        </div>
+
         {/* Day-of-week headers */}
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-muted mb-2">
-          {DAY_LABELS.map((day) => (
-            <div key={day} className="py-1">{day}</div>
+        <div className="grid grid-cols-7 gap-1 px-2.5 pt-2.5 pb-1">
+          {DAY_LABELS.map((day, i) => (
+            <div
+              key={day}
+              className={[
+                "text-center text-[10px] font-semibold py-0.5",
+                i === 0 || i === 6 ? "text-muted/60" : "text-muted",
+              ].join(" ")}
+            >
+              {day}
+            </div>
           ))}
         </div>
 
-        {/* 42-cell grid — h-9 is fixed so height never changes */}
-        <div className="grid grid-cols-7 gap-1">
-          {/* Previous-month days */}
-          {prevMonthDaysList.map((day) => (
+        {/* 42-cell grid */}
+        <div className="grid grid-cols-7 gap-1 px-2.5 pb-2.5">
+          {/* Previous-month trailing days */}
+          {prevDaysList.map((day) => (
             <div
               key={`prev-${day}`}
-              className="aspect-square rounded-md border border-default bg-slate-50/40 px-1 opacity-35"
+              className="aspect-square rounded-md border border-default bg-slate-50/60 opacity-30 flex flex-col items-center justify-between px-1 pt-1 pb-1.5"
             >
-              <div className="flex h-full flex-col items-center justify-between pt-0.5 pb-2">
-                <span className="text-[10px] font-semibold text-muted/60">{day}</span>
-                <span className="inline-flex min-h-4 min-w-4 opacity-0">&nbsp;</span>
-              </div>
+              <span className="text-[10px] font-medium text-muted">{day}</span>
+              <span className="text-[9px] text-muted/50" />
             </div>
           ))}
 
@@ -165,40 +326,68 @@ export function AttendanceCalendarMini({
             const cfg = record ? STATUS_CFG[record.status] : undefined;
             const weekend = isWeekend(date);
 
+            // Cell appearance
+            const cellBg = cfg
+              ? cfg.cellBg
+              : weekend
+                ? "bg-slate-100"
+                : "bg-white";
+            const cellBorder = cfg
+              ? cfg.cellBorder
+              : "border-default";
+            const numCls = cfg
+              ? cfg.numCls
+              : weekend
+                ? "text-muted/60"
+                : "text-muted";
+            const badgeCls = cfg
+              ? cfg.badgeCls
+              : weekend
+                ? "text-muted/40"
+                : "text-transparent"; // empty for unmarked weekdays
+
             return (
               <div
                 key={dateStr}
-                title={record?.status ?? (weekend ? "Weekend" : "Not marked")}
-                className="aspect-square rounded-md border border-default bg-white px-1"
+                title={
+                  record
+                    ? `${dateStr} — ${cfg?.label ?? record.status}`
+                    : weekend
+                      ? `${dateStr} — Weekend`
+                      : `${dateStr} — Not marked`
+                }
+                className={[
+                  "aspect-square rounded-md border flex flex-col items-center justify-between px-0.5 pt-1 pb-1.5",
+                  cellBg,
+                  cellBorder,
+                ].join(" ")}
               >
-                <div className="flex h-full flex-col items-center justify-between pt-0.5 pb-2">
-                  <span className="text-[10px] font-semibold text-muted">{day}</span>
-                  <span
-                    className={[
-                      "inline-flex min-h-4 min-w-4 items-center justify-center rounded px-0.5 text-[10px] font-bold",
-                      cfg?.cls ??
-                        (weekend
-                          ? "bg-subtle text-muted"
-                          : "border border-dashed border-default text-muted"),
-                    ].join(" ")}
-                  >
-                    {cfg?.short ?? (weekend ? "-" : "\u00A0")}
-                  </span>
-                </div>
+                {/* Date number */}
+                <span className={`text-[10px] font-semibold ${numCls}`}>
+                  {day}
+                </span>
+
+                {/* Status label — full word, no cryptic initials */}
+                <span
+                  className={[
+                    "text-[8px] font-semibold leading-none text-center",
+                    badgeCls,
+                  ].join(" ")}
+                >
+                  {cfg ? cfg.label : weekend ? "—" : ""}
+                </span>
               </div>
             );
           })}
 
-          {/* Next-month days — always fills remaining cells up to 42 */}
-          {nextMonthDaysList.map((day) => (
+          {/* Next-month leading days */}
+          {nextDaysList.map((day) => (
             <div
               key={`next-${day}`}
-              className="aspect-square rounded-md border border-default bg-slate-50/40 px-1 opacity-35"
+              className="aspect-square rounded-md border border-default bg-slate-50/60 opacity-30 flex flex-col items-center justify-between px-1 pt-1 pb-1.5"
             >
-              <div className="flex h-full flex-col items-center justify-between pt-0.5 pb-2">
-                <span className="text-[10px] font-semibold text-muted/60">{day}</span>
-                <span className="inline-flex min-h-4 min-w-4 opacity-0">&nbsp;</span>
-              </div>
+              <span className="text-[10px] font-medium text-muted">{day}</span>
+              <span className="text-[9px] text-muted/50" />
             </div>
           ))}
         </div>

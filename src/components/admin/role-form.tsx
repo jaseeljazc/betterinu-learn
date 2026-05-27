@@ -11,7 +11,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AdminRoleRecord, PermissionModule, PermissionAction } from "@/types"
-import RoboLoader from "@/components/loading/robo-loader"
 
 const MODULES: PermissionModule[] = [
   "students",
@@ -19,6 +18,10 @@ const MODULES: PermissionModule[] = [
   "curriculum",
   "tasks",
   "admins",
+  "accounts",
+  "employees",
+  "payroll",
+  "attendance",
 ]
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 

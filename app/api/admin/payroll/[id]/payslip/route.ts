@@ -7,7 +7,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requirePermission(req, "payroll_runs", "view");
+  const auth = await requirePermission(req, "payroll", "view");
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

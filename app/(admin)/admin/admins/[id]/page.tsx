@@ -11,7 +11,17 @@ import RoboLoader from "@/components/loading/robo-loader"
 type Role = { id: string; name: AdminRole; label: string; description: string }
 type PermPair = { module: PermissionModule; action: PermissionAction }
 
-const MODULES: PermissionModule[] = ["students", "courses", "curriculum", "tasks"]
+const MODULES: PermissionModule[] = [
+  "students",
+  "courses",
+  "curriculum",
+  "tasks",
+  "admins",
+  "accounts",
+  "employees",
+  "payroll",
+  "attendance",
+]
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 
 type Props = { params: Promise<{ id: string }> }
@@ -25,7 +35,6 @@ export default function EditAdminPage({ params }: Props) {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [selectedRoleId, setSelectedRoleId] = useState("")
-  const [selectedRoleName, setSelectedRoleName] = useState<AdminRole | "">("")
   const [status, setStatus] = useState("pending")
   const [permissions, setPermissions] = useState<Set<string>>(new Set())
   const [lastLogin, setLastLogin] = useState<string | null>(null)
@@ -44,11 +53,36 @@ export default function EditAdminPage({ params }: Props) {
         fetch("/api/admin/admins/roles"),
       ])
 
+      if (
+        adminRes.status === 401 ||
+        adminRes.status === 403 ||
+        rolesRes.status === 401 ||
+        rolesRes.status === 403
+      ) {
+        router.push("/admin/login")
+        return
+      }
+
+      if (!adminRes.ok || !rolesRes.ok) {
+        const adminErr = !adminRes.ok ? (await adminRes.json()).error : null
+        const rolesErr = !rolesRes.ok ? (await rolesRes.json()).error : null
+        setError(adminErr || rolesErr || "Failed to load data")
+        setLoading(false)
+        return
+      }
+
       const adminData = await adminRes.json()
       const rolesData = await rolesRes.json()
 
       const admin = adminData.admin
-      const filteredRoles = (rolesData.roles as Role[]).filter(
+      if (!admin) {
+        setError("Admin account not found")
+        setLoading(false)
+        return
+      }
+
+      const rolesList = rolesData.roles || []
+      const filteredRoles = (rolesList as Role[]).filter(
         (r) => r.name !== "super_admin"
       )
 
@@ -56,7 +90,6 @@ export default function EditAdminPage({ params }: Props) {
       setFullName(admin.fullName)
       setEmail(admin.email)
       setSelectedRoleId(admin.role.id)
-      setSelectedRoleName(admin.role.name)
       setStatus(admin.status)
       setLastLogin(admin.lastLogin)
       setIsTargetSuperAdmin(admin.role.name === "super_admin")
@@ -70,13 +103,12 @@ export default function EditAdminPage({ params }: Props) {
       setLoading(false)
     }
     load().catch(console.error)
-  }, [params])
+  }, [params, router])
 
   function onRoleChange(roleId: string) {
     const role = roles.find((r) => r.id === roleId)
     if (!role) return
     setSelectedRoleId(roleId)
-    setSelectedRoleName(role.name)
     const defaults = getDefaultPermissions(role.name)
     setPermissions(new Set(defaults.map((p) => `${p.module}:${p.action}`)))
   }

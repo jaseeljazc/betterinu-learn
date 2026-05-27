@@ -19,7 +19,17 @@ import { Checkbox } from "@/components/ui/checkbox"
 type Role = { id: string; name: AdminRole; label: string; description: string }
 type PermPair = { module: PermissionModule; action: PermissionAction }
 
-const MODULES: PermissionModule[] = ["students", "courses", "curriculum", "tasks"]
+const MODULES: PermissionModule[] = [
+  "students",
+  "courses",
+  "curriculum",
+  "tasks",
+  "admins",
+  "accounts",
+  "employees",
+  "payroll",
+  "attendance",
+]
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 
 const ROLE_COLORS: Record<string, string> = {
@@ -43,18 +53,30 @@ export default function NewAdminPage() {
 
   useEffect(() => {
     fetch("/api/admin/roles")
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) {
+          if (r.status === 401 || r.status === 403) {
+            router.push("/admin/login")
+            return
+          }
+          throw new Error("Failed to fetch roles")
+        }
+        return r.json()
+      })
       .then((d) => {
+        if (!d) return
         // Filter out super_admin — cannot be assigned via this form
-        const filtered = (d.roles as Role[]).filter((r) => r.name !== "super_admin")
+        const rolesList = d.roles || []
+        const filtered = (rolesList as Role[]).filter((r) => r.name !== "super_admin")
         setRoles(filtered)
         setLoadingRoles(false)
       })
       .catch((e) => {
         console.error(e)
+        setError("Failed to load roles. Please try again.")
         setLoadingRoles(false)
       })
-  }, [])
+  }, [router])
 
   function onRoleChange(roleId: string) {
     const role = roles.find((r) => r.id === roleId)

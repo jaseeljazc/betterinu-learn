@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/admin-rbac"
 import type { PayrollRun } from "@/types"
 
 export async function GET(req: NextRequest) {
-  const auth = await requirePermission(req, "payroll_runs", "view")
+  const auth = await requirePermission(req, "payroll", "view")
   if (auth instanceof NextResponse) return auth
 
   const { searchParams } = new URL(req.url)

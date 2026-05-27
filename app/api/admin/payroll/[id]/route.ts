@@ -6,7 +6,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(req, "payroll_runs", "edit")
+  const auth = await requirePermission(req, "payroll", "edit")
   if (auth instanceof NextResponse) return auth
 
   const { id } = await params
