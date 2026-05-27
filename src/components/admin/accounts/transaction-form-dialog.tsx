@@ -22,8 +22,8 @@ export function TransactionFormDialog({
   const submitRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-default bg-white shadow-xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur- p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl rounded-md border border-default bg-white shadow-xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         {/* Fixed header */}
         <div className="px-6 py-4 border-b border-default shrink-0 flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">
@@ -54,7 +54,7 @@ export function TransactionFormDialog({
         </div>
 
         {/* Fixed footer */}
-        <div className="px-6 py-4 border-t border-default shrink-0 flex gap-3 bg-white rounded-b-2xl">
+        <div className="px-6 py-4 border-t border-default shrink-0 flex gap-3 bg-white rounded-b-md">
           <button
             type="button"
             onClick={() => submitRef.current?.click()}

@@ -73,8 +73,8 @@ function CategoryFormDialog({ category, defaultType = "income", onClose, onSaved
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-default bg-white shadow-xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur- p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-md rounded-md border border-default bg-white shadow-xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-default shrink-0 flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">{isEdit ? "Edit Category" : "New Category"}</h3>
           <button onClick={onClose} type="button" className="p-1.5 text-secondary hover:bg-subtle rounded-lg transition-colors">
@@ -264,54 +264,54 @@ export function CategoriesTable({ canEdit }: CategoriesTableProps) {
     },
     ...(canEdit
       ? [
-          {
-            id: "actions",
-            header: "Actions",
-            size: 64,
-            enableSorting: false,
-            cell: ({ row }: { row: { original: AccountCategory } }) => {
-              const cat = row.original;
-              return (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex h-7 w-7 items-center justify-center rounded-md border border-default bg-white text-secondary transition-colors hover:border-primary hover:text-primary">
-                      <MoreHorizontal className="size-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="z-50 min-w-[160px] overflow-hidden rounded-xl border border-default bg-white shadow-lg">
-                    <DropdownMenuItem
-                      onClick={() => setDialog({ open: true, category: cat })}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-subtle transition-colors cursor-pointer"
-                    >
-                      <Pencil className="size-3.5" /> Edit
-                    </DropdownMenuItem>
-                    {!cat.isSystem && (
-                      <>
-                        <DropdownMenuSeparator className="my-0.5 border-t border-default/50" />
-                        <DropdownMenuItem
-                          onClick={() => handleArchive(cat)}
-                          disabled={archiving === cat.id}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          {cat.isArchived ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
-                          {archiving === cat.id ? "Working…" : cat.isArchived ? "Unarchive" : "Archive"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(cat)}
-                          disabled={deleting === cat.id}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          <Trash2 className="size-3.5" />
-                          {deleting === cat.id ? "Deleting…" : "Delete"}
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            },
-          } as ColumnDef<AccountCategory>,
-        ]
+        {
+          id: "actions",
+          header: "Actions",
+          size: 64,
+          enableSorting: false,
+          cell: ({ row }: { row: { original: AccountCategory } }) => {
+            const cat = row.original;
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex h-7 w-7 items-center justify-center rounded-md border border-default bg-white text-secondary transition-colors hover:border-primary hover:text-primary">
+                    <MoreHorizontal className="size-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-50 min-w-[160px] overflow-hidden rounded-xl border border-default bg-white shadow-lg">
+                  <DropdownMenuItem
+                    onClick={() => setDialog({ open: true, category: cat })}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-subtle transition-colors cursor-pointer"
+                  >
+                    <Pencil className="size-3.5" /> Edit
+                  </DropdownMenuItem>
+                  {!cat.isSystem && (
+                    <>
+                      <DropdownMenuSeparator className="my-0.5 border-t border-default/50" />
+                      <DropdownMenuItem
+                        onClick={() => handleArchive(cat)}
+                        disabled={archiving === cat.id}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {cat.isArchived ? <ArchiveRestore className="size-3.5" /> : <Archive className="size-3.5" />}
+                        {archiving === cat.id ? "Working…" : cat.isArchived ? "Unarchive" : "Archive"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(cat)}
+                        disabled={deleting === cat.id}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Trash2 className="size-3.5" />
+                        {deleting === cat.id ? "Deleting…" : "Delete"}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
+        } as ColumnDef<AccountCategory>,
+      ]
       : []),
   ];
 

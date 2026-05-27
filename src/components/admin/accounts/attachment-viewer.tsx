@@ -207,11 +207,11 @@ function AttachmentItem({
       {/* Lightbox */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur- p-4 animate-in fade-in duration-200"
           onClick={() => setLightboxUrl(null)}
         >
           <button
-            className="absolute top-4 right-4 rounded-xl bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 rounded-md bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
             onClick={() => setLightboxUrl(null)}
           >
             <X className="size-5" />
@@ -220,7 +220,7 @@ function AttachmentItem({
           <img
             src={lightboxUrl}
             alt={att.fileName}
-            className="max-w-full max-h-full rounded-xl object-contain shadow-2xl"
+            className="max-w-full max-h-full rounded-md object-contain shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

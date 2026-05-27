@@ -9,14 +9,14 @@ interface ChangePasswordModalProps {
 
 export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
   const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword]         = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrent, setShowCurrent]         = useState(false);
-  const [showNew, setShowNew]                 = useState(false);
-  const [showConfirm, setShowConfirm]         = useState(false);
-  const [loading, setLoading]                 = useState(false);
-  const [error, setError]                     = useState("");
-  const [success, setSuccess]                 = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,10 +58,10 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur- p-4 animate-in fade-in duration-200"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-default animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md rounded-md bg-white shadow-2xl border border-default animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-default">
           <div className="flex items-center gap-2.5">

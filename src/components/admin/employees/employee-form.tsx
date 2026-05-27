@@ -691,8 +691,8 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
 
   return (
     <form onSubmit={(e) => handleSubmit(e, isDraftRef.current)} className="space-y-8 mx-auto">
-      {/* Profile Completion Bar */}
-      <div className="sticky top-4 z-30 rounded-md border border-default bg-white px-5 py-4 space-y-2 shadow-sm">
+      {/* Profile Completion Bar  do not uncomment it*/}
+      {/* <div className="sticky top-4 z-30 rounded-md border border-default bg-white px-5 py-4 space-y-2 shadow-sm">
         <div className="flex items-center justify-between text-sm">
           <span className="font-semibold text-foreground">Profile Completion</span>
           <span className="font-bold" style={{ color: "var(--color-primary)" }}>{completionPercent}%</span>
@@ -700,25 +700,25 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
         <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border-default)" }}>
           <div className="h-full transition-all duration-500" style={{ width: `${completionPercent}%`, background: "var(--green-700)" }} />
         </div>
-      </div>
+      </div> */}
 
       {/* Personal Information */}
       <section className="rounded-md border border-default bg-white p-6 space-y-5">
         <SectionHeader icon={User} title="Personal Information" />
 
         {/* Profile Photo Upload */}
-        <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-default border-dashed">
+        <div className="flex flex-col sm:flex-row  items-center gap-5 pb-4 border-b border-default border-dashed">
           <div className="relative group">
             {profilePhotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={profilePhotoUrl} alt="Profile Photo" className="size-24 rounded-full object-cover ring-4 ring-white shadow-md" />
+              <img src={profilePhotoUrl} alt="Profile Photo" className="size-24 rounded-md object-cover ring-4 ring-white shadow-md" />
             ) : (
-              <div className="size-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-md">
+              <div className="size-24 rounded-md bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center ring-4 ring-white shadow-md">
                 {fullName ? fullName.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase() : <User className="size-8" />}
               </div>
             )}
             {photoUploading && (
-              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center text-white">
+              <div className="absolute inset-0 rounded-md bg-black/40 flex items-center justify-center text-white">
                 <Loader2 className="size-6 animate-spin" />
               </div>
             )}
@@ -762,7 +762,14 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
             <input required={!isDraftRef.current} value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} placeholder="e.g. Jaseel Mohammed" />
           </div>
           <div className="sm:col-span-3">
-            <label className={labelCls}>Email *</label>
+            <div className="flex flex-wrap items-center justify-between mb-1.5 gap-x-2 gap-y-1">
+              <label className="block text-sm font-semibold text-foreground">Email *</label>
+              {isEdit && (
+                <span className="text-[11px] text-muted font-medium">
+                  Email cannot be modified after employee creation.
+                </span>
+              )}
+            </div>
             <div className="relative">
               <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted pointer-events-none" />
               <input required={!isDraftRef.current} type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputCls} pl-8`} placeholder="name@company.com" disabled={isEdit} />
@@ -1020,7 +1027,7 @@ export function EmployeeForm({ employee, roles = [] }: EmployeeFormProps) {
             setOriginalFile(null)
             if (photoInputRef.current) photoInputRef.current.value = ""
           }}
-          circular
+          circular={false}
         />
       )}
     </form>

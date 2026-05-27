@@ -46,10 +46,10 @@ function DepartmentFormDialog({ initial, employees, onSave, onCancel }: DeptForm
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-x p-4 animate-in fade-in duration-200"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white border border-default shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md rounded-md bg-white border border-default shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-2.5 px-6 py-4 border-b border-default">
           <Building2 className="size-4 text-primary" />
           <h2 className="font-bold text-base">{initial?.id ? "Edit Department" : "New Department"}</h2>
@@ -60,7 +60,7 @@ function DepartmentFormDialog({ initial, employees, onSave, onCancel }: DeptForm
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-md border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               placeholder="e.g. Engineering"
               required
             />
@@ -71,7 +71,7 @@ function DepartmentFormDialog({ initial, employees, onSave, onCancel }: DeptForm
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              className="w-full rounded-md border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
               placeholder="Optional description"
             />
           </div>
@@ -80,7 +80,7 @@ function DepartmentFormDialog({ initial, employees, onSave, onCancel }: DeptForm
             <select
               value={headId}
               onChange={(e) => setHeadId(e.target.value)}
-              className="w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-md border border-default bg-surface px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
             >
               <option value="">— None —</option>
               {employees.map((e) => (
@@ -89,20 +89,20 @@ function DepartmentFormDialog({ initial, employees, onSave, onCancel }: DeptForm
             </select>
           </div>
           {error && (
-            <p className="rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-600">{error}</p>
+            <p className="rounded-md bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-600">{error}</p>
           )}
           <div className="flex gap-3 pt-1">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 rounded-xl border border-default px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle"
+              className="flex-1 rounded-md border border-default px-4 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+              className="flex-1 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -248,7 +248,7 @@ export function DepartmentsTable({ canEdit }: DepartmentsTableProps) {
                 <MoreHorizontal className="size-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[160px] rounded-xl border border-default bg-white shadow-lg">
+            <DropdownMenuContent align="end" className="min-w-[160px] rounded-md border border-default bg-white shadow-lg">
               {canEdit && (
                 <DropdownMenuItem
                   onClick={() => setDialog({ open: true, dept })}
@@ -287,7 +287,7 @@ export function DepartmentsTable({ canEdit }: DepartmentsTableProps) {
           canEdit ? (
             <button
               onClick={() => setDialog({ open: true })}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 whitespace-nowrap"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 whitespace-nowrap"
             >
               <Plus className="size-4" /> Add Department
             </button>

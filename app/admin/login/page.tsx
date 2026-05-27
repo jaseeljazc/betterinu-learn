@@ -47,9 +47,13 @@ export default function AdminLoginPage() {
       router.push("/admin/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials.";
-      setError(
-        msg.includes("invalid-credential") ? "Invalid email or password." : msg,
-      );
+      if (msg.includes("invalid-credential")) {
+        setError("Invalid email or password.");
+      } else if (msg.includes("user-disabled")) {
+        setError("Access denied.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

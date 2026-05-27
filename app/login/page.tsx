@@ -50,9 +50,13 @@ export default function StudentLoginPage() {
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Invalid email or password.";
-      setError(
-        msg.includes("invalid-credential") ? "Invalid email or password." : msg,
-      );
+      if (msg.includes("invalid-credential")) {
+        setError("Invalid email or password.");
+      } else if (msg.includes("user-disabled")) {
+        setError("Access denied. Please contact your admin.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

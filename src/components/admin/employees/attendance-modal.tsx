@@ -14,15 +14,15 @@ type Status = typeof STATUSES[number];
 
 const STATUS_STYLE: Record<Status, string> = {
   Present: "border-green-500 bg-green-500 text-white",
-  Absent:  "border-red-500 bg-red-500 text-white",
-  Leave:   "border-amber-500 bg-amber-500 text-white",
+  Absent: "border-red-500 bg-red-500 text-white",
+  Leave: "border-amber-500 bg-amber-500 text-white",
   Half_Day: "border-blue-500 bg-blue-500 text-white",
   Holiday: "border-purple-500 bg-purple-500 text-white",
 };
 const STATUS_INACTIVE: Record<Status, string> = {
   Present: "border-green-200 text-green-700 hover:bg-green-50",
-  Absent:  "border-red-200 text-red-600 hover:bg-red-50",
-  Leave:   "border-amber-200 text-amber-700 hover:bg-amber-50",
+  Absent: "border-red-200 text-red-600 hover:bg-red-50",
+  Leave: "border-amber-200 text-amber-700 hover:bg-amber-50",
   Half_Day: "border-blue-200 text-blue-700 hover:bg-blue-50",
   Holiday: "border-purple-200 text-purple-700 hover:bg-purple-50",
 };
@@ -75,8 +75,8 @@ export function AttendanceModal({
 
   async function handleSave() {
     setError("");
-    if (!empId)  { setError("Please select an employee"); return; }
-    if (!date)   { setError("Date is required"); return; }
+    if (!empId) { setError("Please select an employee"); return; }
+    if (!date) { setError("Date is required"); return; }
     if (!status) { setError("Please select a status"); return; }
 
     setSaving(true);
@@ -154,7 +154,7 @@ export function AttendanceModal({
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur- p-4">
       <div className="bg-white rounded-md shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-default">

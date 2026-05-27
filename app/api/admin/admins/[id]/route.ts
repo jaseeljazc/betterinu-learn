@@ -100,7 +100,7 @@ export async function PATCH(
 
   // Fetch target admin
   const targetRows = await sql`
-    SELECT aa.id, aa.status, ar.name AS role_name
+    SELECT aa.id, aa.status, ar.name AS role_name, aa.firebase_uid
     FROM admin_accounts aa
     JOIN admin_roles ar ON ar.id = aa.role_id
     WHERE aa.id = ${id}
@@ -136,6 +136,23 @@ export async function PATCH(
         { error: "Cannot assign super_admin role via this endpoint" },
         { status: 403 }
       )
+    }
+  }
+
+  // Enable or disable Firebase sign-in if status changed
+  if (status && status !== target.status) {
+    if (status === "inactive") {
+      try {
+        await adminAuth.updateUser(target.firebase_uid as string, { disabled: true })
+      } catch (err) {
+        console.error("Firebase disable failed:", err)
+      }
+    } else if (status === "active" || status === "pending") {
+      try {
+        await adminAuth.updateUser(target.firebase_uid as string, { disabled: false })
+      } catch (err) {
+        console.error("Firebase enable failed:", err)
+      }
     }
   }
 

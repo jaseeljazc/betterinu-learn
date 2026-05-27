@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Pencil, UserX, MoreHorizontal } from "lucide-react";
+import { Pencil, UserX, MoreHorizontal, UserCheck } from "lucide-react";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { AdminRole } from "@/types";
@@ -60,6 +60,7 @@ function fmtDate(d: string) {
 
 export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
   const [deactivating, setDeactivating] = useState<string | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
 
   async function handleDeactivate(id: string) {
     if (!confirm("Deactivate this admin? They will lose access immediately.")) return;
@@ -73,6 +74,25 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       }
     } finally {
       setDeactivating(null);
+    }
+  }
+
+  async function handleActivate(id: string) {
+    if (!confirm("Activate this admin? They will regain access immediately.")) return;
+    setActivating(id);
+    try {
+      const res = await fetch(`/api/admin/admins/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (res.ok) window.location.reload();
+      else {
+        const data = await res.json();
+        alert(data.error ?? "Failed to activate.");
+      }
+    } finally {
+      setActivating(null);
     }
   }
 
@@ -189,14 +209,25 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
                   <Pencil className="size-3.5" /> Edit
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeactivate(admin.id)}
-                disabled={!!deactivating}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                <UserX className="size-3.5" />
-                {deactivating === admin.id ? "Deactivating…" : "Deactivate"}
-              </DropdownMenuItem>
+              {admin.status === "inactive" ? (
+                <DropdownMenuItem
+                  onClick={() => handleActivate(admin.id)}
+                  disabled={!!activating}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <UserCheck className="size-3.5" />
+                  {activating === admin.id ? "Activating…" : "Activate"}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => handleDeactivate(admin.id)}
+                  disabled={!!deactivating}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <UserX className="size-3.5" />
+                  {deactivating === admin.id ? "Deactivating…" : "Deactivate"}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );

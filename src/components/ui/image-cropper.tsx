@@ -17,9 +17,9 @@ export function ImageCropper({ src, onCrop, onCancel, circular = true }: ImageCr
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [processing, setProcessing] = useState(false)
-  
+
   const containerRef = useRef<HTMLDivElement>(null)
-  
+
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault()
     const target = e.target as HTMLElement
@@ -99,8 +99,8 @@ export function ImageCropper({ src, onCrop, onCancel, circular = true }: ImageCr
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur- p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-md max-w-sm w-full p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between w-full mb-5">
           <h3 className="font-display font-extrabold text-lg text-foreground">Crop Photo</h3>
@@ -119,10 +119,13 @@ export function ImageCropper({ src, onCrop, onCancel, circular = true }: ImageCr
           className="relative w-64 h-64 overflow-hidden bg-neutral-900 border border-default rounded-xl flex items-center justify-center"
         >
           {/* Avatar circle guide */}
-          {circular && (
+          {/* Avatar circle/square guide */}
+          {circular ? (
             <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/60 pointer-events-none z-10 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]" />
+          ) : (
+            <div className="absolute inset-0 rounded-md border-2 border-dashed border-white/60 pointer-events-none z-10 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]" />
           )}
-          
+
           {/* Scaled/Panned Preview Image */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -155,7 +158,7 @@ export function ImageCropper({ src, onCrop, onCancel, circular = true }: ImageCr
           />
         </div>
         <p className="text-[11px] text-muted text-center mt-2">
-          Drag image to position it inside the circle
+          Drag image to position it inside the {circular ? "circle" : "square"}
         </p>
 
         {/* Actions */}

@@ -26,9 +26,18 @@ export function PayslipModal({
 
   useEffect(() => {
     fetch(endpoint ?? `/api/admin/payroll/${runId}/payslip`, { credentials: "include" })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch payslip: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(d => setData(d))
-      .finally(() => setLoading(false))
+      .catch(err => {
+        console.error(err);
+        setData(null);
+      })
+      .finally(() => setLoading(false));
   }, [endpoint, runId])
 
   function handleDownloadPdf() {
@@ -37,23 +46,23 @@ export function PayslipModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur- p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-default shadow-2xl animate-in zoom-in-95 duration-200">
-        
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-md bg-white border border-default shadow-sm animate-in zoom-in-95 duration-200">
+
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-default">
           <h2 className="font-bold text-lg text-foreground">Payslip</h2>
           <div className="flex items-center gap-2">
             <button
-              className="flex items-center gap-2 rounded-lg border border-default px-3 py-1.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-50 print:hidden"
+              className="flex items-center gap-2 rounded-md border border-default px-3 py-1.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors disabled:opacity-50 print:hidden"
               disabled={!data}
               onClick={handleDownloadPdf}
             >
               <Download className="size-4" /> Download PDF
             </button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-subtle text-muted transition-colors print:hidden" onClick={onClose}>
+            <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-subtle text-muted transition-colors print:hidden" onClick={onClose}>
               <X className="size-5" />
             </button>
           </div>
@@ -67,7 +76,7 @@ export function PayslipModal({
             <div className="h-64 flex items-center justify-center text-red-500">Failed to load payslip</div>
           ) : (
             <div className="space-y-8 print:space-y-6">
-              
+
               {/* Company & Month */}
               <div className="flex items-start justify-between border-b border-dashed border-default pb-6">
                 <div>

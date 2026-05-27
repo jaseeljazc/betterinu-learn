@@ -23,18 +23,18 @@ function fmtDateTime(d: string) {
 }
 
 const TYPE_BADGE: Record<string, string> = {
-  income:   "bg-green-100 text-green-700 border-green-300",
-  expense:  "bg-red-100 text-red-700 border-red-300",
+  income: "bg-green-100 text-green-700 border-green-300",
+  expense: "bg-red-100 text-red-700 border-red-300",
   transfer: "bg-blue-100 text-blue-700 border-blue-300",
 };
 const STATUS_BADGE: Record<string, string> = {
   confirmed: "bg-green-100 text-green-700 border-green-300",
-  pending:   "bg-amber-100 text-amber-700 border-amber-300",
-  void:      "bg-muted/40 text-secondary border-default",
+  pending: "bg-amber-100 text-amber-700 border-amber-300",
+  void: "bg-muted/40 text-secondary border-default",
 };
 const AMOUNT_COLOR: Record<string, string> = {
-  income:   "text-green-700",
-  expense:  "text-red-600",
+  income: "text-green-700",
+  expense: "text-red-600",
   transfer: "text-blue-700",
 };
 
@@ -50,14 +50,14 @@ interface TransactionDetailPageClientProps {
 export function TransactionDetailPageClient({ transactionId, canEdit }: TransactionDetailPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isEditing  = searchParams.get("edit") === "1";
-  const wantsVoid  = searchParams.get("void") === "1";
+  const isEditing = searchParams.get("edit") === "1";
+  const wantsVoid = searchParams.get("void") === "1";
 
   const [transaction, setTransaction] = useState<AccountTransaction | null>(null);
-  const [attachments, setAttachments]  = useState<AccountAttachment[]>([]);
-  const [loading, setLoading]          = useState(true);
+  const [attachments, setAttachments] = useState<AccountAttachment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showVoidConfirm, setShowVoidConfirm] = useState(wantsVoid);
-  const [voiding, setVoiding]          = useState(false);
+  const [voiding, setVoiding] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/accounts/transactions/${transactionId}`, { credentials: "include" })
@@ -107,7 +107,7 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   }
 
-  if (loading)      return <div className="py-20 text-center text-muted text-sm">Loading…</div>;
+  if (loading) return <div className="py-20 text-center text-muted text-sm">Loading…</div>;
   if (!transaction) return <div className="py-20 text-center text-muted text-sm">Transaction not found.</div>;
 
   const isVoid = transaction.status === "void";
@@ -118,17 +118,17 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
         transactionId={transactionId}
         mode="edit"
         initialData={{
-          type:            transaction.type,
-          accountId:       transaction.account?.id,
-          toAccountId:     transaction.toAccount?.id,
-          categoryId:      transaction.category?.id,
-          amount:          String(transaction.amount),
-          date:            transaction.date,
-          description:     transaction.description,
+          type: transaction.type,
+          accountId: transaction.account?.id,
+          toAccountId: transaction.toAccount?.id,
+          categoryId: transaction.category?.id,
+          amount: String(transaction.amount),
+          date: transaction.date,
+          description: transaction.description,
           referenceNumber: transaction.referenceNumber,
-          status:          transaction.status,
+          status: transaction.status,
           attachments,
-          employeeId:      transaction.employee?.id,
+          employeeId: transaction.employee?.id,
         }}
       />
     );
@@ -321,11 +321,11 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
           {attachments.length > 0 && (
             <div className="flex-1 overflow-y-auto flex flex-col divide-y divide-default">
               {attachments.map((a) => (
-                <AttachmentCard 
-                  key={a.id} 
-                  a={a} 
-                  canEdit={canEdit} 
-                  onDelete={handleDeleteAttachment} 
+                <AttachmentCard
+                  key={a.id}
+                  a={a}
+                  canEdit={canEdit}
+                  onDelete={handleDeleteAttachment}
                 />
               ))}
             </div>
@@ -339,7 +339,7 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
 function AttachmentCard({ a, canEdit, onDelete }: { a: AccountAttachment, canEdit: boolean, onDelete: (id: string) => void }) {
   const [url, setUrl] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   useEffect(() => {
     fetch(`/api/admin/accounts/attachments/${a.id}`, { credentials: "include" })
       .then((r) => r.json())
@@ -407,11 +407,11 @@ function AttachmentCard({ a, canEdit, onDelete }: { a: AccountAttachment, canEdi
 
       {/* Lightbox Modal */}
       {isModalOpen && url && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur- animate-in fade-in duration-200"
           onClick={() => setIsModalOpen(false)}
         >
-          <button 
+          <button
             className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
             onClick={() => setIsModalOpen(false)}
             aria-label="Close modal"

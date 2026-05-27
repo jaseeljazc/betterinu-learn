@@ -70,6 +70,145 @@ function runTests() {
   console.log("  - Expected: 2 (Fri, Mon)");
   console.log("  - Match:", calc4.leaveCount === 2 ? "PASS" : "FAIL");
 
+  // Test Case 5: 1 Leave + 2 Public Holidays
+  // May 15: Leave
+  // May 16: Holiday
+  // May 17: Holiday
+  // Expected: 3 leaves (15, 16, 17)
+  const case5Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-17", status: "Holiday" }
+  ];
+  const calc5 = calculatePayrollFromAttendance("2026-05", 30000, case5Records);
+  console.log("\nCase 5 (1 Leave + 2 Public Holidays):");
+  console.log("  - Leave Count:", calc5.leaveCount);
+  console.log("  - Expected: 3");
+  console.log("  - Match:", calc5.leaveCount === 3 ? "PASS" : "FAIL");
+
+  // Test Case 6: Public Holiday Between Leaves
+  // May 15: Leave
+  // May 16: Holiday
+  // May 17: Leave
+  // Expected: 3 leaves (15, 16, 17)
+  const case6Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-17", status: "Leave" }
+  ];
+  const calc6 = calculatePayrollFromAttendance("2026-05", 30000, case6Records);
+  console.log("\nCase 6 (Public Holiday Between Leaves):");
+  console.log("  - Leave Count:", calc6.leaveCount);
+  console.log("  - Expected: 3");
+  console.log("  - Match:", calc6.leaveCount === 3 ? "PASS" : "FAIL");
+
+  // Test Case 7: 2 Public Holidays + 1 Leave
+  // May 15: Holiday
+  // May 16: Holiday
+  // May 17: Leave
+  // Expected: 3 leaves (15, 16, 17)
+  const case7Records = [
+    { date: "2026-05-15", status: "Holiday" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-17", status: "Leave" }
+  ];
+  const calc7 = calculatePayrollFromAttendance("2026-05", 30000, case7Records);
+  console.log("\nCase 7 (2 Public Holidays + 1 Leave):");
+  console.log("  - Leave Count:", calc7.leaveCount);
+  console.log("  - Expected: 3");
+  console.log("  - Match:", calc7.leaveCount === 3 ? "PASS" : "FAIL");
+
+  // Test Case 8: 2 Leaves + 1 Public Holiday
+  // May 15: Leave
+  // May 16: Leave
+  // May 17: Holiday
+  // Expected: 3 leaves (15, 16, 17)
+  const case8Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Leave" },
+    { date: "2026-05-17", status: "Holiday" }
+  ];
+  const calc8 = calculatePayrollFromAttendance("2026-05", 30000, case8Records);
+  console.log("\nCase 8 (2 Leaves + 1 Public Holiday):");
+  console.log("  - Leave Count:", calc8.leaveCount);
+  console.log("  - Expected: 3");
+  console.log("  - Match:", calc8.leaveCount === 3 ? "PASS" : "FAIL");
+
+  // Test Case 9: 4 Consecutive Days Including Holidays
+  // May 15: Leave
+  // May 16: Holiday
+  // May 17: Sunday Weekly Off
+  // May 18: Leave
+  // Expected: 4 leaves (15, 16, 17, 18)
+  const case9Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-18", status: "Leave" }
+  ];
+  const calc9 = calculatePayrollFromAttendance("2026-05", 30000, case9Records);
+  console.log("\nCase 9 (4 Consecutive Days Including Holidays):");
+  console.log("  - Leave Count:", calc9.leaveCount);
+  console.log("  - Expected: 4");
+  console.log("  - Match:", calc9.leaveCount === 4 ? "PASS" : "FAIL");
+
+  // Test Case 10: 5 Consecutive Days Including Multiple Holidays
+  // May 15: Leave
+  // May 16: Holiday
+  // May 17: Sunday Weekly Off
+  // May 18: Holiday
+  // May 19: Leave
+  // Expected: 5 leaves (15, 16, 17, 18, 19)
+  const case10Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-18", status: "Holiday" },
+    { date: "2026-05-19", status: "Leave" }
+  ];
+  const calc10 = calculatePayrollFromAttendance("2026-05", 30000, case10Records);
+  console.log("\nCase 10 (5 Consecutive Days Including Multiple Holidays):");
+  console.log("  - Leave Count:", calc10.leaveCount);
+  console.log("  - Expected: 5");
+  console.log("  - Match:", calc10.leaveCount === 5 ? "PASS" : "FAIL");
+
+  // Test Case 11: 6-Day Continuous Sandwich Block
+  // May 15: Leave
+  // May 16: Leave
+  // May 17: Sunday Weekly Off
+  // May 18: Holiday
+  // May 19: Sunday Weekly Off
+  // May 20: Leave
+  // Expected: 6 leaves (15, 16, 17, 18, 19, 20)
+  const case11Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Leave" },
+    { date: "2026-05-18", status: "Holiday" },
+    { date: "2026-05-19", status: "Holiday" },
+    { date: "2026-05-20", status: "Leave" }
+  ];
+  const calc11 = calculatePayrollFromAttendance("2026-05", 30000, case11Records);
+  console.log("\nCase 11 (6-Day Continuous Sandwich Block):");
+  console.log("  - Leave Count:", calc11.leaveCount);
+  console.log("  - Expected: 6");
+  console.log("  - Match:", calc11.leaveCount === 6 ? "PASS" : "FAIL");
+
+  // Test Case 12: Not Applicable Due to Present Day
+  // May 15: Leave
+  // May 16: Holiday
+  // May 17: Present
+  // May 18: Leave
+  // Expected: 2 leaves (15, 18)
+  const case12Records = [
+    { date: "2026-05-15", status: "Leave" },
+    { date: "2026-05-16", status: "Holiday" },
+    { date: "2026-05-17", status: "Present" },
+    { date: "2026-05-18", status: "Leave" }
+  ];
+  const calc12 = calculatePayrollFromAttendance("2026-05", 30000, case12Records);
+  console.log("\nCase 12 (Not Applicable Due to Present Day):");
+  console.log("  - Leave Count:", calc12.leaveCount);
+  console.log("  - Expected: 2");
+  console.log("  - Match:", calc12.leaveCount === 2 ? "PASS" : "FAIL");
+
   console.log("\n=== TESTS COMPLETED ===");
 }
 
