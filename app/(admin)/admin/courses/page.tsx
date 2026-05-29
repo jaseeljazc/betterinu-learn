@@ -18,14 +18,14 @@ export default async function AdminCoursesPage() {
   let canCreateCourse = false;
   let canEditCourse = false;
   let canEditCurriculum = false;
-  
+
   if (rbacStr) {
     try {
       const payload = JSON.parse(decodeURIComponent(rbacStr));
       canCreateCourse = hasPermission(payload.role, payload.permissions || [], "courses", "create");
       canEditCourse = hasPermission(payload.role, payload.permissions || [], "courses", "edit");
       canEditCurriculum = hasPermission(payload.role, payload.permissions || [], "curriculum", "edit");
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -34,7 +34,7 @@ export default async function AdminCoursesPage() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <BookOpen className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Courses
             </h1>
           </div>

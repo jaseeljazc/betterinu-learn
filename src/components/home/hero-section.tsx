@@ -38,7 +38,7 @@ export function HeroSection() {
 
         {/* Heading */}
         <h1
-          className="max-w-3xl font-display text-[46px] font-extrabold leading-[1.04] tracking-tight text-foreground md:text-[62px] animate-fade-up"
+          className="max-w-3xl font-display text-[46px] font-bold leading-[1.04] tracking-tight text-foreground md:text-[62px] animate-fade-up"
           style={{ animationDelay: "60ms" }}
         >
           Learn smarter. <span className="text-primary">Grow faster.</span>

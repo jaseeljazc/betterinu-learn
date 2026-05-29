@@ -8,18 +8,18 @@ import { StudentsTable } from "@/components/admin/students-table";
 async function getStudents() {
   return sql`
     SELECT
-      s.id, s.name, s.email, s.created_at,
+      s.id, s.name, s.email, s.created_at, s.status,
       COUNT(sc.id)::int AS course_count
     FROM students s
     LEFT JOIN student_courses sc ON sc.student_id = s.id
-    GROUP BY s.id, s.name, s.email, s.created_at
+    GROUP BY s.id, s.name, s.email, s.created_at, s.status
     ORDER BY s.created_at DESC
   `;
 }
 
 export default async function AdminStudentsPage() {
   const students = await getStudents();
-  
+
   const cookieStore = await cookies();
   const rbacStr = cookieStore.get("__rbac")?.value;
   let canCreate = false;
@@ -27,7 +27,7 @@ export default async function AdminStudentsPage() {
     try {
       const payload = JSON.parse(decodeURIComponent(rbacStr));
       canCreate = hasPermission(payload.role, payload.permissions || [], "students", "create");
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -36,7 +36,7 @@ export default async function AdminStudentsPage() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Users className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Students
             </h1>
           </div>

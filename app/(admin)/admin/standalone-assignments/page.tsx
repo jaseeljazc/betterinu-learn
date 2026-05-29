@@ -223,7 +223,7 @@ function StandaloneAssignmentsContent() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <ClipboardList className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Standalone Tasks
             </h1>
           </div>
@@ -247,21 +247,19 @@ function StandaloneAssignmentsContent() {
       <div className="flex border-b border-default mb-6">
         <button
           onClick={() => setActiveTab("assignments")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "assignments"
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "assignments"
               ? "border-primary text-primary"
               : "border-transparent text-muted hover:text-foreground"
-          }`}
+            }`}
         >
           Assignments
         </button>
         <button
           onClick={() => setActiveTab("submissions")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "submissions"
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "submissions"
               ? "border-primary text-primary"
               : "border-transparent text-muted hover:text-foreground"
-          }`}
+            }`}
         >
           Task Reviews
         </button>
@@ -277,11 +275,10 @@ function StandaloneAssignmentsContent() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${
-                  filter === f
+                className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${filter === f
                     ? "bg-primary text-white border-primary"
                     : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
-                }`}
+                  }`}
               >
                 {f === "all"
                   ? `All (${assignments.length})`
@@ -317,11 +314,10 @@ function StandaloneAssignmentsContent() {
                   {/* Scope badge */}
                   <div className="flex items-center justify-between mb-3">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        a.scope === "common"
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${a.scope === "common"
                           ? "bg-purple-50 border-purple-200 text-purple-700"
                           : "bg-blue-50 border-blue-200 text-blue-700"
-                      }`}
+                        }`}
                     >
                       {a.scope === "common" ? (
                         <>

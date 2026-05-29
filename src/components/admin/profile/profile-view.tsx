@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  CalendarDays, FileText, UserCircle, Wallet, MoreHorizontal, 
-  KeyRound, LogOut, Mail, Phone, MapPin, Calendar, 
-  Building2, User, Briefcase, UserCheck, DollarSign 
+import {
+  CalendarDays, FileText, UserCircle, Wallet, MoreHorizontal,
+  KeyRound, LogOut, Mail, Phone, MapPin, Calendar,
+  Building2, User, Briefcase, UserCheck, DollarSign
 } from "lucide-react";
 import type { Employee, PayrollRun } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -201,7 +201,7 @@ export function ProfileView() {
           <Avatar url={employee.profilePhotoUrl} name={employee.fullName} />
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
                 {employee.fullName}
               </h1>
               <Badge

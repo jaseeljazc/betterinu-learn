@@ -61,7 +61,7 @@ function CodeBlock({ children }: { children: string }) {
 
 function Badge({ children, color = "bg-blue-100 text-blue-800" }: { children: React.ReactNode; color?: string }) {
   return (
-    <span className={`inline-block rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${color}`}>
+    <span className={`inline-block rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${color}`}>
       {children}
     </span>
   );
@@ -70,7 +70,7 @@ function Badge({ children, color = "bg-blue-100 text-blue-800" }: { children: Re
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-white text-[10px] font-extrabold mt-0.5">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold mt-0.5">
         {n}
       </span>
       <p className="text-xs text-secondary leading-relaxed">{children}</p>

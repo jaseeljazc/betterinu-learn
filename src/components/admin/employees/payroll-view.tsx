@@ -351,7 +351,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
           <Card key={label} className="shadow-xs">
             <CardContent className="px-5 py-4">
               <p className="text-xs font-semibold text-muted mb-1">{label}</p>
-              <p className={`text-xl font-extrabold tracking-tight ${color}`}>{fmtCurrency(value)}</p>
+              <p className={`text-xl font-bold tracking-tight ${color}`}>{fmtCurrency(value)}</p>
             </CardContent>
           </Card>
         ))}
@@ -418,7 +418,7 @@ export function PayrollView({ canEdit }: { canEdit: boolean }) {
 
           <div className="flex items-center justify-between rounded-md bg-subtle px-3 py-2 border border-default">
             <p className="text-xs font-bold text-muted uppercase">Total Net Payable</p>
-            <p className="text-lg font-extrabold text-green-700">
+            <p className="text-lg font-bold text-green-700">
               {fmtCurrency(
                 runs.filter((r) => r.status === "approved").reduce((s, r) => s + r.netSalary, 0)
               )}

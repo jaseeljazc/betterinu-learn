@@ -301,7 +301,7 @@ export function AttendanceView({ canMark, canEdit }: Props) {
           <div key={label} className={`flex items-center gap-3 rounded-xl border p-4 ${color}`}>
             <Icon className="size-5 shrink-0 opacity-70" />
             <div>
-              <p className="text-2xl font-extrabold leading-none">{count}</p>
+              <p className="text-2xl font-bold leading-none">{count}</p>
               <p className="text-xs font-semibold mt-0.5 opacity-70">{label}</p>
             </div>
           </div>
@@ -362,13 +362,12 @@ export function AttendanceView({ canMark, canEdit }: Props) {
                     return (
                       <th
                         key={day}
-                        className={`px-0 py-0 text-center font-bold border-r border-default last:border-r-0 min-w-[34px] w-[34px] ${
-                          isToday
+                        className={`px-0 py-0 text-center font-bold border-r border-default last:border-r-0 min-w-[34px] w-[34px] ${isToday
                             ? "bg-primary/10 text-primary border-x-primary/20"
                             : isWeekend(day)
                               ? "text-muted/60"
                               : "text-foreground"
-                        }`}
+                          }`}
                       >
                         {canMark && !isSunday ? (
                           <DropdownMenu>

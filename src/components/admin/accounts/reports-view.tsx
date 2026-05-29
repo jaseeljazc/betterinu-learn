@@ -240,7 +240,7 @@ export function ReportsView() {
             ].map(({ label, value, color }) => (
               <div key={label} className={`rounded-2xl border border-default p-4 ${color.split(" ")[1]} shadow-sm`}>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-1">{label}</p>
-                <p className={`text-2xl font-extrabold ${color.split(" ")[0]}`}>{fmtCurrency(value)}</p>
+                <p className={`text-2xl font-bold ${color.split(" ")[0]}`}>{fmtCurrency(value)}</p>
               </div>
             ))}
           </div>

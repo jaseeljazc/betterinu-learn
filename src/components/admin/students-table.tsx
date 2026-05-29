@@ -10,6 +10,7 @@ type StudentRow = {
   id: string;
   name: string;
   email: string;
+  status: "active" | "inactive" | "pending";
   created_at: string;
   course_count: number;
 };
@@ -18,6 +19,12 @@ interface StudentsTableProps {
   students: StudentRow[];
   canCreate: boolean;
 }
+
+const STATUS_BADGE: Record<string, string> = {
+  active:   "bg-green-50 text-green-700 border-green-200",
+  pending:  "bg-yellow-50 text-yellow-700 border-yellow-200",
+  inactive: "bg-red-50 text-red-700 border-red-200",
+};
 
 export function StudentsTable({ students, canCreate }: StudentsTableProps) {
   const columns: ColumnDef<StudentRow>[] = [
@@ -44,6 +51,20 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
       ),
     },
     {
+      accessorKey: "status",
+      header: "Status",
+      size: 120,
+      filterFn: "equals",
+      cell: ({ getValue }) => {
+        const val = (getValue() as string) || "active";
+        return (
+          <Badge variant="outline" className={STATUS_BADGE[val]}>
+            {val.charAt(0).toUpperCase() + val.slice(1)}
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "created_at",
       header: "Joined",
       size: 140,
@@ -66,7 +87,7 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
         <div className="flex items-center justify-end gap-2">
           <Link
             href={`/admin/students/${row.original.id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-default bg-white px-3 py-1.5 text-xs font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
+            className="inline-flex items-center gap-1.5 rounded-md border border-default bg-white px-3 py-1.5 text-xs font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
           >
             <Eye className="size-3.5" /> View
           </Link>
@@ -82,6 +103,16 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
       searchable
       searchPlaceholder="Search name or email..."
       searchColumn="name"
+      filters={[
+        {
+          column: "status",
+          label: "Status",
+          options: [
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+          ],
+        },
+      ]}
       emptyMessage="No students yet."
       emptyIcon={Users}
     />

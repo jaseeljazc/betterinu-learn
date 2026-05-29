@@ -36,7 +36,7 @@ interface Submission {
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  pending:  { label: "Pending",  cls: "bg-amber-100 text-amber-700 border-amber-200" },
+  pending: { label: "Pending", cls: "bg-amber-100 text-amber-700 border-amber-200" },
   approved: { label: "Approved", cls: "bg-green-100 text-primary border-green-200" },
   rejected: { label: "Rejected", cls: "bg-red-100 text-red-700 border-red-200" },
 };
@@ -101,13 +101,13 @@ function SubmissionsContent() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <ClipboardList className="size-6 text-primary" />
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             Task Submissions
           </h1>
         </div>
         <p className="text-sm text-secondary">
           Review and approve or reject student assignment submissions.
-        </p> 
+        </p>
       </div>
 
       {/* Filter Tabs */}
@@ -116,11 +116,10 @@ function SubmissionsContent() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${
-              filter === f
+            className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${filter === f
                 ? "bg-primary text-white border-primary"
                 : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
-            }`}
+              }`}
           >
             {f === "all"
               ? `All (${submissions.length})`

@@ -20,8 +20,8 @@ function fmtDate(d: string) {
 }
 
 const TYPE_ICON = {
-  income:   <ArrowUpRight className="size-4 text-green-600" />,
-  expense:  <ArrowDownLeft className="size-4 text-red-500" />,
+  income: <ArrowUpRight className="size-4 text-green-600" />,
+  expense: <ArrowDownLeft className="size-4 text-red-500" />,
   transfer: <ArrowLeftRight className="size-4 text-blue-500" />,
 };
 
@@ -125,7 +125,7 @@ export function AccountDashboard() {
         {data.accounts.filter((a) => a.isActive).map((acc) => (
           <div key={acc.id} className="rounded-2xl border border-default bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider truncate">{acc.name}</p>
-            <p className={`mt-1.5 text-lg font-extrabold ${acc.currentBalance > 0 ? "text-green-700" : "text-red-600"}`}>
+            <p className={`mt-1.5 text-lg font-bold ${acc.currentBalance > 0 ? "text-green-700" : "text-red-600"}`}>
               {fmtCurrency(acc.currentBalance)}
             </p>
           </div>
@@ -229,7 +229,7 @@ function SummaryCard({ label, value, icon, color }: {
         <p className="text-xs font-bold uppercase tracking-wider text-secondary">{label}</p>
         <div className={`rounded-xl p-2 ${bg}`}>{icon}</div>
       </div>
-      <p className="text-2xl font-extrabold text-foreground">{value}</p>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
     </div>
   );
 }

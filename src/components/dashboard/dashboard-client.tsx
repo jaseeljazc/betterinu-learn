@@ -59,7 +59,7 @@ export function DashboardClient() {
           <p className="text-xs font-bold uppercase tracking-widest text-primary">
             Student Portal
           </p>
-          <h1 className="mt-1 font-display text-4xl font-extrabold tracking-tight">
+          <h1 className="mt-1 font-display text-4xl font-bold tracking-tight">
             {user?.displayName
               ? `Welcome, ${user.displayName.split(" ")[0]}`
               : "Your Dashboard"}
@@ -89,7 +89,7 @@ export function DashboardClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">
+            <p className="font-display text-4xl font-bold">
               {progress.xp}
             </p>
             <div className="mt-3 h-1.5 rounded-full bg-white/20">
@@ -115,7 +115,7 @@ export function DashboardClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">
+            <p className="font-display text-4xl font-bold">
               {progress.streak}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Days in a row</p>
@@ -133,7 +133,7 @@ export function DashboardClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">
+            <p className="font-display text-4xl font-bold">
               {enrolled?.length ?? "—"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Active courses</p>
@@ -151,7 +151,7 @@ export function DashboardClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="font-display text-4xl font-extrabold">
+            <p className="font-display text-4xl font-bold">
               {progress.completedSubModules.length}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Lessons done</p>

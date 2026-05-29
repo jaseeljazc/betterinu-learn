@@ -23,7 +23,7 @@ export default async function NewAccountPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <Wallet className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">Add Account</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Add Account</h1>
           </div>
           <p className="text-sm text-secondary">Create a new financial account for tracking.</p>
         </div>

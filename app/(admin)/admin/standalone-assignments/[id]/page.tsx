@@ -115,7 +115,7 @@ function StudentCard({
     <div className="rounded-xl border border-default bg-white overflow-hidden">
       {/* Row header */}
       <div className="flex items-center gap-3 p-3">
-        <div className="size-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-extrabold text-primary">
+        <div className="size-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
           {s.student_name.charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
@@ -203,11 +203,10 @@ function StudentCard({
           {/* Feedback */}
           {s.feedback && (
             <div
-              className={`rounded-lg border p-3 text-xs ${
-                s.submission_status === "approved"
+              className={`rounded-lg border p-3 text-xs ${s.submission_status === "approved"
                   ? "border-green-200 bg-green-50 text-green-800"
                   : "border-red-200 bg-red-50 text-red-800"
-              }`}
+                }`}
             >
               <p className="font-bold uppercase tracking-widest text-[9px] mb-1">
                 Instructor Feedback
@@ -422,11 +421,10 @@ export default function StandaloneAssignmentDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                  assignment.scope === "common"
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${assignment.scope === "common"
                     ? "bg-purple-50 border-purple-200 text-purple-700"
                     : "bg-blue-50 border-blue-200 text-blue-700"
-                }`}
+                  }`}
               >
                 {assignment.scope === "common" ? (
                   <>
@@ -634,11 +632,10 @@ export default function StandaloneAssignmentDetailPage() {
                   <button
                     key={key}
                     onClick={() => setStudentFilter(key)}
-                    className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold transition-colors border ${
-                      studentFilter === key
+                    className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold transition-colors border ${studentFilter === key
                         ? "bg-primary text-white border-primary"
                         : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {label}
                   </button>

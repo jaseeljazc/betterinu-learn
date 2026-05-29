@@ -128,17 +128,15 @@ export function QuizViewer({ moduleId, courseId, weekId, dayId, quizData, onPass
     return (
       <div className="space-y-6 pb-10">
         {/* Score Card */}
-        <div className={`rounded-2xl border-2 p-6 text-center shadow-sm ${
-          state.passed ? "border-green-300 bg-green-50" : "border-red-200 bg-red-50"
-        }`}>
-          <div className={`inline-flex size-16 items-center justify-center rounded-full mb-3 ${
-            state.passed ? "bg-green-100" : "bg-red-100"
+        <div className={`rounded-2xl border-2 p-6 text-center shadow-sm ${state.passed ? "border-green-300 bg-green-50" : "border-red-200 bg-red-50"
           }`}>
+          <div className={`inline-flex size-16 items-center justify-center rounded-full mb-3 ${state.passed ? "bg-green-100" : "bg-red-100"
+            }`}>
             {state.passed
               ? <Trophy className="size-8 text-green-600" />
               : <XCircle className="size-8 text-red-500" />}
           </div>
-          <h2 className={`text-2xl font-extrabold mb-1 ${state.passed ? "text-primary" : "text-red-700"}`}>
+          <h2 className={`text-2xl font-bold mb-1 ${state.passed ? "text-primary" : "text-red-700"}`}>
             {state.passed ? "Passed!" : "Not Quite"}
           </h2>
           <p className="text-sm font-semibold mb-2 text-foreground">
@@ -332,11 +330,10 @@ function QuestionBlock({
             {(q.options || []).map((opt, oIdx) => (
               <label
                 key={oIdx}
-                className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
-                  answer === oIdx
+                className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all ${answer === oIdx
                     ? "border-primary bg-primary/5 shadow-sm"
                     : "border-default bg-surface hover:border-primary/40"
-                }`}
+                  }`}
               >
                 <input
                   type="radio"

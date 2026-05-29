@@ -11,9 +11,10 @@ export async function verifyStudentToken(token: string) {
   try {
     const decoded = await adminAuth.verifyIdToken(token);
     const rows = await sql`
-      SELECT id FROM students WHERE firebase_uid = ${decoded.uid} LIMIT 1
+      SELECT id, status FROM students WHERE firebase_uid = ${decoded.uid} LIMIT 1
     `;
     if (!rows.length) return null;
+    if (rows[0].status === "inactive") return null;
     return { studentId: rows[0].id as string, uid: decoded.uid };
   } catch {
     return null;

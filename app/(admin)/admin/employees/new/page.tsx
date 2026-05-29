@@ -55,7 +55,7 @@ export default async function NewEmployeePage() {
         </Link>
         <div className="flex items-center gap-3 mb-1">
           <UserPlus className="size-6 text-primary" />
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             Add New Employee
           </h1>
         </div>

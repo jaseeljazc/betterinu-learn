@@ -159,10 +159,10 @@ export function RolesTable({ roles }: RolesTableProps) {
           <span
             title={modules.length ? `Modules: ${modules.join(", ")}` : "No permissions assigned"}
             className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${isSuperAdmin
-                ? "bg-primary/10 text-primary"
-                : permCount === 0
-                  ? "bg-gray-50 text-gray-600"
-                  : "bg-subtle text-foreground"
+              ? "bg-primary/10 text-primary"
+              : permCount === 0
+                ? "bg-gray-50 text-gray-600"
+                : "bg-subtle text-foreground"
               }`}
           >
             {permSummary}
@@ -238,7 +238,7 @@ export function RolesTable({ roles }: RolesTableProps) {
         <div>
           <div className="mb-1 flex items-center gap-3">
             <ShieldCheck className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Roles &amp; Permissions
             </h1>
           </div>

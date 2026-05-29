@@ -45,7 +45,7 @@ export default async function EditAccountPage({
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <Wallet className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">Edit Account</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Edit Account</h1>
           </div>
           <p className="text-sm text-secondary">Update details for <span className="font-semibold">{account.name}</span>.</p>
         </div>

@@ -172,7 +172,7 @@ export function PayslipModal({
                     </p>
                   )}
                 </div>
-                <p className="text-2xl font-extrabold text-primary tracking-tight">
+                <p className="text-2xl font-bold text-primary tracking-tight">
                   {fmtCurrency(data.netSalary)}
                 </p>
               </div>

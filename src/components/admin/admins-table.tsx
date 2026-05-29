@@ -42,15 +42,15 @@ type AdminsTableProps = {
 }
 
 const ROLE_BADGE: Record<AdminRole, string> = {
-  super_admin:     "bg-primary/10 text-primary border-primary/20",
-  admin:           "bg-blue-50 text-blue-700 border-blue-200",
-  instructor:      "bg-purple-50 text-purple-700 border-purple-200",
-  support:         "bg-gray-50 text-gray-600 border-gray-200",
+  super_admin: "bg-primary/10 text-primary border-primary/20",
+  admin: "bg-blue-50 text-blue-700 border-blue-200",
+  instructor: "bg-purple-50 text-purple-700 border-purple-200",
+  support: "bg-gray-50 text-gray-600 border-gray-200",
   account_manager: "bg-amber-50 text-amber-700 border-amber-200",
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  active:  "bg-green-50 text-green-700 border-green-200",
+  active: "bg-green-50 text-green-700 border-green-200",
   pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
   inactive: "bg-gray-50 text-gray-600 border-gray-200",
 }
@@ -69,19 +69,19 @@ function fmtDate(d: string) {
 
 export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
   const [deactivating, setDeactivating] = useState<string | null>(null)
-  const [activating,   setActivating]   = useState<string | null>(null)
+  const [activating, setActivating] = useState<string | null>(null)
 
   /* ── Roles (fetched once for both modals) ── */
-  const [roles,        setRoles]        = useState<AdminFormRole[]>([])
+  const [roles, setRoles] = useState<AdminFormRole[]>([])
   const [rolesLoading, setRolesLoading] = useState(false)
 
   /* ── Create modal ── */
-  const [isCreateOpen,  setIsCreateOpen]  = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
 
   /* ── Edit modal ── */
   const [editingAdmin, setEditingAdmin] = useState<AdminRow | null>(null)
-  const [editLoading,  setEditLoading]  = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
 
   /* ── Fetch roles on first open ── */
   useEffect(() => {
@@ -134,8 +134,8 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: data.fullName,
-          roleId:   data.roleId,
-          status:   data.status,
+          roleId: data.roleId,
+          status: data.status,
         }),
       })
       const json = await res.json()
@@ -279,7 +279,7 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       enableSorting: false,
       cell: ({ row }) => {
         const admin = row.original
-        const isMe        = admin.id === currentAdminId
+        const isMe = admin.id === currentAdminId
         const isSuperAdmin = admin.roleName === "super_admin"
         const actionsDisabled = isMe || isSuperAdmin
         return (
@@ -328,13 +328,13 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
   /* ── Derive AdminFormInitialData from the editing row ── */
   const editInitialData: AdminFormInitialData | undefined = editingAdmin
     ? {
-        id:       editingAdmin.id,
-        fullName: editingAdmin.fullName,
-        email:    editingAdmin.email,
-        status:   editingAdmin.status,
-        roleName: editingAdmin.roleName,
-        roleId:   editingAdmin.roleId,
-      }
+      id: editingAdmin.id,
+      fullName: editingAdmin.fullName,
+      email: editingAdmin.email,
+      status: editingAdmin.status,
+      roleName: editingAdmin.roleName,
+      roleId: editingAdmin.roleId,
+    }
     : undefined
 
   return (
@@ -344,7 +344,7 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <UsersRound className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Admins
             </h1>
           </div>
@@ -373,10 +373,10 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
             column: "roleName",
             label: "Role",
             options: [
-              { value: "super_admin",     label: "Super Admin" },
-              { value: "admin",           label: "Admin" },
-              { value: "instructor",      label: "Instructor" },
-              { value: "support",         label: "Support" },
+              { value: "super_admin", label: "Super Admin" },
+              { value: "admin", label: "Admin" },
+              { value: "instructor", label: "Instructor" },
+              { value: "support", label: "Support" },
               { value: "account_manager", label: "Account Manager" },
             ],
           },
@@ -384,8 +384,8 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
             column: "status",
             label: "Status",
             options: [
-              { value: "active",   label: "Active" },
-              { value: "pending",  label: "Pending" },
+              { value: "active", label: "Active" },
+              { value: "pending", label: "Pending" },
               { value: "inactive", label: "Inactive" },
             ],
           },

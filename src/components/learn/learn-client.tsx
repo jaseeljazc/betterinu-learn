@@ -57,7 +57,7 @@ export function LearnClient({ course }: { course: Course }) {
             <p className="text-[16px] font-bold uppercase tracking-widest text-primary">
               Course material
             </p>
-            {/* <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-foreground">
+            {/* <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground">
               {activeWeek.title.replace(":", " —")}
             </h1> */}
           </div>
@@ -65,7 +65,7 @@ export function LearnClient({ course }: { course: Course }) {
 
         {paddedCourse.weeks.map((week: any, index: number) =>
           isWeekUnlocked(paddedCourse, week.id) &&
-          !week.id.startsWith("dummy") ? (
+            !week.id.startsWith("dummy") ? (
             <WeekCard courseId={paddedCourse.id} key={week.id} week={week} />
           ) : (
             <LockedWeekCard

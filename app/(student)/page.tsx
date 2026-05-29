@@ -162,7 +162,7 @@ function AssignmentRow({ item }: { item: FlatAssignment }) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-xl border border-default bg-white p-3.5 transition-all duration-200 hover:border-primary/30 hover:shadow-md focus-ring"
+      className="group flex items-center gap-3 rounded-md border border-default bg-white p-3.5 transition-all duration-200 hover:border-primary/30 hover:shadow-md focus-ring"
     >
       <span className={`size-2 shrink-0 rounded-full ${cfg.dot}`} />
       <div className="min-w-0 flex-1">
@@ -205,7 +205,7 @@ function CourseCard({
   return (
     <Link
       href={`/course/${course.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-default bg-white shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg focus-ring"
+      className="group relative flex flex-col overflow-hidden rounded-md border border-default bg-white  transition-all duration-300 hover:border-primary/30 hover:shadow-lg focus-ring"
     >
       {/* Course image / fallback */}
       <div className="relative aspect-[16/7] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5">
@@ -221,7 +221,7 @@ function CourseCard({
             <GraduationCap className="size-10 text-primary/30" />
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary shadow-sm backdrop-blur-">
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary  backdrop-blur-">
           Course
         </span>
       </div>
@@ -322,7 +322,7 @@ export default function Home() {
     <PageWrapper>
       <div className="mx-auto max-w-7xl pt-5">
         {/* --- Hero / Greeting Banner --- */}
-        <div className="mb-8 overflow-hidden rounded-2xl border border-default bg-white shadow-xs relative">
+        <div className="mb-8 overflow-hidden rounded-md border border-default bg-white  relative">
           {isLoading ? (
             <>
               <div className="px-6 py-7 sm:p-8">
@@ -333,9 +333,9 @@ export default function Home() {
                     <Skeleton className="h-4 w-48" />
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
-                    <Skeleton className="h-10 w-28 rounded-xl" />
-                    <Skeleton className="h-10 w-28 rounded-xl" />
-                    <Skeleton className="h-10 w-28 rounded-xl" />
+                    <Skeleton className="h-10 w-28 rounded-md" />
+                    <Skeleton className="h-10 w-28 rounded-md" />
+                    <Skeleton className="h-10 w-28 rounded-md" />
                   </div>
                 </div>
               </div>
@@ -396,10 +396,10 @@ export default function Home() {
                     ].map(({ Icon, value, label, accent }) => (
                       <div
                         key={label}
-                        className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 ${accent}`}
+                        className={`flex items-center gap-2 rounded-md border px-3.5 py-2 ${accent}`}
                       >
                         <Icon size={14} className="shrink-0 opacity-80" />
-                        <span className="text-lg font-extrabold leading-none">
+                        <span className="text-lg font-bold leading-none">
                           {value}
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
@@ -414,7 +414,7 @@ export default function Home() {
               {/* User footer */}
               <div className="flex items-center gap-3 border-t border-default px-6 py-3 sm:px-8">
                 <Avatar className="size-6 border border-default">
-                  <AvatarFallback className="bg-primary/10 text-[9px] font-extrabold text-primary">
+                  <AvatarFallback className="bg-primary/10 text-[9px] font-bold text-primary">
                     {user ? getInitials(user.displayName) : "S"}
                   </AvatarFallback>
                 </Avatar>
@@ -446,7 +446,7 @@ export default function Home() {
                 {[1].map((i) => (
                   <div
                     key={i}
-                    className="flex flex-col rounded-2xl border border-default bg-white overflow-hidden shadow-sm"
+                    className="flex flex-col rounded-md border border-default bg-white overflow-hidden "
                   >
                     <Skeleton className="aspect-[16/7] w-full rounded-none" />
                     <div className="flex flex-1 flex-col gap-3 p-4">
@@ -460,7 +460,7 @@ export default function Home() {
                 ))}
               </div>
             ) : courses.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-default bg-white py-14 text-center">
                 <GraduationCap size={36} className="text-muted" />
                 <div>
                   <p className="font-semibold text-foreground">
@@ -501,11 +501,11 @@ export default function Home() {
             {isLoading || allStandaloneTasks === null ? (
               <div className="flex flex-col gap-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-16 w-full rounded-md" />
                 ))}
               </div>
             ) : allStandaloneTasks.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-default bg-white py-14 text-center">
                 <Globe size={36} className="text-muted" />
                 <div>
                   <p className="font-semibold text-foreground">No tasks yet</p>
@@ -515,13 +515,13 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden flex flex-col flex-1">
+              <div className="rounded-md border border-default bg-white  overflow-hidden flex flex-col flex-1">
                 <div className="overflow-y-auto flex-1 p-4">
                   <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-muted flex items-center gap-1">
                     <Globe className="size-3" /> Standalone Tasks ·{" "}
                     {allStandaloneTasks.length}
                     {(newTasks?.length ?? 0) > 0 && (
-                      <span className="ml-1 rounded-full bg-primary text-white text-[9px] font-extrabold px-1.5 py-0.5">
+                      <span className="ml-1 rounded-full bg-primary text-white text-[9px] font-bold px-1.5 py-0.5">
                         {newTasks!.length} new
                       </span>
                     )}
@@ -559,7 +559,7 @@ export default function Home() {
                         <Link
                           key={task.assignment_id}
                           href={`/assignments/${task.assignment_id}`}
-                          className="group flex items-center gap-3 rounded-xl border border-default bg-white p-3 transition-all hover:border-primary/30 hover:shadow-md"
+                          className="group flex items-center gap-3 rounded-md border border-default bg-white p-3 transition-all hover:border-primary/30 hover:shadow-md"
                         >
                           <span
                             className={`size-2 shrink-0 rounded-full ${cfg.dot}${status === "todo" ? " animate-pulse" : ""}`}
@@ -609,11 +609,11 @@ export default function Home() {
             {isLoading ? (
               <div className="flex flex-col gap-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-16 w-full rounded-md" />
                 ))}
               </div>
             ) : submitted.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-default bg-white py-14 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-default bg-white py-14 text-center">
                 <BookOpenCheck size={36} className="text-muted" />
                 <div>
                   <p className="font-semibold text-foreground">No tasks yet</p>
@@ -623,7 +623,7 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden flex flex-col flex-1">
+              <div className="rounded-md border border-default bg-white  overflow-hidden flex flex-col flex-1">
                 <div className="overflow-y-auto flex-1 p-4">
                   <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-muted flex items-center gap-1">
                     <BookOpenCheck className="size-3" /> Course Tasks ·{" "}

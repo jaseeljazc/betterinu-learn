@@ -19,8 +19,9 @@ async function setCors() {
         CORSRules: [
           {
             AllowedOrigins: ["*"],
-            AllowedMethods: ["GET", "HEAD"],
+            AllowedMethods: ["GET", "HEAD", "PUT", "POST", "DELETE"],
             AllowedHeaders: ["*"],
+            ExposeHeaders: ["ETag"],
             MaxAgeSeconds: 86400,
           },
         ],

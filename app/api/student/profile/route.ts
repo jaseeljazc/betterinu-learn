@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
   if (!student) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const rows = await sql`
-    SELECT name, email, created_at FROM students WHERE id = ${student.studentId}
+    SELECT s.*,
+      sp.highest_qualification, sp.current_status, sp.year_of_passing,
+      sp.certification_url, sp.id_proof_url, sp.verification_status,
+      sp.verified_by, sp.verified_at
+    FROM students s
+    LEFT JOIN student_profiles sp ON sp.student_id = s.id
+    WHERE s.id = ${student.studentId}
   `;
 
   if (!rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });

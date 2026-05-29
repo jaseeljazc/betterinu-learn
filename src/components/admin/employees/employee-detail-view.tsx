@@ -161,7 +161,7 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
         <div>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">Edit Employee</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Edit Employee</h1>
               <p className="text-sm text-secondary mt-1">{employee.fullName} · {employee.employeeCode}</p>
             </div>
             <button
@@ -181,7 +181,7 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
               <Avatar url={employee.profilePhotoUrl} name={employee.fullName} />
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+                  <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
                     {employee.fullName}
                   </h1>
                   <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${statusCfg.cls}`}>
@@ -286,38 +286,38 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
           {/* Documents */}
           <div className="mt-6">
             <SectionCard title="Documents">
-                {docs.length === 0 ? (
-                  <p className="text-sm text-muted py-2">No documents uploaded.</p>
-                ) : (
-                  <div className="space-y-5 pt-1">
-                    {mandatoryDocs.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Identity & Banking</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {mandatoryDocs.map(renderDocRow)}
-                        </div>
+              {docs.length === 0 ? (
+                <p className="text-sm text-muted py-2">No documents uploaded.</p>
+              ) : (
+                <div className="space-y-5 pt-1">
+                  {mandatoryDocs.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Identity & Banking</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {mandatoryDocs.map(renderDocRow)}
                       </div>
-                    )}
-                    {certDocs.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Educational Certificates</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {certDocs.map(renderDocRow)}
-                        </div>
+                    </div>
+                  )}
+                  {certDocs.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Educational Certificates</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {certDocs.map(renderDocRow)}
                       </div>
-                    )}
-                    {otherDocs.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Other Attachments</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {otherDocs.map(renderDocRow)}
-                        </div>
+                    </div>
+                  )}
+                  {otherDocs.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Other Attachments</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {otherDocs.map(renderDocRow)}
                       </div>
-                    )}
-                  </div>
-                )}
-              </SectionCard>
-            </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </SectionCard>
+          </div>
 
           <Dialog
             open={attendanceOpen}

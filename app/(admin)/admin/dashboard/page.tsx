@@ -47,25 +47,25 @@ async function getStats() {
 
   return {
     students: students[0].count as number,
-    courses:  courses[0].count  as number,
+    courses: courses[0].count as number,
     assignments: assignments[0].count as number,
     recentSubmissions: allSubmissions,
   };
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  pending:  { label: "Pending",  className: "bg-amber-100 text-amber-700 border-amber-200" },
+  pending: { label: "Pending", className: "bg-amber-100 text-amber-700 border-amber-200" },
   approved: { label: "Approved", className: "bg-green-100 text-green-700 border-green-200" },
-  rejected: { label: "Revise",   className: "bg-red-100 text-red-700 border-red-200" },
+  rejected: { label: "Revise", className: "bg-red-100 text-red-700 border-red-200" },
 };
 
 export default async function AdminDashboard() {
   const stats = await getStats();
 
   const cards = [
-    { label: "Total Students",    value: stats.students,    Icon: Users,       color: "bg-blue-50   text-blue-600" },
-    { label: "Active Courses",    value: stats.courses,     Icon: BookOpen,    color: "bg-green-50  text-[#1a4031]" },
-    { label: "Total Assignments", value: stats.assignments, Icon: TrendingUp,  color: "bg-amber-50  text-amber-600" },
+    { label: "Total Students", value: stats.students, Icon: Users, color: "bg-blue-50   text-blue-600" },
+    { label: "Active Courses", value: stats.courses, Icon: BookOpen, color: "bg-green-50  text-[#1a4031]" },
+    { label: "Total Assignments", value: stats.assignments, Icon: TrendingUp, color: "bg-amber-50  text-amber-600" },
   ];
 
   return (
@@ -73,7 +73,7 @@ export default async function AdminDashboard() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
           <LayoutDashboard className="size-6 text-primary" />
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             Dashboard
           </h1>
         </div>

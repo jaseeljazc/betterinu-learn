@@ -23,10 +23,10 @@ export default async function AccountsPage() {
   }
 
   const quickLinks = [
-    { href: "/admin/accounts/accounts/new",      label: "Add Account",     color: "bg-primary/10 text-primary" },
-    { href: "/admin/accounts/transactions/new",   label: "New Transaction", color: "bg-green-50 text-green-700" },
-    { href: "/admin/accounts/transfers",          label: "Transfers",       color: "bg-blue-50 text-blue-700" },
-    { href: "/admin/accounts/reports",            label: "Reports",         color: "bg-amber-50 text-amber-700" },
+    { href: "/admin/accounts/accounts/new", label: "Add Account", color: "bg-primary/10 text-primary" },
+    { href: "/admin/accounts/transactions/new", label: "New Transaction", color: "bg-green-50 text-green-700" },
+    { href: "/admin/accounts/transfers", label: "Transfers", color: "bg-blue-50 text-blue-700" },
+    { href: "/admin/accounts/reports", label: "Reports", color: "bg-amber-50 text-amber-700" },
   ];
 
   return (
@@ -36,7 +36,7 @@ export default async function AccountsPage() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Wallet className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Account Manager
             </h1>
           </div>

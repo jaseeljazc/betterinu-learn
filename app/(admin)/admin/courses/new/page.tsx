@@ -78,7 +78,7 @@ function WeekJsonEditor({
   }, [week, collapsed]);
 
   return (
-    <div className="rounded-xl border border-default bg-white overflow-hidden shadow-sm transition-all">
+    <div className="rounded-md border border-default bg-white overflow-hidden shadow-sm transition-all">
       <div className="flex items-center justify-between bg-surface px-4 py-3 border-b border-default">
         <div className="flex items-center gap-3 flex-1">
           <button
@@ -97,7 +97,7 @@ function WeekJsonEditor({
         {!collapsed && (
           <button
             type="button"
-            className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-green-800 font-semibold flex items-center gap-1 transition-colors"
+            className="text-xs bg-primary text-white px-3 py-1.5 rounded-md hover:bg-green-800 font-semibold flex items-center gap-1 transition-colors"
             onClick={() => {
               try {
                 const p = JSON.parse(input);
@@ -116,7 +116,7 @@ function WeekJsonEditor({
       {!collapsed && (
         <div className="p-4 bg-[#fafafa]">
           <textarea
-            className="w-full h-[350px] font-mono text-xs p-4 rounded-xl border border-default bg-white outline-none focus:border-primary shadow-inner resize-y"
+            className="w-full h-[350px] font-mono text-xs p-4 rounded-md border border-default bg-white outline-none focus:border-primary shadow-inner resize-y"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             spellCheck={false}
@@ -336,9 +336,9 @@ export default function CourseNewPage() {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-default bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+    "w-full rounded-md border border-default bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
   const sectionClass =
-    "rounded-xl border border-default bg-white p-6 space-y-5";
+    "rounded-md border border-default bg-white p-6 space-y-5";
 
   return (
     <div className="p-8 w-full">
@@ -346,7 +346,7 @@ export default function CourseNewPage() {
       <div className="mb-8 flex items-center gap-3">
         <Link
           href="/admin/courses"
-          className="rounded-lg border border-[#e5e2da] p-2 hover:bg-[#f5f5f0]"
+          className="rounded-md border border-[#e5e2da] p-2 hover:bg-[#f5f5f0]"
         >
           <ChevronLeft className="size-4" />
         </Link>
@@ -358,7 +358,7 @@ export default function CourseNewPage() {
             Fill out the details to add a new course to the platform.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-[#f0ede6] p-1">
+        <div className="flex items-center gap-2 rounded-md bg-[#f0ede6] p-1">
           <button
             type="button"
             onClick={() => setActiveTab("settings")}
@@ -605,12 +605,12 @@ export default function CourseNewPage() {
                     e.key === "Enter" && (e.preventDefault(), addOutcome())
                   }
                   placeholder="Add outcome..."
-                  className="flex-1 rounded-lg border border-[#e5e2da] bg-[#f9f9f6] px-3 py-2 text-sm outline-none focus:border-[#1a4031]"
+                  className="flex-1 rounded-md border border-[#e5e2da] bg-[#f9f9f6] px-3 py-2 text-sm outline-none focus:border-[#1a4031]"
                 />
                 <button
                   type="button"
                   onClick={addOutcome}
-                  className="flex items-center gap-1 rounded-lg bg-[#1a4031]/10 px-3 py-2 text-sm font-semibold text-[#1a4031]"
+                  className="flex items-center gap-1 rounded-md bg-[#1a4031]/10 px-3 py-2 text-sm font-semibold text-[#1a4031]"
                 >
                   <Plus className="size-4" /> Add
                 </button>
@@ -679,7 +679,7 @@ export default function CourseNewPage() {
                   type="button"
                   onClick={handleImport}
                   disabled={importing || !importCourseId}
-                  className="px-4 py-2.5 bg-[#1a4031] text-white font-semibold text-sm rounded-lg hover:bg-[#1a4031]/90 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2.5 bg-[#1a4031] text-white font-semibold text-sm rounded-md hover:bg-[#1a4031]/90 disabled:opacity-50 transition-colors"
                 >
                   {importing ? "Importing..." : "Import Weeks"}
                 </button>
@@ -691,7 +691,7 @@ export default function CourseNewPage() {
             </div>
 
             {form.curriculum && form.curriculum.length > 0 ? (
-              <div className="border border-default rounded-xl overflow-hidden bg-white min-h-[600px] h-[calc(100vh-200px)]">
+              <div className="border border-default rounded-md overflow-hidden bg-white min-h-[600px] h-[calc(100vh-200px)]">
                 <ThreePanelCurriculumBuilder
                   courseId={form.id || "new-course"}
                   initialData={form.curriculum}
@@ -705,7 +705,7 @@ export default function CourseNewPage() {
                 />
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-default p-12 text-center bg-white">
+              <div className="rounded-md border border-dashed border-default p-12 text-center bg-white">
                 <p className="text-sm font-semibold text-foreground">
                   No Curriculum Yet
                 </p>
@@ -720,7 +720,7 @@ export default function CourseNewPage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -729,7 +729,7 @@ export default function CourseNewPage() {
           <button
             type="submit"
             disabled={saving || success}
-            className="flex items-center gap-2 rounded-lg bg-[#1a4031] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
+            className="flex items-center gap-2 rounded-md bg-[#1a4031] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
           >
             {saving ? (
               <>

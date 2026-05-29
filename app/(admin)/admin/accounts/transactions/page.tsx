@@ -24,7 +24,7 @@ export default async function TransactionsPage() {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Wallet className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">Transactions</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">Transactions</h1>
           </div>
           <p className="text-sm text-secondary">All income, expense, and transfer transactions.</p>
         </div>

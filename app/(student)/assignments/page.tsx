@@ -130,7 +130,7 @@ export default function MyAssignmentsPage() {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-1">
             <ClipboardList className="size-6 text-primary" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               My Tasks
             </h1>
           </div>
@@ -143,11 +143,10 @@ export default function MyAssignmentsPage() {
         <div className="flex border-b border-default mb-6">
           <button
             onClick={() => setActiveTab("course")}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${
-              activeTab === "course"
+            className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "course"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted hover:text-foreground"
-            }`}
+              }`}
           >
             <GraduationCap className="size-4" />
             Course Tasks
@@ -161,11 +160,10 @@ export default function MyAssignmentsPage() {
           </button>
           <button
             onClick={() => setActiveTab("other")}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${
-              activeTab === "other"
+            className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "other"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted hover:text-foreground"
-            }`}
+              }`}
           >
             <Globe className="size-4" />
             Other Tasks
@@ -177,7 +175,7 @@ export default function MyAssignmentsPage() {
               </span>
             )}
             {newOtherCount > 0 && (
-              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">
+              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-white">
                 {newOtherCount} new
               </span>
             )}
@@ -204,8 +202,8 @@ export default function MyAssignmentsPage() {
                     f === "all"
                       ? courseAssignments!.length
                       : courseAssignments!.filter(
-                          (a) => a.submission_status === f,
-                        ).length;
+                        (a) => a.submission_status === f,
+                      ).length;
                   const labels: Record<CourseFilter, string> = {
                     all: "All",
                     pending: "Under Review",
@@ -216,11 +214,10 @@ export default function MyAssignmentsPage() {
                     <button
                       key={f}
                       onClick={() => setCourseFilter(f)}
-                      className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${
-                        courseFilter === f
+                      className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${courseFilter === f
                           ? "bg-primary text-white border-primary"
                           : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
-                      }`}
+                        }`}
                     >
                       {labels[f]} ({count})
                     </button>
@@ -267,8 +264,8 @@ export default function MyAssignmentsPage() {
                     f === "all"
                       ? standaloneAssignments!.length
                       : standaloneAssignments!.filter(
-                          (a) => (a.submission_status ?? "todo") === f,
-                        ).length;
+                        (a) => (a.submission_status ?? "todo") === f,
+                      ).length;
                   const labels: Record<OtherFilter, string> = {
                     all: "All",
                     todo: "To Do",
@@ -280,11 +277,10 @@ export default function MyAssignmentsPage() {
                     <button
                       key={f}
                       onClick={() => setOtherFilter(f)}
-                      className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${
-                        otherFilter === f
+                      className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors border ${otherFilter === f
                           ? "bg-primary text-white border-primary"
                           : "bg-white text-secondary border-default hover:border-primary hover:text-primary"
-                      }`}
+                        }`}
                     >
                       {labels[f]} ({count})
                     </button>
@@ -389,11 +385,10 @@ function StandaloneCard({
         <div className="flex items-center gap-2 flex-wrap mb-0.5">
           <p className="font-bold text-foreground text-sm">{a.title}</p>
           <span
-            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase ${
-              a.scope === "common"
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase ${a.scope === "common"
                 ? "bg-purple-50 border-purple-200 text-purple-700"
                 : "bg-blue-50 border-blue-200 text-blue-700"
-            }`}
+              }`}
           >
             {a.scope === "common" ? (
               <>
