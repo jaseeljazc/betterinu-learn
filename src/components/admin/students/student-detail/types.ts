@@ -41,6 +41,14 @@ export type AssignedCourse = {
 export type CourseRow = {
   id: string
   title: string
+  level?: string
+  duration?: string
+  // Fee fields (migration 019)
+  one_time_price?: number | null
+  installment_total_price?: number | null
+  default_installment_count?: number | null
+  default_installment_amount?: number | null
+  grace_period_days?: number | null
 }
 
 export type Submission = {

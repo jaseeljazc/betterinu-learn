@@ -31,32 +31,36 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
-import { CourseImageUploader } from "@/components/admin/course-image-uploader";
+import { CourseImageUploader } from "@/components/admin/course-image-uploader"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
+import {
+  FeeSettingsSection,
+  type FeeSettings,
+} from "@/components/admin/fee-settings-section"
 
 type CourseRow = {
-  id: string;
-  title: string;
-  tagline: string;
-  description: string;
-  instructor: string;
-  instructor_bio: string;
-  duration: string;
-  total_modules: number;
-  level: string;
-  color: string;
-  icon: string;
-  outcomes: string[];
-  is_active: boolean;
-  image: string;
-  curriculum: any[];
-};
+  id: string
+  title: string
+  tagline: string
+  description: string
+  instructor: string
+  instructor_bio: string
+  duration: string
+  total_modules: number
+  level: string
+  color: string
+  icon: string
+  outcomes: string[]
+  is_active: boolean
+  image: string
+  curriculum: any[]
+}
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 
@@ -166,20 +170,29 @@ export default function CourseNewPage() {
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState("");
   const [outcomeInput, setOutcomeInput] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const [useThreePanel, setUseThreePanel] = useState(true); // ADDED
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
+  const [useThreePanel, setUseThreePanel] = useState(true)
   const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>(
     {},
-  );
+  )
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
     {},
-  );
+  )
 
-  const [existingCourses, setExistingCourses] = useState<CourseRow[]>([]);
-  const [importCourseId, setImportCourseId] = useState("");
-  const [importing, setImporting] = useState(false);
+  const [existingCourses, setExistingCourses] = useState<CourseRow[]>([])
+  const [importCourseId, setImportCourseId] = useState("")
+  const [importing, setImporting] = useState(false)
+
+  // Fee settings state
+  const [fee, setFee] = useState<FeeSettings>({
+    one_time_price: "",
+    installment_total_price: "",
+    default_installment_count: "",
+    default_installment_amount: "",
+    grace_period_days: "3",
+  })
 
   useEffect(() => {
     fetch("/api/admin/courses", { credentials: "include" })
@@ -307,14 +320,21 @@ export default function CourseNewPage() {
       return;
     }
 
-    setSaving(true);
+    setSaving(true)
     try {
       const res = await fetch(`/api/admin/courses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
-      });
+        body: JSON.stringify({
+          ...form,
+          one_time_price: fee.one_time_price ? parseFloat(fee.one_time_price) : null,
+          installment_total_price: fee.installment_total_price ? parseFloat(fee.installment_total_price) : null,
+          default_installment_count: fee.default_installment_count ? parseInt(fee.default_installment_count, 10) : null,
+          default_installment_amount: fee.default_installment_amount ? parseFloat(fee.default_installment_amount) : null,
+          grace_period_days: fee.grace_period_days ? parseInt(fee.grace_period_days, 10) : 3,
+        }),
+      })
 
       if (!res.ok) {
         const data = await res.json();
@@ -617,7 +637,16 @@ export default function CourseNewPage() {
               </div>
             </div>
 
-            {/* 5. Visibility */}
+            {/* 5. Fee Settings */}
+            <div className={sectionClass}>
+              <FeeSettingsSection
+                fee={fee}
+                onChange={setFee}
+                inputClass={inputClass}
+              />
+            </div>
+
+            {/* 6. Visibility */}
             <div className={sectionClass}>
               <div className="flex items-center gap-2 border-b border-[#f0ede6] pb-3">
                 <Info className="size-4 text-[#1a4031]" />

@@ -258,4 +258,4 @@ available at the root.
 
 
 
-Always use Tailwind CSS and shadcn components for all styling and components. 
+Always use Tailwind CSS and shadcn components (Cards, Buttons, Dropdown, Select, Input etc ) for all styling and components.

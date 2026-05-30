@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import {
-  ArrowLeft, Mail, Phone, MapPin, Calendar, User, FileText, CheckCircle2, Clock, AlertTriangle, ShieldAlert
-} from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, User, FileText, CheckCircle2, Clock, AlertTriangle, ShieldAlert, CreditCard, UserCheck } from "lucide-react"
 import RoboLoader from "@/components/loading/robo-loader"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Avatar as UIDAvatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { StudentFeeSection } from "@/components/student/fee/student-fee-section"
 
 const STATUS_CFG = {
   active: { label: "Active", cls: "bg-green-50 text-green-700 border-green-200" },
@@ -54,11 +55,11 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
 
 function SectionCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <Card className={className}>
+    <Card className={cn("gap-0 pb-1", className)}>
       <CardHeader className="pb-3 border-b border-default">
         <CardTitle className="text-xs font-bold text-muted uppercase tracking-wider">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-0">
         {children}
       </CardContent>
     </Card>
@@ -145,7 +146,7 @@ export default function StudentProfilePage() {
         </Link>
 
         {/* Page header */}
-        <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap rounded-md border border-default bg-white p-5">
           <div className="flex items-center gap-5">
             <Avatar url={student.profile_image_url} name={student.name} />
             <div>
@@ -186,19 +187,25 @@ export default function StudentProfilePage() {
             <SectionCard title="Personal Information" className="h-full">
               <InfoRow icon={User} label="Gender" value={student.gender} />
               <InfoRow icon={Calendar} label="Date of Birth" value={formatDate(student.date_of_birth)} />
+              <InfoRow
+                icon={UserCheck}
+                label="Student Type"
+                value={
+                  student.student_type
+                    ? student.student_type.charAt(0).toUpperCase() +
+                      student.student_type.slice(1)
+                    : null
+                }
+              />
             </SectionCard>
           </div>
 
           {/* Academic Info */}
           <div className="lg:col-span-2">
             <SectionCard title="Academic Profile" className="h-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                <InfoRow icon={User} label="Highest Qualification" value={student.highest_qualification} />
-                <InfoRow icon={Calendar} label="Year of Passing" value={student.year_of_passing} />
-                <div className="sm:col-span-2">
-                  <InfoRow icon={User} label="Current Status" value={student.current_status ? (student.current_status.charAt(0).toUpperCase() + student.current_status.slice(1).replace("_", " ")) : null} />
-                </div>
-              </div>
+              <InfoRow icon={User} label="Highest Qualification" value={student.highest_qualification} />
+              <InfoRow icon={User} label="Current Status" value={student.current_status ? (student.current_status.charAt(0).toUpperCase() + student.current_status.slice(1).replace("_", " ")) : null} />
+              <InfoRow icon={Calendar} label="Year of Passing" value={student.year_of_passing} />
             </SectionCard>
           </div>
 
@@ -216,13 +223,30 @@ export default function StudentProfilePage() {
         {(student.certification_url || student.id_proof_url) && (
           <div className="mt-6">
             <SectionCard title="Uploaded Documents">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
                 {student.id_proof_url && renderDocRow(student.id_proof_url, "Government ID Proof")}
                 {student.certification_url && renderDocRow(student.certification_url, "Qualification Certificate")}
               </div>
             </SectionCard>
           </div>
         )}
+
+        {/* Fee Section */}
+        <div className="mt-6">
+          <Card>
+            <CardHeader className="pb-3 border-b border-default">
+              <div className="flex items-center gap-2">
+                <CreditCard className="size-4 text-primary" />
+                <CardTitle className="text-xs font-bold text-muted uppercase tracking-wider">
+                  Fee & Payments
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <StudentFeeSection />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

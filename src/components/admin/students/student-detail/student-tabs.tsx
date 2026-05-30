@@ -9,6 +9,7 @@ import {
   Clock,
   CheckCircle2,
   Eye,
+  CreditCard,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -26,8 +27,11 @@ import {
   fmtDateTime,
   SUBMISSION_STATUS_CFG,
 } from "./types"
+import { FeePlanPanel } from "./fee-plan-panel"
 
 type StudentTabsProps = {
+  studentId: string
+  canEditStudent: boolean
   assigned: AssignedCourse[]
   submissions: Submission[]
   standaloneSubs: any[]
@@ -35,13 +39,15 @@ type StudentTabsProps = {
 }
 
 export function StudentTabs({
+  studentId,
+  canEditStudent,
   assigned,
   submissions,
   standaloneSubs,
   onReviewSubmission,
 }: StudentTabsProps) {
   const [activeTab, setActiveTab] = useState<
-    "courses" | "submissions" | "tasks"
+    "courses" | "submissions" | "tasks" | "fee"
   >("courses")
   const [collapsedCourses, setCollapsedCourses] = useState<
     Set<string>
@@ -58,14 +64,14 @@ export function StudentTabs({
 
   return (
     <div className="flex-1 min-w-0 space-y-6 w-full">
-      <div className="flex gap-1 rounded-md border border-default bg-white p-1 w-fit">
-        {(["courses", "submissions", "tasks"] as const).map(
+      <div className="flex gap-1 rounded-md border border-default bg-white p-1 w-fit flex-wrap">
+        {(["courses", "submissions", "tasks", "fee"] as const).map(
           (tab) => (
             <Button
               key={tab}
               variant="ghost"
               onClick={() => setActiveTab(tab)}
-              className={`rounded-md px-4 py-2 text-sm font-semibold capitalize transition-all ${
+              className={`rounded-md h-8 px-3 text-xs font-semibold capitalize transition-all ${
                 activeTab === tab
                   ? "bg-primary text-white hover:bg-primary/90 hover:text-white"
                   : "text-muted hover:text-foreground hover:bg-transparent"
@@ -75,7 +81,14 @@ export function StudentTabs({
                 ? `Courses (${assigned.length})`
                 : tab === "submissions"
                   ? `Submissions (${submissions.length})`
-                  : `Tasks (${standaloneSubs.length})`}
+                  : tab === "tasks"
+                    ? `Tasks (${standaloneSubs.length})`
+                    : (
+                      <span className="flex items-center gap-1.5">
+                        {/* <CreditCard className="size-3.5" /> */}
+                        Fee Plan
+                      </span>
+                    )}
             </Button>
           )
         )}
@@ -99,6 +112,13 @@ export function StudentTabs({
 
       {activeTab === "tasks" && (
         <TasksTabContent standaloneSubs={standaloneSubs} />
+      )}
+
+      {activeTab === "fee" && (
+        <FeePlanPanel
+          studentId={studentId}
+          canRecordPayment={canEditStudent}
+        />
       )}
     </div>
   )

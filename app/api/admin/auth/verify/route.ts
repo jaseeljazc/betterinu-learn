@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
-  })
+  })                                                                                            
   response.cookies.set(
     "__rbac",
     JSON.stringify({ adminId, fullName, email, role, permissions }),

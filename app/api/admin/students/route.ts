@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
   const rows = await sql`
     SELECT
       s.id, s.name, s.email, s.student_type, s.is_active,
-      s.profile_image_url, s.created_at,
+      s.profile_image_url, s.created_at, s.temp_password,
       COUNT(sc.id)::int AS course_count
     FROM students s
     LEFT JOIN student_courses sc ON sc.student_id = s.id
-    GROUP BY s.id, s.name, s.email, s.student_type, s.is_active, s.profile_image_url, s.created_at
+    GROUP BY s.id, s.name, s.email, s.student_type, s.is_active, s.profile_image_url, s.created_at, s.temp_password
     ORDER BY s.created_at DESC
   `;
 
@@ -69,22 +69,60 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name and email are required" }, { status: 400 });
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   // 1. Generate password
   const password = generatePassword();
 
-  // 2. Create Firebase user
+  // 2. Create Firebase user (or recover/link orphan user)
   let firebaseUid: string;
   try {
     const userRecord = await adminAuth.createUser({
-      email,
+      email: normalizedEmail,
       password,
       displayName: name,
       emailVerified: false,
     });
     firebaseUid = userRecord.uid;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Firebase error";
-    return NextResponse.json({ error: msg }, { status: 422 });
+  } catch (err: any) {
+    if (err && err.code === "auth/email-already-exists") {
+      // Check if they exist in the DB
+      const existingDb = await sql`SELECT id FROM students WHERE email = ${normalizedEmail}`;
+      if (existingDb.length > 0) {
+        return NextResponse.json(
+          { error: "The email address is already in use by another account." },
+          { status: 409 }
+        );
+      }
+
+      // If they exist in Firebase Auth but NOT in the PostgreSQL DB (orphan),
+      // we reuse the Firebase user: update their password/display name and proceed!
+      try {
+        const existingUser = await adminAuth.getUserByEmail(normalizedEmail);
+        await adminAuth.updateUser(existingUser.uid, {
+          password,
+          displayName: name,
+        });
+        firebaseUid = existingUser.uid;
+      } catch (recoveryErr: any) {
+        const msg = recoveryErr instanceof Error ? recoveryErr.message : "Firebase recovery error";
+        return NextResponse.json({ error: msg }, { status: 500 });
+      }
+    } else {
+      const msg = err instanceof Error ? err.message : "Firebase error";
+      return NextResponse.json({ error: msg }, { status: 422 });
+    }
+  }
+
+  // 2.5 Generate unique student code
+  const currentYear = new Date().getFullYear();
+  let studentCode: string = "";
+  let uniqueCode = false;
+  while (!uniqueCode) {
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    studentCode = `STU-${currentYear}-${random}`;
+    const check = await sql`SELECT id FROM students WHERE student_code = ${studentCode}`;
+    if (check.length === 0) uniqueCode = true;
   }
 
   // 3. Insert student row (all new columns included)
@@ -104,11 +142,13 @@ export async function POST(req: NextRequest) {
         emergency_contact_name,
         emergency_contact_relation,
         emergency_contact_phone,
-        is_active
+        is_active,
+        temp_password,
+        student_code
       )
       VALUES (
         ${name},
-        ${email},
+        ${normalizedEmail},
         ${firebaseUid},
         ${phone ?? null},
         ${date_of_birth ?? null},
@@ -119,7 +159,9 @@ export async function POST(req: NextRequest) {
         ${emergency_contact_name ?? null},
         ${emergency_contact_relation ?? null},
         ${emergency_contact_phone ?? null},
-        TRUE
+        TRUE,
+        ${password},
+        ${studentCode}
       )
       RETURNING id
     `;
@@ -175,12 +217,14 @@ export async function POST(req: NextRequest) {
 
   // 5. Send welcome email (non-fatal)
   let emailSent = false;
+  let tempPassword: string | null = null;
   try {
-    await sendWelcomeEmail({ name, email, password });
+    await sendWelcomeEmail({ name, email: normalizedEmail, password });
     emailSent = true;
   } catch (err) {
     console.error("Welcome email failed:", err);
+    tempPassword = password;
   }
 
-  return NextResponse.json({ ok: true, studentId, emailSent }, { status: 201 });
+  return NextResponse.json({ ok: true, studentId, emailSent, tempPassword }, { status: 201 });
 }

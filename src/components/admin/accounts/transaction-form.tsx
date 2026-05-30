@@ -19,6 +19,32 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+// ── Fee-management types (inlined to avoid server import) ─────────────────────
+
+type FeeStudent = {
+  id: string
+  fullName: string
+  studentCode: string
+  email: string
+}
+
+type FeeInstallment = {
+  id: string
+  installmentNumber: number
+  dueDate: string
+  totalAmount: number
+  paidAmount: number
+  remainingBalance: number
+  status: string
+}
+
+type FeeEnrollment = {
+  enrollmentId: string
+  courseId: string
+  courseTitle: string
+  installments: FeeInstallment[]
+}
+
 const TX_STATUSES = [
   { value: "confirmed", label: "Confirmed" },
   { value: "pending", label: "Pending" },
@@ -89,6 +115,14 @@ export function TransactionForm({
     transactionId ?? null,
   );
 
+  // ── Fee management state (cascading dropdowns) ────────────────────────────
+  const [feeStudents, setFeeStudents] = useState<FeeStudent[]>([])
+  const [feeStudentId, setFeeStudentId] = useState("")
+  const [feeEnrollments, setFeeEnrollments] = useState<FeeEnrollment[]>([])
+  const [feeEnrollmentId, setFeeEnrollmentId] = useState("")
+  const [feeInstallmentId, setFeeInstallmentId] = useState("")
+  const [paymentMode, setPaymentMode] = useState("cash")
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -116,6 +150,25 @@ export function TransactionForm({
     });
   }, []);
 
+  // Fetch enrolled students when a fee category is picked
+  useEffect(() => {
+    if (!isFeeCategory) { setFeeStudents([]); return }
+    fetch("/api/admin/fee/enrolled-students", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setFeeStudents(d.students ?? []))
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId])
+
+  // Fetch enrollments when a fee student is picked
+  useEffect(() => {
+    if (!feeStudentId) { setFeeEnrollments([]); setFeeEnrollmentId(""); setFeeInstallmentId(""); return }
+    fetch(`/api/admin/fee/installments?studentId=${feeStudentId}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setFeeEnrollments(d.enrollments ?? []))
+      .catch(() => {})
+  }, [feeStudentId])
+
   const incomeCategories = categories.filter(
     (c) => c.type === "income" && !c.isArchived,
   );
@@ -127,6 +180,16 @@ export function TransactionForm({
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const isSalaryCategory = selectedCategory?.name?.toLowerCase().includes("salar") ?? false;
+  const isFeeCategory = selectedCategory?.name?.toLowerCase().includes("fee") ?? false;
+
+  // Derived fee selections
+  const selectedEnrollment = feeEnrollments.find(
+    (e) => e.enrollmentId === feeEnrollmentId,
+  ) ?? null
+  const feeInstallments = selectedEnrollment?.installments ?? []
+  const selectedInstallment = feeInstallments.find(
+    (i) => i.id === feeInstallmentId,
+  ) ?? null
 
   const activeAccounts = accounts.filter((a) => a.isActive);
   const toAccounts = activeAccounts.filter((a) => a.id !== accountId);
@@ -165,10 +228,17 @@ export function TransactionForm({
       categoryId: type !== "transfer" ? categoryId || undefined : undefined,
       amount: parseFloat(amount),
       date,
-      description,
+      description: isFeeCategory
+        ? `Student fee payment — ${paymentMode}`
+        : description,
       referenceNumber,
       status,
       employeeId: (type === "expense" && isSalaryCategory) ? (employeeId || null) : null,
+      // Fee-specific fields
+      studentId: isFeeCategory && feeStudentId ? feeStudentId : undefined,
+      enrollmentId: isFeeCategory && feeEnrollmentId ? feeEnrollmentId : undefined,
+      installmentId: isFeeCategory && feeInstallmentId ? feeInstallmentId : undefined,
+      paymentMode: isFeeCategory ? paymentMode : undefined,
       // Pass s3Keys of pending attachments (uploaded before tx existed) so the API can link them
       pendingS3Keys: mode === "create"
         ? attachments.filter((a) => !a.transactionId || a.transactionId === "").map((a) => a.s3Key)
@@ -224,7 +294,7 @@ export function TransactionForm({
     <button
       type="button"
       onClick={() => setType(value)}
-      className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all ${type === value ? `${color} text-white shadow-sm` : "bg-subtle text-secondary hover:bg-default"}`}
+      className={`px-5 py-2.5 text-sm font-bold rounded-md transition-all ${type === value ? `${color} text-white shadow-sm` : "bg-subtle text-secondary hover:bg-default"}`}
     >
       {label}
     </button>
@@ -246,7 +316,7 @@ export function TransactionForm({
         value={value || "none"}
         onValueChange={(v) => onChange(v === "none" ? "" : v)}
       >
-        <SelectTrigger className="w-full h-[42px] bg-white rounded-xl border-default px-4">
+        <SelectTrigger className="w-full h-[42px] bg-white rounded-md border-default px-4">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -259,13 +329,13 @@ export function TransactionForm({
         </SelectContent>
       </Select>
     ) : (
-      <div className="w-full h-[42px] rounded-xl border border-default bg-white" />
+      <div className="w-full h-[42px] rounded-md border border-default bg-white" />
     );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
           {error}
         </div>
       )}
@@ -321,7 +391,7 @@ export function TransactionForm({
               </label>
               <FormSelect
                 value={categoryId}
-                onChange={setCategoryId}
+                onChange={(v) => { setCategoryId(v); setFeeStudentId(""); setFeeEnrollmentId(""); setFeeInstallmentId(""); }}
                 placeholder="Select category"
                 options={currentCategories.map((c) => ({
                   value: c.id,
@@ -347,6 +417,91 @@ export function TransactionForm({
                 />
               </div>
             )}
+
+            {/* Fee management cascading dropdowns */}
+            {isFeeCategory && (
+              <>
+                {/* Student */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground">
+                    Student
+                  </label>
+                  <FormSelect
+                    value={feeStudentId}
+                    onChange={(v) => { setFeeStudentId(v); setFeeEnrollmentId(""); setFeeInstallmentId(""); }}
+                    placeholder="Select student"
+                    options={feeStudents.map((s) => ({
+                      value: s.id,
+                      label: `${s.fullName} (${s.studentCode})`,
+                    }))}
+                  />
+                </div>
+
+                {/* Enrollment / Course */}
+                {feeStudentId && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground">
+                      Course Enrollment
+                    </label>
+                    <FormSelect
+                      value={feeEnrollmentId}
+                      onChange={(v) => { setFeeEnrollmentId(v); setFeeInstallmentId(""); }}
+                      placeholder="Select course"
+                      options={feeEnrollments.map((e) => ({
+                        value: e.enrollmentId,
+                        label: e.courseTitle,
+                      }))}
+                    />
+                  </div>
+                )}
+
+                {/* Installment */}
+                {feeEnrollmentId && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground">
+                      Installment
+                    </label>
+                    <FormSelect
+                      value={feeInstallmentId}
+                      onChange={(v) => {
+                        setFeeInstallmentId(v)
+                        const inst = feeInstallments.find((i) => i.id === v)
+                        if (inst) setAmount(inst.remainingBalance.toFixed(2))
+                      }}
+                      placeholder="Select installment"
+                      options={feeInstallments.map((i) => ({
+                        value: i.id,
+                        label: `#${i.installmentNumber} — Due ${i.dueDate} · ₹${i.remainingBalance.toFixed(2)} remaining (${i.status})`,
+                      }))}
+                    />
+                    {selectedInstallment && (
+                      <p className="text-xs text-muted-foreground">
+                        Total ₹{selectedInstallment.totalAmount.toFixed(2)} · Paid ₹{selectedInstallment.paidAmount.toFixed(2)} · Remaining ₹{selectedInstallment.remainingBalance.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Payment Mode */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground">
+                    Payment Mode 
+                  </label>
+                  <FormSelect
+                    value={paymentMode}
+                    onChange={setPaymentMode}
+                    placeholder="Select mode"
+                    options={[
+                      { value: "cash", label: "Cash" },
+                      { value: "upi", label: "UPI" },
+                      { value: "bank_transfer", label: "Bank Transfer" },
+                      { value: "cheque", label: "Cheque" },
+                      { value: "other", label: "Other" },
+                    ]}
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -366,7 +521,7 @@ export function TransactionForm({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-xl border border-default bg-white pl-8 pr-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-md border border-default bg-white pl-8 pr-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               required
             />
           </div>
@@ -381,7 +536,7 @@ export function TransactionForm({
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 h-11"
+            className="w-full rounded-md border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 h-11"
             required
           />
         </div>
@@ -395,7 +550,7 @@ export function TransactionForm({
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
             placeholder="e.g. INV-2024-001"
-            className="w-full rounded-xl border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-md border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -427,7 +582,7 @@ export function TransactionForm({
               ? "Optional transfer note"
               : "Optional description"
           }
-          className="w-full rounded-xl border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+          className="w-full rounded-md border border-default bg-white px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
         />
       </div>
 
@@ -458,14 +613,14 @@ export function TransactionForm({
     <button
       type="submit"
       disabled={saving}
-      className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+      className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
     >
       {saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Transaction"}
     </button>
     <button
       type="button"
       onClick={() => onCancel ? onCancel() : router.back()}
-      className="rounded-xl border border-default px-6 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
+      className="rounded-md border border-default px-6 py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
     >
       Cancel
     </button>

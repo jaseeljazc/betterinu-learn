@@ -16,6 +16,15 @@ import {
   unassignCourse,
   assignTask,
   reviewSubmission,
+  fetchStudentInstallments,
+  recordPayment,
+  applyWaiver,
+  fetchPaymentLogs,
+  addAdjustment,
+  type AssignCoursePayload,
+  type RecordPaymentPayload,
+  type ApplyWaiverPayload,
+  type AddAdjustmentPayload,
 } from "@/lib/services/student-service"
 
 // ── Query keys ───────────────────────────────────────────────────────────────
@@ -130,13 +139,13 @@ export function useAssignCourse(studentId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (courseId: string) =>
-      assignCourse(studentId, courseId),
+    mutationFn: (payload: AssignCoursePayload) =>
+      assignCourse(studentId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: studentKeys.detail(studentId),
       })
-      toast.success("Course assigned.")
+      toast.success("Course assigned successfully.")
     },
     onError: (err: Error) => {
       toast.error(err.message || "Failed to assign course")
@@ -215,6 +224,85 @@ export function useReviewSubmission(studentId: string) {
     },
     onError: (err: Error) => {
       toast.error(err.message || "Review action failed")
+    },
+  })
+}
+
+// ── Fee Management Hooks ──────────────────────────────────────────────────────
+
+export function useStudentInstallments(studentId: string) {
+  return useQuery({
+    queryKey: ["student", "installments", studentId],
+    queryFn: () => fetchStudentInstallments(studentId),
+    enabled: !!studentId,
+    select: (data) => data.enrollments,
+  })
+}
+
+export function useRecordPayment(studentId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: RecordPaymentPayload) => recordPayment(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["student", "installments", studentId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["student", "detail", studentId],
+      })
+      toast.success(data.message || "Payment recorded successfully.")
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to record payment")
+    },
+  })
+}
+
+export function useApplyWaiver(studentId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: ApplyWaiverPayload) => applyWaiver(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["student", "installments", studentId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["student", "detail", studentId],
+      })
+      toast.success(data.message || "Waiver applied successfully.")
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to apply waiver")
+    },
+  })
+}
+
+// ── Payment Log Hooks ─────────────────────────────────────────────────────────
+
+export function usePaymentLogs(studentId: string) {
+  return useQuery({
+    queryKey: ["student", "payment-logs", studentId],
+    queryFn: () => fetchPaymentLogs(studentId),
+    enabled: !!studentId,
+    select: (data) => data.logs,
+  })
+}
+
+export function useAddAdjustment(studentId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: AddAdjustmentPayload) => addAdjustment(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["student", "payment-logs", studentId],
+      })
+      toast.success(data.message || "Adjustment recorded.")
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to add adjustment")
     },
   })
 }

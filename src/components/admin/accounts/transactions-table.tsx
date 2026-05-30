@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Eye, Pencil, Ban, Plus, ReceiptText, MoreHorizontal } from "lucide-react";
+import { Eye, Pencil, Ban, Plus, ReceiptText, MoreHorizontal, GraduationCap, Search, X } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { AccountTransaction } from "@/types";
 import { DataTable } from "@/components/admin/data-table";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import {
   DropdownMenu,
@@ -15,6 +16,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+/* ------------------------------------------------------------------ */
+/*  Local type extension for student-fee rows                          */
+/* ------------------------------------------------------------------ */
+
+type TxRow = AccountTransaction & {
+  studentId?: string | null
+  studentName?: string | null
+  installmentId?: string | null
+  installmentNumber?: number | null
+  courseTitle?: string | null
+}
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                           */
@@ -51,8 +64,10 @@ interface TransactionsTableProps {
 }
 
 export function TransactionsTable({ canEdit }: TransactionsTableProps) {
-  const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
+  const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [debouncedStudentSearch, setDebouncedStudentSearch] = useState("");
   const [dialog, setDialog] = useState<{
     open: boolean;
     mode: "create" | "edit";
@@ -60,13 +75,21 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
     initialData?: unknown;
   }>({ open: false, mode: "create" });
 
+  // Debounce student search to avoid spamming the API
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedStudentSearch(studentSearch), 350);
+    return () => clearTimeout(t);
+  }, [studentSearch]);
+
   const fetchData = useCallback(() => {
     setLoading(true);
-    fetch(`/api/admin/accounts/transactions?t=${Date.now()}`, { credentials: "include" })
+    const qs = new URLSearchParams({ t: String(Date.now()) });
+    if (debouncedStudentSearch) qs.set("studentSearch", debouncedStudentSearch);
+    fetch(`/api/admin/accounts/transactions?${qs}`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => setTransactions(d.transactions ?? []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [debouncedStudentSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -75,7 +98,7 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
     setDialog({ open: false, mode: "create" });
   }
 
-  const columns: ColumnDef<AccountTransaction>[] = [
+  const columns: ColumnDef<TxRow>[] = [
     {
       accessorKey: "date",
       header: "Date & Time",
@@ -113,22 +136,43 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
     {
       id: "categoryName",
       accessorFn: (row) => (row.category as { name?: string } | undefined)?.name ?? "",
-      header: "Category",
-      size: 140,
+      header: "Category / Student",
+      size: 200,
       enableSorting: false,
       cell: ({ row }) => {
         const catName = (row.original.category as { name?: string } | undefined)?.name ?? "";
         const emp = row.original.employee;
-        if (!catName) {
-          return <span className="text-muted italic text-xs">—</span>;
-        }
+        const tx = row.original as TxRow;
+
         return (
-          <div className="flex flex-col">
-            <span className="text-secondary text-sm font-medium">{catName}</span>
+          <div className="flex flex-col gap-0.5">
+            {catName ? (
+              <span className="text-secondary text-sm font-medium">{catName}</span>
+            ) : (
+              <span className="text-muted italic text-xs">—</span>
+            )}
+
+            {/* Employee sub-row */}
             {emp && (
-              <span className="text-[10px] text-muted truncate max-w-[130px]" title={`${emp.fullName} (${emp.employeeCode})`}>
+              <span className="text-[10px] text-muted truncate max-w-[180px]" title={`${emp.fullName} (${emp.employeeCode})`}>
                 {emp.fullName} ({emp.employeeCode})
               </span>
+            )}
+
+            {/* Student fee sub-row */}
+            {tx.studentName && (
+              <div className="flex items-center gap-1 text-[10px] text-primary/80">
+                <GraduationCap className="size-2.5 shrink-0" />
+                <span className="truncate max-w-[160px]" title={tx.studentName}>
+                  {tx.studentName}
+                  {tx.courseTitle && (
+                    <span className="text-muted-foreground">
+                      {" "}· {tx.courseTitle}
+                      {tx.installmentNumber && ` · Inst. #${tx.installmentNumber}`}
+                    </span>
+                  )}
+                </span>
+              </div>
             )}
           </div>
         );
@@ -247,14 +291,37 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
         emptyMessage="No transactions found."
         emptyIcon={ReceiptText}
         actions={
-          canEdit ? (
-            <button
-              onClick={() => setDialog({ open: true, mode: "create" })}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 shadow-sm whitespace-nowrap"
-            >
-              <Plus className="size-4" /> New Transaction
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {/* Student name filter */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="student-search-filter"
+                placeholder="Filter by student…"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="h-8 pl-8 pr-7 text-xs w-44"
+              />
+              {studentSearch && (
+                <button
+                  type="button"
+                  onClick={() => setStudentSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </div>
+
+            {canEdit && (
+              <button
+                onClick={() => setDialog({ open: true, mode: "create" })}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 shadow-sm whitespace-nowrap"
+              >
+                <Plus className="size-4" /> New Transaction
+              </button>
+            )}
+          </div>
         }
       />
 

@@ -182,11 +182,11 @@ export function DataTable<TData, TValue>({
         <div ref={scrollContainerRef}>
           <Table>
             {caption && (
-              <caption className="px-4 py-2 text-left text-xs text-muted">{caption}</caption>
+              <caption className="px-4 py-2 text-center text-xs text-muted border-t">{caption}</caption>
             )}
             <TableHeader className="sticky top-0 z-10">
               {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id} className="border-b border-default bg-subtle hover:bg-subtle">
+                <TableRow key={hg.id} className="border-b border-default bg-subtle/30 hover:bg-subtle">
                   {hg.headers.map((header) => {
                     const canSort = header.column.getCanSort();
                     const sorted = header.column.getIsSorted();
@@ -194,7 +194,7 @@ export function DataTable<TData, TValue>({
                       <TableHead
                         key={header.id}
                         style={{ width: header.column.columnDef.size ? `${header.column.columnDef.size}px` : undefined }}
-                        className={`h-9 border-r border-default px-3 py-2 text-xs font-bold uppercase tracking-widest text-secondary last:border-r-0 select-none bg-subtle ${header.column.id === "actions" ? "text-center" : "text-left"}`}
+                        className={`h-9 border-r border-default px-3 py-2 text-xs font-bold uppercase tracking-widest text-secondary last:border-r-0 select-none bg-subtle/30 ${header.column.id === "actions" ? "text-center" : "text-left"}`}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
                         <span className={canSort ? "cursor-pointer inline-flex items-center" : header.column.id === "actions" ? "inline-flex items-center justify-center w-full" : ""}>

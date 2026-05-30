@@ -13,6 +13,7 @@ type StudentRow = {
   status: "active" | "inactive" | "pending";
   created_at: string;
   course_count: number;
+  temp_password?: string;
 };
 
 interface StudentsTableProps {
@@ -39,6 +40,21 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
       header: "Email",
       size: 250,
       cell: ({ getValue }) => <span className="text-secondary">{getValue() as string}</span>,
+    },
+    {
+      accessorKey: "temp_password",
+      header: "Password",
+      size: 150,
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        return val ? (
+          <code className="font-mono text-xs  px-1.5 py-0.5 rounded border border-default select-all">
+            {val}
+          </code>
+        ) : (
+          <span className="text-muted italic text-[11px]">—</span>
+        );
+      },
     },
     {
       accessorKey: "course_count",

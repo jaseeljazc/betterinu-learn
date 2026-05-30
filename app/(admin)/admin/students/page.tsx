@@ -8,11 +8,11 @@ import { StudentsTable } from "@/components/admin/students-table";
 async function getStudents() {
   return sql`
     SELECT
-      s.id, s.name, s.email, s.created_at, s.status,
+      s.id, s.name, s.email, s.created_at, s.status, s.temp_password,
       COUNT(sc.id)::int AS course_count
     FROM students s
     LEFT JOIN student_courses sc ON sc.student_id = s.id
-    GROUP BY s.id, s.name, s.email, s.created_at, s.status
+    GROUP BY s.id, s.name, s.email, s.created_at, s.status, s.temp_password
     ORDER BY s.created_at DESC
   `;
 }
@@ -47,7 +47,7 @@ export default async function AdminStudentsPage() {
         {canCreate && (
           <Link
             href="/admin/students/new"
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm hover:shadow-md"
+            className="flex shrink-0 items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all shadow-sm hover:shadow-md"
           >
             <Plus className="size-4" /> Add Student
           </Link>

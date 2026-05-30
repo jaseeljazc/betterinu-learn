@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { DatePickerField } from "@/components/admin/employees/employee-form/date-picker-field"
+import { Dialog } from "@/components/ui/dialog"
+import { useStudentForm } from "@/lib/hooks/useStudentForm"
 
 // ── Shared style tokens (same as employee form) ───────────────────────────────
 const inputCls =
@@ -88,78 +90,99 @@ function emptyUpload(): UploadState {
   return { file: null, url: "", status: "idle" }
 }
 
-/**
- * Uploads a file directly to the public S3 bucket via a presigned URL
- * obtained from /api/admin/students/upload-presign.
- * Returns the final public URL.
- */
-async function uploadToPublicS3(file: File): Promise<string> {
-  const presignRes = await fetch("/api/admin/students/upload-presign", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-    }),
-  })
-  if (!presignRes.ok) {
-    const d = await presignRes.json().catch(() => ({}))
-    throw new Error(d.error ?? "Failed to get upload URL")
+
+
+function formatDateToString(dateVal: any): string {
+  if (!dateVal) return ""
+  if (dateVal instanceof Date) {
+    return dateVal.toISOString().split("T")[0]
   }
-  const { presignedUrl, publicUrl } = await presignRes.json()
-
-  const uploadRes = await fetch(presignedUrl, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
-  })
-  if (!uploadRes.ok) throw new Error("S3 upload failed")
-
-  return publicUrl as string
+  if (typeof dateVal === "string") {
+    return dateVal.split("T")[0]
+  }
+  return ""
 }
 
 // ── Main Form ─────────────────────────────────────────────────────────────────
-export function StudentForm() {
+type StudentFormProps = {
+  student?: any
+}
+
+export function StudentForm({ student }: StudentFormProps = {}) {
   const router = useRouter()
+  const isEdit = !!student
+
+  const { uploadFile, saveStudent, isSaving } = useStudentForm()
 
   // ── Personal Info ────────────────────────────────────────────────────────
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [dob, setDob] = useState("")
-  const [gender, setGender] = useState("")
-  const [address, setAddress] = useState("")
-  const [studentType, setStudentType] = useState<"online" | "offline" | "">("offline")
+  const [name, setName] = useState(student?.name ?? "")
+  const [email, setEmail] = useState(student?.email ?? "")
+  const [phone, setPhone] = useState(student?.phone ?? student?.phone_number ?? "")
+  const [dob, setDob] = useState(formatDateToString(student?.date_of_birth || student?.dob))
+  const [gender, setGender] = useState(student?.gender ?? "")
+  const [address, setAddress] = useState(student?.address ?? "")
+  const [studentType, setStudentType] = useState<"online" | "offline" | "">(student?.student_type ?? "offline")
+
+  // Edit-only Core details
+  const [status, setStatus] = useState<"active" | "inactive" | "pending">(student?.status ?? "active")
+  const [studentCode, setStudentCode] = useState(student?.student_code ?? "")
+  const [enrollmentDate, setEnrollmentDate] = useState(
+    formatDateToString(student?.enrollment_date || student?.created_at)
+  )
 
   // Profile photo
-  const [profileImageUrl, setProfileImageUrl] = useState("")
+  const [profileImageUrl, setProfileImageUrl] = useState(student?.profile_image_url ?? "")
   const [profileImageUploading, setProfileImageUploading] = useState(false)
   const photoInputRef = useRef<HTMLInputElement | null>(null)
 
   // Emergency contact (collapsible)
-  const [emergencyOpen, setEmergencyOpen] = useState(false)
-  const [ecName, setEcName] = useState("")
-  const [ecRelation, setEcRelation] = useState("")
-  const [ecPhone, setEcPhone] = useState("")
+  const [emergencyOpen, setEmergencyOpen] = useState(
+    !!(student?.emergency_contact_name || student?.emergency_contact_phone)
+  )
+  const [ecName, setEcName] = useState(student?.emergency_contact_name ?? "")
+  const [ecRelation, setEcRelation] = useState(student?.emergency_contact_relation ?? "")
+  const [ecPhone, setEcPhone] = useState(student?.emergency_contact_phone ?? "")
 
   // ── Academic Profile ─────────────────────────────────────────────────────
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [qualification, setQualification] = useState("")
-  const [currentStatus, setCurrentStatus] = useState("")
-  const [yearOfPassing, setYearOfPassing] = useState("")
+  const [profileOpen, setProfileOpen] = useState(
+    !!(student?.highest_qualification || student?.current_status)
+  )
+  const [qualification, setQualification] = useState(student?.highest_qualification ?? "")
+  const [currentStatus, setCurrentStatus] = useState(student?.current_status ?? "")
+  const [yearOfPassing, setYearOfPassing] = useState(
+    student?.year_of_passing ? String(student.year_of_passing) : ""
+  )
 
   // Certification upload (public S3)
-  const [certUpload, setCertUpload] = useState<UploadState>(emptyUpload())
+  const [certUpload, setCertUpload] = useState<UploadState>(() => {
+    if (student?.certification_url) {
+      return { file: null, url: student.certification_url, status: "done" }
+    }
+    return emptyUpload()
+  })
   const certInputRef = useRef<HTMLInputElement | null>(null)
 
   // ID proof upload (public S3)
-  const [idUpload, setIdUpload] = useState<UploadState>(emptyUpload())
+  const [idUpload, setIdUpload] = useState<UploadState>(() => {
+    if (student?.id_proof_url) {
+      return { file: null, url: student.id_proof_url, status: "done" }
+    }
+    return emptyUpload()
+  })
   const idInputRef = useRef<HTMLInputElement | null>(null)
 
   // ── Submit state ─────────────────────────────────────────────────────────
-  const [saving, setSaving] = useState(false)
+  const saving = isSaving
+  const [tempPasswordModal, setTempPasswordModal] = useState<string | null>(null)
+  const [createdStudentId, setCreatedStudentId] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`Email: ${email}\nPassword: ${tempPasswordModal}`)
+    setCopied(true)
+    toast.success("Credentials copied to clipboard!")
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // ── File helpers ─────────────────────────────────────────────────────────
   function validateFile(file: File, imageOnly = false): string | undefined {
@@ -179,7 +202,7 @@ export function StudentForm() {
     if (err) { toast.error(err); return }
     setProfileImageUploading(true)
     try {
-      const url = await uploadToPublicS3(file)
+      const url = await uploadFile(file)
       setProfileImageUrl(url)
       toast.success("Profile photo uploaded.")
     } catch (e: any) {
@@ -204,14 +227,13 @@ export function StudentForm() {
     }
     setter({ file, url: "", status: "uploading" })
     try {
-      const url = await uploadToPublicS3(file)
+      const url = await uploadFile(file)
       setter({ file, url, status: "done" })
     } catch (e: any) {
       setter({ file, url: "", status: "error", error: e.message ?? "Upload failed" })
     }
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -220,13 +242,9 @@ export function StudentForm() {
       return
     }
 
-    setSaving(true)
-    try {
-      const res = await fetch("/api/admin/students", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    saveStudent(
+      {
+        payload: {
           name,
           email,
           phone: phone || undefined,
@@ -244,18 +262,27 @@ export function StudentForm() {
           year_of_passing: yearOfPassing ? Number(yearOfPassing) : undefined,
           certification_url: certUpload.url || undefined,
           id_proof_url: idUpload.url || undefined,
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error ?? "Failed to create student")
-
-      toast.success("Student created successfully!")
-      router.push(`/admin/students/${data.studentId}`)
-    } catch (e: any) {
-      toast.error(e.message ?? "An unexpected error occurred")
-    } finally {
-      setSaving(false)
-    }
+          // Edit-only fields
+          student_code: isEdit ? studentCode : undefined,
+          enrollment_date: isEdit ? enrollmentDate || undefined : undefined,
+          status: isEdit ? status : undefined,
+        },
+        isEdit,
+        id: student?.id,
+      },
+      {
+        onSuccess: (data: any) => {
+          if (!isEdit && data.tempPassword) {
+            setTempPasswordModal(data.tempPassword)
+            setCreatedStudentId(data.studentId)
+            toast.warning("Student created, but welcome email failed to send.")
+          } else {
+            toast.success(isEdit ? "Student updated successfully!" : "Student created successfully!")
+            router.push(`/admin/students/${isEdit ? student.id : data.studentId}`)
+          }
+        },
+      }
+    )
   }
 
   const isUploading =
@@ -285,7 +312,7 @@ export function StudentForm() {
                   name
                     .split(" ")
                     .slice(0, 2)
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")
                     .toUpperCase()
                 ) : (
@@ -412,7 +439,7 @@ export function StudentForm() {
           </div>
 
           {/* Student Type */}
-          <div className="sm:col-span-1">
+          <div className="sm:col-span-2">
             <label className={labelCls}>Student Type *</label>
             <Select
               value={studentType}
@@ -427,6 +454,52 @@ export function StudentForm() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Student Status (Edit only) */}
+          {isEdit && (
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Student Status *</label>
+              <Select
+                value={status}
+                onValueChange={(v: any) => setStatus(v)}
+              >
+                <SelectTrigger className="w-full h-10 border-default bg-white text-sm">
+                  <SelectValue placeholder="— Select —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Student Code (Edit only) */}
+          {isEdit && (
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Student Code *</label>
+              <input
+                required
+                value={studentCode}
+                onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+                className={inputCls}
+                placeholder="STU-YYYY-XXXXXX"
+              />
+            </div>
+          )}
+
+          {/* Enrollment Date (Edit only) */}
+          {isEdit && (
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Enrollment Date</label>
+              <DatePickerField
+                value={enrollmentDate}
+                onChange={setEnrollmentDate}
+                placeholder="Pick enrollment date"
+              />
+            </div>
+          )}
 
           {/* Address */}
           <div className="sm:col-span-6">
@@ -714,7 +787,7 @@ export function StudentForm() {
       </section>
 
       {/* ── Sticky footer bar (same layout as employee form) ────────────── */}
-      <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-md border border-default bg-white/80 p-2 backdrop-blur-md shadow-sm">
+      <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-3 rounded-md border border-default bg-white/80 p-2 backdrop-blur-md ">
         <Button
           type="button"
           variant="outline"
@@ -725,12 +798,66 @@ export function StudentForm() {
         </Button>
         <Button type="submit" disabled={saving || isUploading}>
           {saving
-            ? "Creating…"
+            ? (isEdit ? "Saving…" : "Creating…")
             : isUploading
               ? "Uploading…"
-              : "Create Student"}
+              : (isEdit ? "Save Changes" : "Create Student")}
         </Button>
       </div>
+
+      <Dialog
+        open={!!tempPasswordModal}
+        title="Welcome Email Delivery Failed"
+        onClose={() => {
+          if (createdStudentId) {
+            router.push(`/admin/students/${createdStudentId}`)
+          }
+          setTempPasswordModal(null)
+        }}
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-secondary">
+            The student was created successfully, but the welcome email could not be sent due to a mail delivery error.
+            Please share the credentials below manually with the student so they can log in.
+          </p>
+          <div className="rounded-md border border-amber-200 bg-amber-50/50 p-4 space-y-2">
+            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
+              Student Credentials
+            </div>
+            <div className="text-xs text-foreground">
+              <span className="font-semibold">Email:</span> {email}
+            </div>
+            <div className="text-xs text-foreground flex items-center justify-between">
+              <div>
+                <span className="font-semibold">Password:</span>{" "}
+                <span className="font-mono bg-white px-2 py-0.5 border border-default rounded text-xs select-all">
+                  {tempPasswordModal}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline cursor-pointer"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              onClick={() => {
+                if (createdStudentId) {
+                  router.push(`/admin/students/${createdStudentId}`)
+                }
+                setTempPasswordModal(null)
+              }}
+            >
+              Go to Student Profile
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </form>
   )
 }

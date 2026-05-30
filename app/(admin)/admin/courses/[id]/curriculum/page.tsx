@@ -56,7 +56,7 @@ type CourseRow = {
   image: string;
 };
 
-const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const LEVEL_OPTIONS = ["Beginner", "Intermediate ", "Advanced", "All Levels"];
 
 function WeekJsonEditor({
   week,

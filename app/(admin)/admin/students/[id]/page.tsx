@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeft, AlertCircle } from "lucide-react"
 
@@ -20,12 +20,13 @@ import { StudentHeader } from "@/components/admin/students/student-detail/studen
 import { StudentInfoGrid } from "@/components/admin/students/student-detail/student-info-grid"
 import { StudentTabs } from "@/components/admin/students/student-detail/student-tabs"
 import { StudentSidebar } from "@/components/admin/students/student-detail/student-sidebar"
-import { EditStudentModal } from "@/components/admin/students/student-detail/edit-student-modal"
+
 import { ReviewSubmissionModal } from "@/components/admin/students/student-detail/review-submission-modal"
 import { RemoveCourseModal } from "@/components/admin/students/student-detail/remove-course-modal"
 
 export default function AdminStudentDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
   const { can } = useAdminPermissions()
   const [mounted, setMounted] = useState(false)
 
@@ -56,7 +57,6 @@ export default function AdminStudentDetailPage() {
   const deleteMutation = useDeleteStudent(id)
 
   // ── Modal state ──────────────────────────────────────────────────────────
-  const [isEditOpen, setIsEditOpen] = useState(false)
   const [isRemoveCourseOpen, setIsRemoveCourseOpen] =
     useState(false)
   const [selectedSubmission, setSelectedSubmission] =
@@ -143,7 +143,7 @@ export default function AdminStudentDetailPage() {
         student={student}
         canEditStudent={canEditStudent}
         canDeleteStudent={canDeleteStudent}
-        onEditClick={() => setIsEditOpen(true)}
+        onEditClick={() => router.push(`/admin/students/${id}/edit`)}
         onRemoveCourseClick={() => setIsRemoveCourseOpen(true)}
         onDeleteClick={handleDeleteClick}
         deleting={deleteMutation.isPending}
@@ -158,6 +158,8 @@ export default function AdminStudentDetailPage() {
       {/* Tabs + Sidebar */}
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         <StudentTabs
+          studentId={id}
+          canEditStudent={canEditStudent}
           assigned={assigned}
           submissions={submissions}
           standaloneSubs={standaloneSubs}
@@ -181,13 +183,6 @@ export default function AdminStudentDetailPage() {
       </div>
 
       {/* ── Modals ────────────────────────────────────────────────────────── */}
-      {isEditOpen && (
-        <EditStudentModal
-          open={isEditOpen}
-          onClose={() => setIsEditOpen(false)}
-          student={student}
-        />
-      )}
 
       {selectedSubmission && (
         <ReviewSubmissionModal

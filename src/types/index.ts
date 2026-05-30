@@ -295,7 +295,14 @@ export interface AccountTransaction {
   /** Optional — links a salary expense transaction to an employee */
   employeeId?: string
   employee?: { id: string; fullName: string; employeeCode: string }
+  /** Optional — links a student-fee income transaction to a student */
+  studentId?: string | null
+  studentName?: string | null
+  installmentId?: string | null
+  installmentNumber?: number | null
+  courseTitle?: string | null
 }
+
 
 // ── Employee / HR types ───────────────────────────────────────
 

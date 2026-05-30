@@ -61,6 +61,7 @@ const FALLBACK_NAV: NavItem[] = [
     groupItems: [
       { href: "/admin/courses",                label: "Courses" },
       { href: "/admin/students",               label: "Students" },
+      { href: "/admin/students/overdue",       label: "Overdue Payments" },
       { href: "/admin/submissions",            label: "Submissions" },
       { href: "/admin/standalone-assignments", label: "Standalone Tasks" },
     ],
@@ -85,6 +86,17 @@ export function AdminSidebar({
   const { isSuperAdmin, role, can, fullName, email } = useAdminPermissions();
   const [mounted, setMounted] = useState(false);
 
+  const isSubActive = (sub: SubItem) => {
+    if (sub.exact) return pathname === sub.href
+    if (sub.href === "/admin/students") {
+      return (
+        pathname.startsWith("/admin/students") &&
+        !pathname.startsWith("/admin/students/overdue")
+      )
+    }
+    return pathname.startsWith(sub.href)
+  };
+
   // Track which expandable sections are open (by href key)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -99,6 +111,9 @@ export function AdminSidebar({
       : []),
     ...(can("students", "view")
       ? [{ href: "/admin/students", label: "Students" }]
+      : []),
+    ...(can("accounts", "view")
+      ? [{ href: "/admin/students/overdue", label: "Overdue Payments" }]
       : []),
     ...(can("tasks", "view")
       ? [{ href: "/admin/submissions", label: "Submissions" }]
@@ -198,9 +213,7 @@ export function AdminSidebar({
     return (
       <AnimatedSubList isOpen={isOpen}>
         {subItems.map((sub) => {
-          const subActive = sub.exact
-            ? pathname === sub.href
-            : pathname.startsWith(sub.href);
+          const subActive = isSubActive(sub);
           return (
             <Link
               key={sub.href}
@@ -269,9 +282,7 @@ export function AdminSidebar({
               </div>
               <div className="py-1.5 flex flex-col">
                 {childItems.map((sub) => {
-                  const subActive = sub.exact
-                    ? pathname === sub.href
-                    : pathname.startsWith(sub.href);
+                  const subActive = isSubActive(sub);
                   return (
                     <Link
                       key={sub.href}

@@ -153,36 +153,30 @@ export function StudentInfoGrid({
         {/* Academic Profile */}
         <div className="lg:col-span-2">
           <SectionCard title="Academic Profile" className="h-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-              <InfoRow
-                icon={Building2}
-                label="Highest Qualification"
-                value={student.highest_qualification}
-              />
-              <InfoRow
-                icon={Calendar}
-                label="Year of Passing"
-                value={student.year_of_passing}
-              />
-              <div className="sm:col-span-2">
-                <InfoRow
-                  icon={User}
-                  label="Current Status"
-                  value={
+            <InfoRow
+              icon={Building2}
+              label="Highest Qualification"
+              value={student.highest_qualification}
+            />
+            <InfoRow
+              icon={User}
+              label="Current Status"
+              value={
+                student.current_status
+                  ? student.current_status
+                      .charAt(0)
+                      .toUpperCase() +
                     student.current_status
-                      ? student.current_status
-                          .charAt(0)
-                          .toUpperCase() +
-                        student.current_status
-                          .slice(1)
-                          .replace("_", " ")
-                      : null
-                  }
-                />
-              </div>
-            </div>
-
-
+                      .slice(1)
+                      .replace("_", " ")
+                  : null
+              }
+            />
+            <InfoRow
+              icon={Calendar}
+              label="Year of Passing"
+              value={student.year_of_passing}
+            />
           </SectionCard>
         </div>
 

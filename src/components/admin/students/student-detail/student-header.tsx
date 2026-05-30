@@ -44,7 +44,7 @@ export function StudentHeader({
     ] ?? STUDENT_STATUS_CFG.active
 
   return (
-    <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+    <div className="flex items-center justify-between gap-4 mb-8 flex-wrap rounded-md border border-default bg-white p-5 ">
       <div className="flex items-center gap-5">
         <div className="relative">
           <Avatar className="size-24 ring-4 ring-white shadow-md">

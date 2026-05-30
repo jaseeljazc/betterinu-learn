@@ -32,7 +32,7 @@ export function TransactionFormDialog({
           <button
             onClick={onClose}
             type="button"
-            className="p-1.5 text-secondary hover:bg-subtle rounded-lg transition-colors"
+            className="p-1.5 text-secondary hover:bg-subtle rounded-md transition-colors"
           >
             <X className="size-5" />
           </button>

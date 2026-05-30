@@ -7,11 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
 import RoboLoader from "@/components/loading/robo-loader"
 
-import {
-  useAssignCourse,
-  useAssignTask,
-} from "@/lib/hooks/useStudentDetail"
-
+import { useAssignTask } from "@/lib/hooks/useStudentDetail"
+import { AssignCourseModal } from "./assign-course-modal"
 import type { AssignedCourse, CourseRow } from "./types"
 
 type StudentSidebarProps = {
@@ -39,44 +36,34 @@ export function StudentSidebar({
   rejectedCount,
   overallPct,
 }: StudentSidebarProps) {
-  const [selectedCourse, setSelectedCourse] = useState("")
+  const [selectedCourseId, setSelectedCourseId] = useState("")
   const [selectedTask, setSelectedTask] = useState("")
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
 
-  const assignCourseMutation = useAssignCourse(studentId)
   const assignTaskMutation = useAssignTask(studentId)
 
   const unassigned = allCourses.filter(
-    (c) => !assigned.some((a) => a.course_id === c.id)
+    (c) => !assigned.some((a) => a.course_id === c.id),
   )
 
-  const assignedCourseIds = new Set(
-    assigned.map((a) => a.course_id)
-  )
+  const selectedCourse = unassigned.find((c) => c.id === selectedCourseId) ?? null
+
+  const assignedCourseIds = new Set(assigned.map((a) => a.course_id))
   const eligibleTasks = allTasks.filter(
     (t) =>
       t.scope === "common" ||
-      (t.scope === "course" &&
-        assignedCourseIds.has(t.course_id))
+      (t.scope === "course" && assignedCourseIds.has(t.course_id)),
   )
-  const submittedTaskIds = new Set(
-    standaloneSubs.map((s) => s.assignment_id)
-  )
+  const submittedTaskIds = new Set(standaloneSubs.map((s) => s.assignment_id))
   const unassignedTasks = eligibleTasks.filter(
-    (t) => !submittedTaskIds.has(t.id)
+    (t) => !submittedTaskIds.has(t.id),
   )
-
-  function handleAssign() {
-    if (!selectedCourse) return
-    assignCourseMutation.mutate(selectedCourse, {
-      onSuccess: () => setSelectedCourse(""),
-    })
-  }
 
   function handleAssignTask() {
     if (!selectedTask) return
     assignTaskMutation.mutate(
       { taskId: selectedTask, studentIds: [studentId] },
-      { onSuccess: () => setSelectedTask("") }
+      { onSuccess: () => setSelectedTask("") },
     )
   }
 
@@ -84,7 +71,7 @@ export function StudentSidebar({
     <div className="w-full xl:w-72 shrink-0 xl:sticky xl:top-6 space-y-4">
       {canEditStudent && (
         <>
-          {/* Assign Course card */}
+          {/* ── Assign Course card ─────────────────────────────────────── */}
           <div className="rounded-md border border-default bg-white p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">
               Assign Course
@@ -100,36 +87,26 @@ export function StudentSidebar({
                     value: c.id,
                     label: c.title,
                   }))}
-                  value={selectedCourse}
-                  onValueChange={setSelectedCourse}
+                  value={selectedCourseId}
+                  onValueChange={setSelectedCourseId}
                   placeholder="Select a course…"
                   searchPlaceholder="Search courses…"
                 />
                 <Button
-                  onClick={handleAssign}
-                  disabled={
-                    !selectedCourse ||
-                    assignCourseMutation.isPending
-                  }
+                  onClick={() => {
+                    if (selectedCourseId) setIsAssignModalOpen(true)
+                  }}
+                  disabled={!selectedCourseId}
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
                 >
-                  {assignCourseMutation.isPending ? (
-                    <RoboLoader
-                      size="xs"
-                      className="text-current"
-                    />
-                  ) : (
-                    <PlusCircle className="size-4" />
-                  )}
-                  {assignCourseMutation.isPending
-                    ? "Assigning…"
-                    : "Assign Course"}
+                  <PlusCircle className="size-4" />
+                  Configure &amp; Assign
                 </Button>
               </div>
             )}
           </div>
 
-          {/* Assign Task card */}
+          {/* ── Assign Task card ───────────────────────────────────────── */}
           <div className="rounded-md border border-default bg-white p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">
               Assign Task
@@ -152,23 +129,15 @@ export function StudentSidebar({
                 />
                 <Button
                   onClick={handleAssignTask}
-                  disabled={
-                    !selectedTask ||
-                    assignTaskMutation.isPending
-                  }
+                  disabled={!selectedTask || assignTaskMutation.isPending}
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
                 >
                   {assignTaskMutation.isPending ? (
-                    <RoboLoader
-                      size="xs"
-                      className="text-current"
-                    />
+                    <RoboLoader size="xs" className="text-current" />
                   ) : (
                     <PlusCircle className="size-4" />
                   )}
-                  {assignTaskMutation.isPending
-                    ? "Assigning…"
-                    : "Assign Task"}
+                  {assignTaskMutation.isPending ? "Assigning…" : "Assign Task"}
                 </Button>
               </div>
             )}
@@ -176,51 +145,42 @@ export function StudentSidebar({
         </>
       )}
 
-      {/* Quick stats card */}
+      {/* ── Quick stats card ──────────────────────────────────────────── */}
       <div className="rounded-md border border-default bg-white p-5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-3">
           Quick Stats
         </p>
         <div className="space-y-2">
           {[
-            {
-              label: "Courses Assigned",
-              value: assigned.length,
-              color: "text-primary",
-            },
-            {
-              label: "Assignments Approved",
-              value: approvedCount,
-              color: "text-green-700",
-            },
-            {
-              label: "Pending Review",
-              value: pendingCount,
-              color: "text-amber-600",
-            },
-            {
-              label: "Needs Revision",
-              value: rejectedCount,
-              color: "text-red-600",
-            },
-            {
-              label: "Overall Progress",
-              value: `${overallPct}%`,
-              color: "text-foreground",
-            },
+            { label: "Courses Assigned", value: assigned.length, color: "text-primary" },
+            { label: "Assignments Approved", value: approvedCount, color: "text-green-700" },
+            { label: "Pending Review", value: pendingCount, color: "text-amber-600" },
+            { label: "Needs Revision", value: rejectedCount, color: "text-red-600" },
+            { label: "Overall Progress", value: `${overallPct}%`, color: "text-foreground" },
           ].map(({ label, value, color }) => (
             <div
               key={label}
               className="flex items-center justify-between py-1.5 border-b border-default last:border-0"
             >
               <span className="text-xs text-muted">{label}</span>
-              <span className={`text-sm font-bold ${color}`}>
-                {value}
-              </span>
+              <span className={`text-sm font-bold ${color}`}>{value}</span>
             </div>
           ))}
         </div>
       </div>
+
+      {/* ── Assign Course Modal ───────────────────────────────────────── */}
+      {isAssignModalOpen && selectedCourse && (
+        <AssignCourseModal
+          open={isAssignModalOpen}
+          onClose={() => {
+            setIsAssignModalOpen(false)
+            setSelectedCourseId("")
+          }}
+          studentId={studentId}
+          course={selectedCourse}
+        />
+      )}
     </div>
   )
 }
