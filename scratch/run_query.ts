@@ -26,13 +26,13 @@ async function main() {
       si.total_amount,
       si.due_date,
       sc.payment_type,
-      s.full_name,
-      c.name AS course_name
+      s.name,
+      c.title AS course_name
     FROM student_payment_logs spl
     JOIN student_installments si ON si.id = spl.installment_id
     JOIN student_courses sc ON sc.id = spl.enrollment_id
     JOIN students s ON s.id = spl.student_id
-    JOIN courses c ON c.id = sc.course_id
+    JOIN courses c ON c.id::text = sc.course_id
     LIMIT 1;
   `
 

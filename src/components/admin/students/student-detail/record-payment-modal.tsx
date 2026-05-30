@@ -36,6 +36,7 @@ type Account = {
 type RecordPaymentModalProps = {
   open: boolean
   onClose: () => void
+  onSuccessPayment?: (paymentLogId: string) => void
   studentId: string
   installment: Installment
   enrollment: FeeEnrollment
@@ -94,6 +95,7 @@ function fmt(n: number) {
 export function RecordPaymentModal({
   open,
   onClose,
+  onSuccessPayment,
   studentId,
   installment,
   enrollment,
@@ -151,7 +153,15 @@ export function RecordPaymentModal({
         accountId,
         s3Key: uploadedS3Key || undefined,
       },
-      { onSuccess: onClose },
+      {
+        onSuccess: (data) => {
+          if (data.paymentLogId && onSuccessPayment) {
+            onSuccessPayment(data.paymentLogId)
+          } else {
+            onClose()
+          }
+        },
+      },
     )
   }
 

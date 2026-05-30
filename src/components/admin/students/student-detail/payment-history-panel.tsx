@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   History,
   ChevronDown,
@@ -11,6 +12,7 @@ import {
   Plus,
   User,
   FileText,
+  ReceiptText,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +26,7 @@ import {
 
 import { usePaymentLogs } from "@/lib/hooks/useStudentDetail"
 import { AddAdjustmentModal } from "./add-adjustment-modal"
+import { ReceiptModal } from "./receipt-modal"
 import type { PaymentLog } from "@/lib/services/student-service"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -108,10 +111,12 @@ function fmtDateTime(d: string) {
 function LogRow({
   log,
   onAddAdjustment,
+  onViewReceipt,
   canRecordPayment,
 }: {
   log: PaymentLog
   onAddAdjustment: (target: AdjustmentTarget) => void
+  onViewReceipt: (id: string) => void
   canRecordPayment: boolean
 }) {
   const cfg = ENTRY_CFG[log.entryType] ?? ENTRY_CFG.payment
@@ -182,6 +187,19 @@ function LogRow({
         )}
       </div>
 
+      {/* View receipt action */}
+      {log.entryType === "payment" && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 shrink-0 rounded-md border border-border px-2 text-[10px] font-semibold text-muted-foreground hover:text-teal-700"
+          onClick={() => onViewReceipt(log.id)}
+        >
+          <ReceiptText className="mr-1 size-3" />
+          Receipt
+        </Button>
+      )}
+
       {/* Adjustment action - hidden as per request */}
       {false && canRecordPayment && log.entryType !== "adjustment" && (
         <Button
@@ -213,6 +231,7 @@ export function PaymentHistoryPanel({
 }: PaymentHistoryPanelProps) {
   const [collapsed, setCollapsed] = useState(true)
   const [adjustTarget, setAdjustTarget] = useState<AdjustmentTarget | null>(null)
+  const [receiptLogId, setReceiptLogId] = useState<string | null>(null)
 
   const { data: logs, isLoading } = usePaymentLogs(studentId)
 
@@ -273,6 +292,7 @@ export function PaymentHistoryPanel({
                     key={log.id}
                     log={log}
                     onAddAdjustment={setAdjustTarget}
+                    onViewReceipt={setReceiptLogId}
                     canRecordPayment={canRecordPayment}
                   />
                 ))}
@@ -291,6 +311,14 @@ export function PaymentHistoryPanel({
           enrollmentId={adjustTarget.enrollmentId}
           installmentNumber={adjustTarget.installmentNumber}
           courseTitle={adjustTarget.courseTitle}
+        />
+      )}
+
+      {receiptLogId && (
+        <ReceiptModal
+          open={!!receiptLogId}
+          onClose={() => setReceiptLogId(null)}
+          paymentLogId={receiptLogId}
         />
       )}
     </>

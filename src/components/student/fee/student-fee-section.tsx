@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   AlertCircle,
@@ -22,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 import { useStudentFee } from "@/lib/hooks/useStudentFee"
+import { ReceiptModal } from "@/components/admin/students/student-detail/receipt-modal"
 import type {
   StudentFeeEnrollment,
   StudentInstallment,
@@ -303,6 +305,7 @@ function InstallmentRow({
 
 function PaymentHistorySection({ logs }: { logs: StudentPaymentLog[] }) {
   const [open, setOpen] = useState(false)
+  const [receiptLogId, setReceiptLogId] = useState<string | null>(null)
 
   return (
     <div className="border-t border-default pt-3">
@@ -348,6 +351,9 @@ function PaymentHistorySection({ logs }: { logs: StudentPaymentLog[] }) {
                     <th className="px-3 py-2 text-left font-semibold text-muted-foreground">
                       Reference
                     </th>
+                    <th className="px-3 py-2 text-right font-semibold text-muted-foreground">
+                      Receipt
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-default">
@@ -368,6 +374,17 @@ function PaymentHistorySection({ logs }: { logs: StudentPaymentLog[] }) {
                           <span className="text-[10px] italic">—</span>
                         )}
                       </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="h-6 rounded border border-border px-1.5 text-[10px] font-semibold text-muted-foreground hover:text-teal-700"
+                          onClick={() => setReceiptLogId(log.id)}
+                        >
+                          <ReceiptText className="mr-1 size-3" />
+                          Receipt
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -375,6 +392,13 @@ function PaymentHistorySection({ logs }: { logs: StudentPaymentLog[] }) {
             </div>
           )}
         </div>
+      )}
+      {receiptLogId && (
+        <ReceiptModal
+          open={!!receiptLogId}
+          onClose={() => setReceiptLogId(null)}
+          paymentLogId={receiptLogId}
+        />
       )}
     </div>
   )

@@ -23,6 +23,7 @@ import { useStudentInstallments } from "@/lib/hooks/useStudentDetail"
 import { RecordPaymentModal } from "./record-payment-modal"
 import { ApplyWaiverModal } from "./apply-waiver-modal"
 import { PaymentHistoryPanel } from "./payment-history-panel"
+import { ReceiptModal } from "./receipt-modal"
 import type { Installment, FeeEnrollment } from "@/lib/services/student-service"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -340,6 +341,7 @@ export function FeePlanPanel({
     null,
   )
   const [activeWaiver, setActiveWaiver] = useState<ActiveWaiver | null>(null)
+  const [receiptLogId, setReceiptLogId] = useState<string | null>(null)
 
   const { data: enrollments, isLoading } = useStudentInstallments(studentId)
 
@@ -404,6 +406,10 @@ export function FeePlanPanel({
         <RecordPaymentModal
           open={!!activePayment}
           onClose={() => setActivePayment(null)}
+          onSuccessPayment={(id) => {
+            setActivePayment(null)
+            setReceiptLogId(id)
+          }}
           studentId={studentId}
           installment={activePayment.installment}
           enrollment={activePayment.enrollment}
@@ -416,6 +422,14 @@ export function FeePlanPanel({
           onClose={() => setActiveWaiver(null)}
           studentId={studentId}
           enrollment={activeWaiver.enrollment}
+        />
+      )}
+
+      {receiptLogId && (
+        <ReceiptModal
+          open={!!receiptLogId}
+          onClose={() => setReceiptLogId(null)}
+          paymentLogId={receiptLogId}
         />
       )}
     </>

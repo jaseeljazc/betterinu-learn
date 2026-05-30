@@ -10,6 +10,7 @@ export function Dialog({
   onClose,
   size = "md",
   scrollable = true,
+  headerActions,
 }: {
   open: boolean;
   title: string;
@@ -17,6 +18,7 @@ export function Dialog({
   onClose: () => void;
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "7xl";
   scrollable?: boolean;
+  headerActions?: ReactNode;
 }) {
   useEffect(() => {
     if (open) {
@@ -49,9 +51,12 @@ export function Dialog({
       <div className={`w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col rounded-md border border-default bg-elevated p-5 shadow-modal animate-in zoom-in-95 duration-200`}>
         <div className="mb-4 flex items-center justify-between gap-4 shrink-0">
           <h2 className="font-display text-xl font-bold">{title}</h2>
-          <Button aria-label="Close dialog" onClick={onClose} size="icon" type="button" variant="ghost">
-            <X className="size-4" aria-hidden />
-          </Button>
+          <div className="flex items-center gap-2">
+            {headerActions && <div className="flex items-center gap-2 mr-2 no-print">{headerActions}</div>}
+            <Button aria-label="Close dialog" onClick={onClose} size="icon" type="button" variant="ghost">
+              <X className="size-4" aria-hidden />
+            </Button>
+          </div>
         </div>
         <div className={cn("flex-1 min-h-0", scrollable ? "overflow-y-auto pr-1" : "flex flex-col")}>
           {children}

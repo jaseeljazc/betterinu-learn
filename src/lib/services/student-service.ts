@@ -205,7 +205,7 @@ export async function fetchStudentInstallments(studentId: string) {
 }
 
 export async function recordPayment(payload: RecordPaymentPayload) {
-  return apiClient<{ ok: boolean; message?: string }>(
+  return apiClient<{ ok: boolean; message?: string; paymentLogId?: string }>(
     "/api/admin/fee/record-payment",
     {
       method: "POST",
