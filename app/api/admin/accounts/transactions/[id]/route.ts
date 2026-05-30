@@ -46,7 +46,19 @@ export async function GET(
       c.color AS cat_color, c.icon AS cat_icon,
       cb.id AS cb_id, cb.full_name AS cb_name,
       vb.id AS vb_id, vb.full_name AS vb_name,
-      t.employee_id, emp.full_name AS employee_name, emp.employee_code AS employee_code
+      t.employee_id, emp.full_name AS employee_name, emp.employee_code AS employee_code,
+      t.student_id, st.name AS student_name,
+      t.installment_id, si.installment_number,
+      co.title AS course_title,
+      (
+        SELECT spl.id
+        FROM student_payment_logs spl
+        WHERE spl.installment_id = t.installment_id
+          AND spl.student_id = t.student_id
+          AND spl.amount_paid = t.amount
+          AND spl.entry_type = 'payment'
+        LIMIT 1
+      ) AS payment_log_id
     FROM account_transactions t
     LEFT JOIN accounts a ON a.id = t.account_id
     LEFT JOIN accounts ta ON ta.id = t.to_account_id
@@ -54,6 +66,10 @@ export async function GET(
     LEFT JOIN admin_accounts cb ON cb.id = t.created_by
     LEFT JOIN admin_accounts vb ON vb.id = t.voided_by
     LEFT JOIN employees emp ON emp.id = t.employee_id
+    LEFT JOIN students st ON st.id = t.student_id
+    LEFT JOIN student_installments si ON si.id = t.installment_id
+    LEFT JOIN student_courses sc ON sc.id = t.enrollment_id
+    LEFT JOIN courses co ON co.id::text = sc.course_id
     WHERE t.id = ${id}
   `;
 
@@ -82,6 +98,12 @@ export async function GET(
       employee: r.employee_id ? { id: r.employee_id, fullName: r.employee_name, employeeCode: r.employee_code } : null,
       createdBy: r.cb_id ? { id: r.cb_id, fullName: r.cb_name } : null,
       voidedBy: r.vb_id ? { id: r.vb_id, fullName: r.vb_name } : null,
+      studentId: (r.student_id as string | null) ?? null,
+      studentName: (r.student_name as string | null) ?? null,
+      installmentId: (r.installment_id as string | null) ?? null,
+      installmentNumber: (r.installment_number as number | null) ?? null,
+      courseTitle: (r.course_title as string | null) ?? null,
+      paymentLogId: (r.payment_log_id as string | null) ?? null,
       attachments: attachments.map((a) => ({
         id: a.id, transactionId: a.transaction_id,
         s3Key: a.s3_key, fileName: a.file_name,

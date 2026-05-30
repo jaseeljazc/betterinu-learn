@@ -81,7 +81,7 @@ export function AccountDashboard() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 rounded-2xl border border-default bg-white animate-pulse" />
+          <div key={i} className="h-28 rounded-md border border-default bg-white animate-pulse" />
         ))}
       </div>
     );
@@ -123,7 +123,7 @@ export function AccountDashboard() {
       {/* Account balance cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {data.accounts.filter((a) => a.isActive).map((acc) => (
-          <div key={acc.id} className="rounded-2xl border border-default bg-white p-4 shadow-sm">
+          <div key={acc.id} className="rounded-md border border-default bg-white p-4 ">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider truncate">{acc.name}</p>
             <p className={`mt-1.5 text-lg font-bold ${acc.currentBalance > 0 ? "text-green-700" : "text-red-600"}`}>
               {fmtCurrency(acc.currentBalance)}
@@ -135,7 +135,7 @@ export function AccountDashboard() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Monthly Bar Chart */}
-        <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+        <div className="rounded-md border border-default bg-white p-5 ">
           <h3 className="text-sm font-bold text-foreground mb-4">Monthly Income vs Expense</h3>
           {chartMonthly.length === 0 ? (
             <p className="text-muted text-sm text-center py-8">No data yet.</p>
@@ -155,7 +155,7 @@ export function AccountDashboard() {
         </div>
 
         {/* Category Donut */}
-        <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+        <div className="rounded-md border border-default bg-white p-5 ">
           <h3 className="text-sm font-bold text-foreground mb-4">Expense by Category (This Month)</h3>
           {data.categories.length === 0 ? (
             <p className="text-muted text-sm text-center py-8">No category data yet.</p>
@@ -186,7 +186,7 @@ export function AccountDashboard() {
       </div>
 
       {/* Recent transactions */}
-      <div className="rounded-2xl border border-default bg-white shadow-sm overflow-hidden">
+      <div className="rounded-md border border-default bg-white  overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-default">
           <h3 className="font-bold text-foreground">Recent Transactions</h3>
           <Link href="/admin/accounts/transactions" className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
@@ -224,10 +224,10 @@ function SummaryCard({ label, value, icon, color }: {
 }) {
   const bg = color === "primary" ? "bg-primary/10" : color === "green" ? "bg-green-100" : "bg-red-100";
   return (
-    <div className="rounded-2xl border border-default bg-white p-5 shadow-sm">
+    <div className="rounded-md border border-default bg-white p-5 ">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold uppercase tracking-wider text-secondary">{label}</p>
-        <div className={`rounded-xl p-2 ${bg}`}>{icon}</div>
+        <div className={`rounded-md p-2 ${bg}`}>{icon}</div>
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
     </div>

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Ban, RotateCcw, Pencil, Download, FileText, Paperclip, Trash2, ArrowLeft, X } from "lucide-react";
+import { Ban, RotateCcw, Pencil, Download, FileText, Paperclip, Trash2, ArrowLeft, X, ReceiptText } from "lucide-react";
 import Link from "next/link";
 import { TransactionForm } from "@/components/admin/accounts/transaction-form";
+import { ReceiptModal } from "@/components/admin/students/student-detail/receipt-modal";
 import type { AccountTransaction, AccountAttachment } from "@/types";
 
 function fmtCurrency(n: number) {
@@ -58,6 +59,7 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
   const [loading, setLoading] = useState(true);
   const [showVoidConfirm, setShowVoidConfirm] = useState(wantsVoid);
   const [voiding, setVoiding] = useState(false);
+  const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/admin/accounts/transactions/${transactionId}`, { credentials: "include" })
@@ -150,6 +152,14 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
           </span>
         </div>
         <div className="flex gap-2">
+          {transaction.paymentLogId && (
+            <button
+              onClick={() => setReceiptLogId(transaction.paymentLogId!)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold border border-default rounded-lg px-3 py-1.5 text-secondary hover:text-primary hover:border-primary transition-colors"
+            >
+              <ReceiptText className="size-3" /> View Receipt
+            </button>
+          )}
           {canEdit && !isVoid && (
             <>
               <Link
@@ -275,6 +285,24 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
               </div>
             )}
 
+            {transaction.studentName && (
+              <div className="px-4 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-0.5">Student / Fee Details</p>
+                <Link
+                  href={`/admin/students/${transaction.studentId}`}
+                  className="text-sm font-semibold text-primary hover:underline block truncate"
+                >
+                  {transaction.studentName}
+                </Link>
+                {transaction.courseTitle && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {transaction.courseTitle}
+                    {transaction.installmentNumber && ` (Installment #${transaction.installmentNumber})`}
+                  </p>
+                )}
+              </div>
+            )}
+
             {transaction.createdBy && (
               <div className="px-4 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-0.5">Created By</p>
@@ -332,6 +360,14 @@ export function TransactionDetailPageClient({ transactionId, canEdit }: Transact
           )}
         </div>
       </div>
+
+      {receiptLogId && (
+        <ReceiptModal
+          open={!!receiptLogId}
+          onClose={() => setReceiptLogId(null)}
+          paymentLogId={receiptLogId}
+        />
+      )}
     </div>
   );
 }

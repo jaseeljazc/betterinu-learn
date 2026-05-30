@@ -301,6 +301,7 @@ export interface AccountTransaction {
   installmentId?: string | null
   installmentNumber?: number | null
   courseTitle?: string | null
+  paymentLogId?: string | null
 }
 
 

@@ -34,7 +34,16 @@ export async function GET(req: NextRequest) {
       t.enrollment_id,
       t.installment_id, si.installment_number,
       co.title AS course_title,
-      (SELECT COUNT(*) FROM account_attachments att WHERE att.transaction_id = t.id) AS attachment_count
+      (SELECT COUNT(*) FROM account_attachments att WHERE att.transaction_id = t.id) AS attachment_count,
+      (
+        SELECT spl.id
+        FROM student_payment_logs spl
+        WHERE spl.installment_id = t.installment_id
+          AND spl.student_id = t.student_id
+          AND spl.amount_paid = t.amount
+          AND spl.entry_type = 'payment'
+        LIMIT 1
+      ) AS payment_log_id
     FROM account_transactions t
     LEFT JOIN accounts a ON a.id = t.account_id
     LEFT JOIN accounts ta ON ta.id = t.to_account_id
@@ -83,6 +92,7 @@ export async function GET(req: NextRequest) {
     installmentId: (r.installment_id as string | null) ?? null,
     installmentNumber: (r.installment_number as number | null) ?? null,
     courseTitle: (r.course_title as string | null) ?? null,
+    paymentLogId: (r.payment_log_id as string | null) ?? null,
   }));
 
   return NextResponse.json({ transactions });

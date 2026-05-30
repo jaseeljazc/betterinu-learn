@@ -9,6 +9,7 @@ import { DataTable } from "@/components/admin/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { TransactionFormDialog } from "./transaction-form-dialog";
+import { ReceiptModal } from "@/components/admin/students/student-detail/receipt-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +75,7 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
     transactionId?: string;
     initialData?: unknown;
   }>({ open: false, mode: "create" });
+  const [receiptLogId, setReceiptLogId] = useState<string | null>(null);
 
   // Debounce student search to avoid spamming the API
   useEffect(() => {
@@ -233,6 +235,14 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
                   <Eye className="size-3.5" /> View
                 </Link>
               </DropdownMenuItem>
+              {t.paymentLogId && (
+                <DropdownMenuItem
+                  onClick={() => setReceiptLogId(t.paymentLogId || null)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-subtle transition-colors cursor-pointer"
+                >
+                  <ReceiptText className="size-3.5 text-muted-foreground" /> Receipt
+                </DropdownMenuItem>
+              )}
               {canEdit && !isVoid && (
                 <>
                   <DropdownMenuItem
@@ -332,6 +342,14 @@ export function TransactionsTable({ canEdit }: TransactionsTableProps) {
           mode={dialog.mode}
           onClose={() => setDialog({ open: false, mode: "create" })}
           onSaved={handleSaved}
+        />
+      )}
+
+      {receiptLogId && (
+        <ReceiptModal
+          open={!!receiptLogId}
+          onClose={() => setReceiptLogId(null)}
+          paymentLogId={receiptLogId}
         />
       )}
     </>
