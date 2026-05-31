@@ -232,4 +232,5 @@ function SummaryCard({ label, value, icon, color }: {
       <p className="text-2xl font-bold text-foreground">{value}</p>
     </div>
   );
-}
+} 
+

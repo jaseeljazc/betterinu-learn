@@ -17,7 +17,9 @@ export async function sendWelcomeEmail({
     throw new Error(
       "SMTP email configuration is missing: EMAIL_USER or EMAIL_APP_PASSWORD not set."
     )
-  }
+  } 
+
+  
 
   const transporter = nodemailer.createTransport({
     service: "gmail",

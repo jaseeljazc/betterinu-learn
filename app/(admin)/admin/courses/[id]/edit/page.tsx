@@ -565,7 +565,7 @@ export default function CourseEditPage() {
             <div className="flex items-center gap-2 border-b border-muted pb-3">
               <Target className="size-4 text-primary" />
               <h2 className="text-sm font-bold uppercase tracking-wide text-primary">
-                Learning Outcomes
+                Learning Outcomes <samp></samp>
               </h2>
             </div>
             <div className="flex flex-wrap gap-2">

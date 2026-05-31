@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { useStudentInstallments } from "@/lib/hooks/useStudentDetail"
 import { RecordPaymentModal } from "./record-payment-modal"
@@ -347,12 +348,58 @@ export function FeePlanPanel({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="space-y-4">
         {[1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-28 rounded-md border border-default bg-white animate-pulse"
-          />
+          <div key={i} className="rounded-md border border-default bg-white overflow-hidden">
+            {/* Header Skeleton */}
+            <div className="flex items-start justify-between gap-3 p-4">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="size-4 shrink-0 rounded-full" />
+                  <Skeleton className="h-4 w-40" />
+                  {i === 1 && <Skeleton className="h-4 w-16 rounded-full" />}
+                </div>
+                <Skeleton className="h-3 w-48" />
+                <Skeleton className="h-1.5 w-full mt-1.5" />
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Skeleton className="h-9 w-24 rounded-md" />
+                <Skeleton className="size-7 rounded-md" />
+              </div>
+            </div>
+
+            {/* Installments list Skeleton */}
+            <div className="border-t border-default p-3 space-y-2 bg-muted/5">
+              {[1, 2].map((j) => (
+                <div
+                  key={j}
+                  className="flex flex-col gap-2 rounded-md border border-default bg-white p-3 sm:flex-row sm:items-center sm:gap-3"
+                >
+                  {/* Bubble number */}
+                  <Skeleton className="size-8 shrink-0 rounded-full" />
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-14 rounded-full" />
+                      <Skeleton className="h-3 w-28" />
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="h-3 w-32 shrink-0" />
+                      <Skeleton className="h-1.5 flex-1" />
+                      <Skeleton className="h-3 w-6 shrink-0" />
+                    </div>
+                  </div>
+
+                  {/* Remaining / Action */}
+                  <div className="flex shrink-0 flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1.5 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-dashed border-default">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-28 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     )
