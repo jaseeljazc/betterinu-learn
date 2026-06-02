@@ -60,11 +60,17 @@ export async function POST(
   let adminId: string
   try {
     const inserted = await sql`
-      INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by, temp_password)
-      VALUES (${firebaseUid}, ${emp.full_name}, ${(emp.email as string).toLowerCase()}, ${roleId}, 'active', ${creatorId}, ${password})
+      INSERT INTO admin_accounts (firebase_uid, full_name, email, status, created_by, temp_password)
+      VALUES (${firebaseUid}, ${emp.full_name}, ${(emp.email as string).toLowerCase()}, 'active', ${creatorId}, ${password})
       RETURNING id
     `
     adminId = inserted[0].id as string
+    // Insert role into pivot table
+    await sql`
+      INSERT INTO admin_account_roles (admin_account_id, role_id, assigned_by)
+      VALUES (${adminId}, ${roleId}, ${creatorId})
+      ON CONFLICT (admin_account_id, role_id) DO NOTHING
+    `
     await sql`UPDATE employees SET admin_account_id = ${adminId}, updated_at = NOW() WHERE id = ${id}`
   } catch (err) {
     await adminAuth.deleteUser(firebaseUid).catch(() => {})

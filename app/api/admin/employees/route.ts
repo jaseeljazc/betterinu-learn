@@ -45,12 +45,11 @@ export async function GET(req: NextRequest) {
       rm.id        AS manager_id,
       rm.full_name AS manager_name,
       aa.status   AS admin_status,
-      ar.name     AS admin_role
+      (SELECT string_agg(ar.name, ', ') FROM admin_account_roles aar JOIN admin_roles ar ON ar.id = aar.role_id WHERE aar.admin_account_id = aa.id) AS admin_role
     FROM employees e
     LEFT JOIN departments d ON d.id = e.department_id
     LEFT JOIN employees rm ON rm.id = e.reporting_manager_id
     LEFT JOIN admin_accounts aa ON aa.id = e.admin_account_id
-    LEFT JOIN admin_roles ar ON ar.id = aa.role_id
     WHERE TRUE
       ${departmentId ? sql`AND e.department_id = ${departmentId}` : sql``}
       ${status ? sql`AND e.status = ${status}` : sql``}
@@ -188,11 +187,16 @@ export async function POST(req: NextRequest) {
 
       try {
         const inserted = await sql`
-          INSERT INTO admin_accounts (firebase_uid, full_name, email, role_id, status, created_by, temp_password)
-          VALUES (${firebaseUid}, ${fullName.trim()}, ${email.toLowerCase()}, ${roleId}, 'active', ${creatorId}, ${tempPassword})
+          INSERT INTO admin_accounts (firebase_uid, full_name, email, status, created_by, temp_password)
+          VALUES (${firebaseUid}, ${fullName.trim()}, ${email.toLowerCase()}, 'active', ${creatorId}, ${tempPassword})
           RETURNING id
         `
         adminId = inserted[0].id as string
+        await sql`
+          INSERT INTO admin_account_roles (admin_account_id, role_id, assigned_by)
+          VALUES (${adminId}, ${roleId}, ${creatorId})
+          ON CONFLICT (admin_account_id, role_id) DO NOTHING
+        `
         await sql`UPDATE employees SET admin_account_id = ${adminId} WHERE id = ${employeeId}`
       } catch (err) {
         await adminAuth.deleteUser(firebaseUid).catch(() => {})

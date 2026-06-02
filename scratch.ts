@@ -1,9 +1,43 @@
-import { sql } from './src/lib/db';
-async function run() {
-  const role = await sql`SELECT * FROM admin_roles WHERE id = '2cab1820-54f3-4816-9640-001404e93296'`;
-  console.log('Role:', role);
-  
-  const permissions = await sql`SELECT p.* FROM permissions p JOIN admin_role_permissions arp ON p.id = arp.permission_id WHERE arp.role_id = '2cab1820-54f3-4816-9640-001404e93296'`;
-  console.log('Permissions:', permissions);
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+import { prisma } from "./src/lib/db"
+
+async function main() {
+  const employees = await prisma.hr_employees.findMany({
+    where: {
+      email: {
+        in: ["batgamer7904@gmail.com", "jaseeljazck2@gmail.com"]
+      }
+    }
+  });
+
+  console.log("Employees found:", employees.length);
+
+  for (const emp of employees) {
+    for (let i = 1; i <= 3; i++) {
+      const task = await prisma.tasks_tasks.create({
+        data: {
+          title: `Mock task ${i} for ${emp.email}`,
+          description: `This is a mock task created for testing purposes for ${emp.email}`,
+          type: "task",
+          priority: i === 1 ? "high" : i === 2 ? "medium" : "low",
+          status: "todo",
+          visibility: "public",
+          assigned_to: emp.id,
+          assigned_by: emp.id,
+          is_active: true
+        }
+      });
+      console.log(`Created task ${task.id} for ${emp.email}`);
+    }
+  }
 }
-run();
+
+main()
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

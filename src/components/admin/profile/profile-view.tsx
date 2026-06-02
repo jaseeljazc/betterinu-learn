@@ -16,6 +16,7 @@ import { PayslipModal } from "@/components/admin/employees/payslip-modal";
 import { ChangePasswordModal } from "@/components/shared/change-password-modal";
 import { AttendanceCalendarMini, type ProfileAttendanceRecord } from "./attendance-calendar-mini";
 import { PayslipHistoryTable } from "./payslip-history-table";
+import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 
 function currentYearMonth() {
   const date = new Date();
@@ -96,6 +97,7 @@ function SectionCard({ title, children, className }: { title: string; children: 
 }
 
 export function ProfileView() {
+  const { roles } = useAdminPermissions();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -210,6 +212,11 @@ export function ProfileView() {
               >
                 {employee.status.replace(/_/g, " ")}
               </Badge>
+              {roles.map((r) => (
+                <Badge key={r} variant="default" className="w-fit capitalize font-semibold text-xs border-primary/20">
+                  {r.replace(/_/g, " ")}
+                </Badge>
+              ))}
             </div>
             <p className="text-sm text-secondary mt-1">{employee.designation ?? "Employee"}</p>
             <div className="flex items-center gap-2 mt-2 flex-wrap">

@@ -43,7 +43,8 @@ async function getRoles() {
     FROM admin_roles ar
     LEFT JOIN admin_role_permissions arp ON arp.role_id = ar.id
     LEFT JOIN permissions p             ON p.id = arp.permission_id
-    LEFT JOIN admin_accounts aa         ON aa.role_id = ar.id
+    LEFT JOIN admin_account_roles aar   ON aar.role_id = ar.id
+    LEFT JOIN admin_accounts aa         ON aa.id = aar.admin_account_id
     GROUP BY ar.id
     ORDER BY ar.is_system DESC, ar.created_at ASC
   `

@@ -1,46 +1,17 @@
 import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
 import { sql } from "@/lib/db"
-import { adminAuth } from "@/lib/firebase-admin"
 import { hasPermission } from "@/lib/permissions"
+import { getPageSession } from "@/lib/server-session"
 import { generateViewPresignedUrl } from "@/lib/s3-private"
 import { EmployeeDetailView } from "@/components/admin/employees/employee-detail-view"
-import type { AdminRole, Permission, Employee } from "@/types"
-
-async function getSession() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get("__session")?.value
-  if (!token) return null
-  try {
-    const decoded = await adminAuth.verifyIdToken(token)
-    const uid = decoded.uid
-    if (process.env.SUPER_ADMIN_UID && uid === process.env.SUPER_ADMIN_UID) {
-      return { role: "super_admin" as AdminRole, permissions: [] as Permission[] }
-    }
-    const rows = await sql`
-      SELECT ar.name AS role_name,
-        COALESCE(
-          json_agg(json_build_object('module', p.module, 'action', p.action, 'id', p.id, 'description', p.description))
-          FILTER (WHERE p.id IS NOT NULL), '[]'
-        ) AS permissions
-      FROM admin_accounts aa
-      JOIN admin_roles ar ON ar.id = aa.role_id
-      LEFT JOIN admin_role_permissions arp ON arp.role_id = aa.role_id
-      LEFT JOIN permissions p ON p.id = arp.permission_id
-      WHERE aa.firebase_uid = ${uid} AND aa.status = 'active'
-      GROUP BY ar.name LIMIT 1
-    `
-    if (!rows.length) return null
-    return { role: rows[0].role_name as AdminRole, permissions: rows[0].permissions as Permission[] }
-  } catch { return null }
-}
+import type { Employee } from "@/types"
 
 export default async function EmployeeDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const session = await getSession()
+  const session = await getPageSession()
   if (!session) redirect("/admin/login")
   if (!hasPermission(session.role, session.permissions, "employees", "view")) {
     redirect("/admin/dashboard")
@@ -60,12 +31,12 @@ export default async function EmployeeDetailPage({
       e.qualification, e.skills,
       d.id AS dept_id, d.name AS dept_name, d.is_active AS dept_active,
       rm.id AS manager_id, rm.full_name AS manager_name,
-      aa.status AS admin_status, ar.name AS admin_role
+      aa.status AS admin_status,
+      (SELECT string_agg(ar.name, ', ') FROM admin_account_roles aar JOIN admin_roles ar ON ar.id = aar.role_id WHERE aar.admin_account_id = aa.id) AS admin_role
     FROM employees e
     LEFT JOIN departments d ON d.id = e.department_id
     LEFT JOIN employees rm ON rm.id = e.reporting_manager_id
     LEFT JOIN admin_accounts aa ON aa.id = e.admin_account_id
-    LEFT JOIN admin_roles ar ON ar.id = aa.role_id
     WHERE e.id = ${id}
     LIMIT 1
   `

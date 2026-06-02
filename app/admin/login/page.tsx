@@ -37,8 +37,8 @@ export default function AdminLoginPage() {
       });
 
       if (!res.ok) {
-        const { error: msg } = await res.json();
-        setError(msg ?? "Access denied.");
+        const body = await res.json().catch(() => ({}))
+        setError((body as { error?: string }).error ?? "Access denied.")
         await clientAuth.signOut();
         return;
       }

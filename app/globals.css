@@ -674,7 +674,7 @@ button, a, input, textarea, select { font: inherit; }
   --primary-foreground:     oklch(0.205 0 0);
   --secondary:     oklch(0.269 0 0);
   --secondary-foreground:     oklch(0.985 0 0);
-  --muted:     oklch(0.269 0 0);
+  --muted:     oklch(65.996% 0.00008 271.152);
   --muted-foreground:     oklch(0.708 0 0);
   --accent:     oklch(0.269 0 0);
   --accent-foreground:     oklch(0.985 0 0);

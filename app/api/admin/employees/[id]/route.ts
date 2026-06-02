@@ -24,12 +24,12 @@ export async function GET(
       e.status, e.admin_account_id, e.created_at, e.qualification, e.skills,
       d.id AS dept_id, d.name AS dept_name, d.is_active AS dept_active,
       rm.id AS manager_id, rm.full_name AS manager_name,
-      aa.status AS admin_status, ar.name AS admin_role
+      aa.status AS admin_status,
+      (SELECT string_agg(ar.name, ', ') FROM admin_account_roles aar JOIN admin_roles ar ON ar.id = aar.role_id WHERE aar.admin_account_id = aa.id) AS admin_role
     FROM employees e
     LEFT JOIN departments d ON d.id = e.department_id
     LEFT JOIN employees rm ON rm.id = e.reporting_manager_id
     LEFT JOIN admin_accounts aa ON aa.id = e.admin_account_id
-    LEFT JOIN admin_roles ar ON ar.id = aa.role_id
     WHERE e.id = ${id}
     LIMIT 1
   `

@@ -5,7 +5,7 @@ import { requireSuperAdmin } from "@/lib/admin-rbac"
 
 /**
  * GET /api/admin/admins/[id]
- * Returns a single admin account with role + permissions.
+ * Returns a single admin account with all roles + union permissions.
  * Requires: super_admin
  */
 export async function GET(
@@ -26,32 +26,40 @@ export async function GET(
       aa.last_login,
       aa.created_at,
       aa.temp_password,
-      ar.id          AS role_id,
-      ar.name        AS role_name,
-      ar.label       AS role_label,
-      ar.description AS role_description,
-      ar.is_system   AS role_is_system,
       cb.id          AS created_by_id,
       cb.full_name   AS created_by_name,
       cb.email       AS created_by_email,
       COALESCE(
         json_agg(
-          json_build_object(
-            'id', p.id,
-            'module', p.module,
-            'action', p.action,
+          DISTINCT jsonb_build_object(
+            'id',          ar.id,
+            'name',        ar.name,
+            'label',       ar.label,
+            'description', ar.description,
+            'isSystem',    ar.is_system
+          )
+        ) FILTER (WHERE ar.id IS NOT NULL),
+        '[]'
+      ) AS roles,
+      COALESCE(
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id',          p.id,
+            'module',      p.module,
+            'action',      p.action,
             'description', p.description
           )
         ) FILTER (WHERE p.id IS NOT NULL),
         '[]'
       ) AS permissions
     FROM admin_accounts aa
-    JOIN admin_roles ar ON ar.id = aa.role_id
+    JOIN admin_account_roles aar ON aar.admin_account_id = aa.id
+    JOIN admin_roles ar          ON ar.id = aar.role_id
     LEFT JOIN admin_accounts cb ON cb.id = aa.created_by
-    LEFT JOIN admin_role_permissions arp ON arp.role_id = aa.role_id
+    LEFT JOIN admin_role_permissions arp ON arp.role_id = ar.id
     LEFT JOIN permissions p ON p.id = arp.permission_id
     WHERE aa.id = ${id}
-    GROUP BY aa.id, ar.id, cb.id, cb.full_name, cb.email
+    GROUP BY aa.id, cb.id, cb.full_name, cb.email
   `
 
   if (!rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -66,14 +74,8 @@ export async function GET(
       lastLogin: r.last_login,
       createdAt: r.created_at,
       tempPassword: r.temp_password,
-      role: {
-        id: r.role_id,
-        name: r.role_name,
-        label: r.role_label,
-        description: r.role_description,
-        isSystem: r.role_is_system,
-        permissions: r.permissions,
-      },
+      roles: r.roles,
+      permissions: r.permissions,
       createdBy: r.created_by_id
         ? { id: r.created_by_id, fullName: r.created_by_name, email: r.created_by_email }
         : null,
@@ -83,8 +85,8 @@ export async function GET(
 
 /**
  * PATCH /api/admin/admins/[id]
- * Updates fullName, roleId, and/or status.
- * Cannot change role or status of super_admin accounts.
+ * Updates fullName, roleIds (array), and/or status.
+ * Cannot change roles or status of super_admin accounts.
  * Requires: super_admin
  */
 export async function PATCH(
@@ -96,21 +98,32 @@ export async function PATCH(
 
   const { id } = await params
   const body = await req.json()
-  const { fullName, roleId, status } = body
+  const { fullName, status } = body
 
-  // Fetch target admin
+  // Accept both roleIds[] (new) and legacy roleId (single)
+  const roleIds: string[] | undefined = Array.isArray(body.roleIds)
+    ? body.roleIds
+    : body.roleId
+    ? [body.roleId]
+    : undefined
+
+  // Fetch target admin's current role names to guard super_admin
   const targetRows = await sql`
-    SELECT aa.id, aa.status, ar.name AS role_name, aa.firebase_uid
+    SELECT aa.id, aa.status, aa.firebase_uid,
+      json_agg(ar.name) AS role_names
     FROM admin_accounts aa
-    JOIN admin_roles ar ON ar.id = aa.role_id
+    JOIN admin_account_roles aar ON aar.admin_account_id = aa.id
+    JOIN admin_roles ar          ON ar.id = aar.role_id
     WHERE aa.id = ${id}
+    GROUP BY aa.id
   `
   if (!targetRows.length) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const target = targetRows[0]
+  const currentRoleNames: string[] = (target.role_names as string[]) ?? []
 
   // Cannot modify super_admin accounts
-  if (target.role_name === "super_admin") {
+  if (currentRoleNames.includes("super_admin")) {
     return NextResponse.json(
       { error: "Cannot modify a super_admin account" },
       { status: 403 }
@@ -125,17 +138,22 @@ export async function PATCH(
     )
   }
 
-  // Validate new role if provided
-  if (roleId) {
-    const roleRows = await sql`SELECT name FROM admin_roles WHERE id = ${roleId}`
-    if (!roleRows.length) {
-      return NextResponse.json({ error: "Invalid roleId" }, { status: 400 })
+  // Validate new role IDs if provided; block super_admin in the list
+  if (roleIds !== undefined) {
+    if (roleIds.length === 0) {
+      return NextResponse.json({ error: "At least one roleId is required" }, { status: 400 })
     }
-    if (roleRows[0].name === "super_admin") {
-      return NextResponse.json(
-        { error: "Cannot assign super_admin role via this endpoint" },
-        { status: 403 }
-      )
+    for (const roleId of roleIds) {
+      const roleRows = await sql`SELECT name FROM admin_roles WHERE id = ${roleId}`
+      if (!roleRows.length) {
+        return NextResponse.json({ error: `Invalid roleId: ${roleId}` }, { status: 400 })
+      }
+      if (roleRows[0].name === "super_admin") {
+        return NextResponse.json(
+          { error: "Cannot assign super_admin role via this endpoint" },
+          { status: 403 }
+        )
+      }
     }
   }
 
@@ -156,15 +174,26 @@ export async function PATCH(
     }
   }
 
-  // Build update
+  // Update name and status on admin_accounts
   await sql`
     UPDATE admin_accounts
     SET
       full_name = COALESCE(${fullName ?? null}, full_name),
-      role_id   = COALESCE(${roleId ?? null}, role_id),
       status    = COALESCE(${status ?? null}, status)
     WHERE id = ${id}
   `
+
+  // Replace all role pivot rows atomically if new roles provided
+  if (roleIds !== undefined) {
+    await sql`DELETE FROM admin_account_roles WHERE admin_account_id = ${id}`
+    for (const roleId of roleIds) {
+      await sql`
+        INSERT INTO admin_account_roles (admin_account_id, role_id, assigned_by)
+        VALUES (${id}, ${roleId}, ${auth.adminId === "super_admin_bootstrap" ? null : auth.adminId})
+        ON CONFLICT (admin_account_id, role_id) DO NOTHING
+      `
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }
@@ -192,14 +221,18 @@ export async function DELETE(
   }
 
   const rows = await sql`
-    SELECT aa.id, ar.name AS role_name, aa.firebase_uid
+    SELECT aa.id, aa.firebase_uid,
+      json_agg(ar.name) AS role_names
     FROM admin_accounts aa
-    JOIN admin_roles ar ON ar.id = aa.role_id
+    JOIN admin_account_roles aar ON aar.admin_account_id = aa.id
+    JOIN admin_roles ar          ON ar.id = aar.role_id
     WHERE aa.id = ${id}
+    GROUP BY aa.id
   `
   if (!rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (rows[0].role_name === "super_admin") {
+  const roleNames: string[] = (rows[0].role_names as string[]) ?? []
+  if (roleNames.includes("super_admin")) {
     return NextResponse.json(
       { error: "Cannot deactivate a super_admin account" },
       { status: 403 }

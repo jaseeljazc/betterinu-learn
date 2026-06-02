@@ -122,3 +122,7 @@ footer stay sticky. Preserve it when editing scroll containers.
 ## border radius 
 
 Use border radius rounded-md for almost every cards and buttons.
+
+##For Forms 
+
+Use Shadcn form component and react hook form

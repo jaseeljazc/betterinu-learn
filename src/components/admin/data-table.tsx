@@ -11,7 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Search } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   Table,
@@ -49,6 +49,12 @@ export interface DataTableProps<TData, TValue> {
   pageSize?: number;
   caption?: string;
   actions?: React.ReactNode;
+  /** Server-side infinite scroll — when provided the client-side slice is disabled */
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  onLoadMore?: () => void
+  /** Max height for vertical scrolling container (defaults to "60vh") */
+  maxHeight?: string
 }
 
 function SortIcon({ direction }: { direction: "asc" | "desc" | false }) {
@@ -70,18 +76,26 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   caption,
   actions,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  maxHeight,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [mounted, setMounted] = React.useState(false);
-  const [visibleRows, setVisibleRows] = React.useState(pageSize);
 
-  React.useEffect(() => { setMounted(true); }, []);
+  const [visibleRows, setVisibleRows] = React.useState(pageSize)
+  const serverInfinite = hasNextPage !== undefined || onLoadMore !== undefined
+
+  const scrollContainerRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => { setMounted(true); }, [])
 
   React.useEffect(() => {
-    setVisibleRows(pageSize);
-  }, [globalFilter, columnFilters, sorting, pageSize]);
+    if (!serverInfinite) setVisibleRows(pageSize)
+  }, [globalFilter, columnFilters, sorting, pageSize, serverInfinite])
 
   const table = useReactTable({
     data,
@@ -95,27 +109,47 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const totalRows = table.getRowModel().rows.length;
-  const rowsToRender = table.getRowModel().rows.slice(0, visibleRows);
+  const allRows = table.getRowModel().rows;
+  const totalRows = allRows.length;
+  const rowsToRender = serverInfinite ? allRows : allRows.slice(0, visibleRows);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const observerRef = React.useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = React.useCallback(
+  // ── Sentinel for client-side slice (original behaviour) ───────────────────
+  const clientObserverRef = React.useRef<IntersectionObserver | null>(null)
+  const clientLoadMoreRef = React.useCallback(
     (node: HTMLTableRowElement | null) => {
-      if (loading) return;
-      if (observerRef.current) observerRef.current.disconnect();
-      observerRef.current = new IntersectionObserver(
+      if (loading || serverInfinite) return
+      if (clientObserverRef.current) clientObserverRef.current.disconnect()
+      clientObserverRef.current = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting) {
-            setVisibleRows((prev) => prev + pageSize);
+            setVisibleRows((prev) => prev + pageSize)
           }
         },
-        { root: scrollContainerRef.current, rootMargin: "100px", threshold: 0 }
-      );
-      if (node) observerRef.current.observe(node);
+        { root: scrollContainerRef.current || null, rootMargin: "100px", threshold: 0 }
+      )
+      if (node) clientObserverRef.current.observe(node)
     },
-    [loading, pageSize]
-  );
+    [loading, pageSize, serverInfinite]
+  )
+
+  // ── Sentinel for server-side infinite scroll ──────────────────────────────
+  const serverObserverRef = React.useRef<IntersectionObserver | null>(null)
+  const serverSentinelRef = React.useCallback(
+    (node: HTMLTableRowElement | null) => {
+      if (!serverInfinite || isFetchingNextPage || !hasNextPage) return
+      if (serverObserverRef.current) serverObserverRef.current.disconnect()
+      serverObserverRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+            onLoadMore?.()
+          }
+        },
+        { root: scrollContainerRef.current || null, rootMargin: "200px", threshold: 0 }
+      )
+      if (node) serverObserverRef.current.observe(node)
+    },
+    [serverInfinite, isFetchingNextPage, hasNextPage, onLoadMore]
+  )
 
   const skeletonRows = Array.from({ length: Math.min(pageSize, 10) });
 
@@ -179,63 +213,67 @@ export function DataTable<TData, TValue>({
       )}
 
       <div className="overflow-hidden rounded-md border border-default bg-white">
-        <div ref={scrollContainerRef}>
-          <Table>
-            {caption && (
-              <caption className="px-4 py-2 text-center text-xs text-muted border-t">{caption}</caption>
-            )}
-            <TableHeader className="sticky top-0 z-10">
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id} className="border-b border-default bg-subtle/30 hover:bg-subtle">
-                  {hg.headers.map((header) => {
-                    const canSort = header.column.getCanSort();
-                    const sorted = header.column.getIsSorted();
-                    return (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: header.column.columnDef.size ? `${header.column.columnDef.size}px` : undefined }}
-                        className={`h-9 border-r border-default px-3 py-2 text-xs font-bold uppercase tracking-widest text-secondary last:border-r-0 select-none bg-subtle/30 ${header.column.id === "actions" ? "text-center" : "text-left"}`}
-                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                      >
-                        <span className={canSort ? "cursor-pointer inline-flex items-center" : header.column.id === "actions" ? "inline-flex items-center justify-center w-full" : ""}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && <SortIcon direction={sorted} />}
-                        </span>
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
+        <Table
+          containerRef={scrollContainerRef}
+          containerClassName="overflow-y-auto animate-fade-in"
+          containerStyle={{ maxHeight: maxHeight ?? "calc(100vh - 250px)" }}
+        >
+          {caption && (
+            <caption className="px-4 py-2 text-center text-xs text-muted border-t">{caption}</caption>
+          )}
+          <TableHeader className="sticky top-0 z-10 bg-white">
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id} className="border-b border-default bg-subtle hover:bg-subtle">
+                {hg.headers.map((header) => {
+                  const canSort = header.column.getCanSort()
+                  const sorted = header.column.getIsSorted()
+                  return (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: header.column.columnDef.size ? `${header.column.columnDef.size}px` : undefined }}
+                      className={`h-9 border-r border-default px-3 py-2 text-xs font-bold uppercase tracking-widest text-secondary last:border-r-0 select-none bg-subtle ${header.column.id === "actions" ? "text-center" : "text-left"}`}
+                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                    >
+                      <span className={canSort ? "cursor-pointer inline-flex items-center" : header.column.id === "actions" ? "inline-flex items-center justify-center w-full" : ""}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                        {canSort && <SortIcon direction={sorted} />}
+                      </span>
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
 
-            <TableBody>
-              {loading ? (
-                skeletonRows.map((_, i) => (
-                  <TableRow key={i} className="border-b border-default">
-                    {columns.map((_, ci) => (
-                      <TableCell key={ci} className="h-9 border-r border-default px-3 py-2 last:border-r-0">
-                        <Skeleton className="h-4 w-full rounded" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : rowsToRender.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="py-16 text-center">
-                    {EmptyIcon && <EmptyIcon className="mx-auto mb-3 size-9 text-muted" />}
-                    <p className="text-sm text-secondary font-medium">{emptyMessage}</p>
-                  </TableCell>
+          <TableBody>
+            {loading ? (
+              skeletonRows.map((_, i) => (
+                <TableRow key={i} className="border-b border-default">
+                  {columns.map((_, ci) => (
+                    <TableCell key={ci} className="h-9 border-r border-default px-3 py-2 last:border-r-0">
+                      <Skeleton className="h-4 w-full rounded" />
+                    </TableCell>
+                  ))}
                 </TableRow>
-              ) : (
-                rowsToRender.map((row, index) => {
-                  const isLastRendered = index === rowsToRender.length - 1;
-                  const hasMore = visibleRows < totalRows;
+              ))
+            ) : rowsToRender.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="py-16 text-center">
+                  {EmptyIcon && <EmptyIcon className="mx-auto mb-3 size-9 text-muted" />}
+                  <p className="text-sm text-secondary font-medium">{emptyMessage}</p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              <>
+                {rowsToRender.map((row, index) => {
+                  const isLastRendered = index === rowsToRender.length - 1
+                  const hasMoreClient = !serverInfinite && visibleRows < totalRows
                   return (
                     <TableRow
                       key={row.id}
-                      ref={isLastRendered && hasMore ? loadMoreRef : null}
+                      ref={isLastRendered && hasMoreClient ? clientLoadMoreRef : null}
                       className="border-b border-default last:border-b-0 hover:bg-subtle/60 transition-colors"
                     >
                       {row.getVisibleCells().map((cell) => (
@@ -254,12 +292,30 @@ export function DataTable<TData, TValue>({
                         </TableCell>
                       ))}
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                  )
+                })}
+
+                {/* Server-side infinite scroll sentinel */}
+                {serverInfinite && (
+                  <TableRow ref={serverSentinelRef} className="border-0">
+                    <TableCell colSpan={columns.length} className="py-3 text-center border-0">
+                      {isFetchingNextPage ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Loader2 className="size-3.5 animate-spin" />
+                          Loading more…
+                        </span>
+                      ) : hasNextPage ? (
+                        <span className="text-[11px] text-muted-foreground/50">Scroll to load more</span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground/40">All records loaded</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

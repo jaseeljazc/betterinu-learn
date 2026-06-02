@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
   AlertCircle,
   Info,
@@ -17,6 +17,7 @@ import {
   CalendarCheck,
   User,
   Mail,
+  Check,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -57,6 +58,7 @@ const MODULES: { key: PermissionModule; label: string; icon: React.ElementType }
   { key: "courses",    label: "Courses",    icon: BookOpen },
   { key: "curriculum", label: "Curriculum", icon: LayoutGrid },
   { key: "tasks",      label: "Tasks",      icon: CheckSquare },
+  { key: "tasks_mgmt", label: "Task Mgmt",  icon: CheckSquare },
   { key: "admins",     label: "Admins",     icon: ShieldAlert },
   { key: "accounts",   label: "Accounts",   icon: Wallet },
   { key: "employees",  label: "Employees",  icon: UserCog },
@@ -66,7 +68,7 @@ const MODULES: { key: PermissionModule; label: string; icon: React.ElementType }
 
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 
-const ACTION_DESC: Record<PermissionAction, string> = {
+const ACTION_DESC: Partial<Record<PermissionAction, string>> = {
   view:   "Can read and list records",
   create: "Can create new records",
   edit:   "Can update existing records",
@@ -101,7 +103,8 @@ export type AdminFormRole = {
 export type AdminFormData = {
   fullName: string
   email: string
-  roleId: string
+  /** Array of role IDs to assign (multi-role). */
+  roleIds: string[]
   status: string
 }
 
@@ -111,8 +114,10 @@ export type AdminFormInitialData = {
   fullName: string
   email: string
   status: "active" | "inactive" | "pending"
-  roleName: AdminRole
-  roleId: string
+  /** All role names currently held (for super_admin guard). */
+  roleNames: AdminRole[]
+  /** All role IDs currently held. */
+  roleIds: string[]
 }
 
 type AdminFormProps = {
@@ -137,36 +142,52 @@ export function AdminForm({
   loading,
 }: AdminFormProps) {
   const isEdit       = !!initialData
-  const isSuperAdmin = initialData?.roleName === "super_admin"
+  const isSuperAdmin = initialData?.roleNames.includes("super_admin") ?? false
 
   /* ---------- form state ---------- */
-  const [fullName, setFullName]         = useState(initialData?.fullName ?? "")
-  const [email,    setEmail]            = useState(initialData?.email    ?? "")
-  const [roleId,   setRoleId]           = useState(initialData?.roleId   ?? "")
-  const [status,   setStatus]           = useState<string>(initialData?.status   ?? "pending")
-  const [error,    setError]            = useState("")
+  const [fullName,  setFullName]  = useState(initialData?.fullName ?? "")
+  const [email,     setEmail]     = useState(initialData?.email    ?? "")
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialData?.roleIds ?? [])
+  const [status,    setStatus]    = useState<string>(initialData?.status ?? "pending")
+  const [error,     setError]     = useState("")
 
-  /* ---------- derived: selected role object ---------- */
-  const selectedRole = useMemo(
-    () => roles.find((r) => r.id === roleId) ?? null,
-    [roles, roleId]
+  /* ---------- toggle a role in/out ---------- */
+  function toggleRole(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  /* ---------- selected role objects ---------- */
+  const selectedRoles = useMemo(
+    () => roles.filter((r) => selectedIds.includes(r.id)),
+    [roles, selectedIds]
   )
 
-  /* ---------- permission display (read-only, driven by role) ---------- */
+  /* ---------- union of permissions from all selected roles ---------- */
   const rolePermissions = useMemo<PermSet>(() => {
-    if (!selectedRole) return new Set()
-    return new Set(selectedRole.permissions.map((p) => `${p.module}:${p.action}`))
-  }, [selectedRole])
+    const s = new Set<string>()
+    for (const role of selectedRoles) {
+      for (const p of role.permissions) {
+        s.add(`${p.module}:${p.action}`)
+      }
+    }
+    return s
+  }, [selectedRoles])
 
-  /* ---------- hasChanges (edit mode: disable Save if nothing changed) ---------- */
-  const initialRoleId = initialData?.roleId   ?? ""
-  const initialStatus = initialData?.status   ?? "pending"
-  const initialName   = initialData?.fullName ?? ""
+  /* ---------- hasChanges (disable Save if nothing changed in edit mode) ---------- */
+  const initialRoleIds = initialData?.roleIds ?? []
+  const initialStatus  = initialData?.status   ?? "pending"
+  const initialName    = initialData?.fullName ?? ""
+
+  const rolesChanged =
+    selectedIds.length !== initialRoleIds.length ||
+    [...selectedIds].sort().join(",") !== [...initialRoleIds].sort().join(",")
 
   const hasChanges =
     !isEdit ||
     fullName !== initialName ||
-    roleId   !== initialRoleId ||
+    rolesChanged ||
     status   !== initialStatus
 
   /* ---------- submit ---------- */
@@ -185,12 +206,12 @@ export function AdminForm({
         return
       }
     }
-    if (!roleId) {
-      setError("Please select a role.")
+    if (selectedIds.length === 0) {
+      setError("Please select at least one role.")
       return
     }
 
-    onSubmit({ fullName: fullName.trim(), email: email.trim().toLowerCase(), roleId, status })
+    onSubmit({ fullName: fullName.trim(), email: email.trim().toLowerCase(), roleIds: selectedIds, status })
   }
 
   /* ---------- render ---------- */
@@ -205,7 +226,7 @@ export function AdminForm({
             <CardHeader className="pb-4">
               <CardTitle className="text-base">Account Details</CardTitle>
               <CardDescription className="text-xs">
-                {isEdit ? "Update this admin's name, role, and status." : "Enter the new admin's information. A temporary password will be emailed to them."}
+                {isEdit ? "Update this admin's name, roles, and status." : "Enter the new admin's information. A temporary password will be emailed to them."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -248,64 +269,24 @@ export function AdminForm({
                 )}
               </div>
 
-              {/* Role + Status side by side */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Role */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="admin-role" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-                    Role <span className="text-destructive">*</span>
-                    {isSuperAdmin && <Lock className="size-3 text-muted-foreground" />}
-                  </Label>
-                  {isSuperAdmin ? (
-                    <Input
-                      value="Super Admin"
-                      disabled
-                      className="text-sm"
-                    />
-                  ) : (
-                    <Select
-                      value={roleId}
-                      onValueChange={setRoleId}
-                      disabled={isSuperAdmin}
-                    >
-                      <SelectTrigger id="admin-role" className="text-sm h-9">
-                        <SelectValue placeholder="Select a role…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {selectedRole && !isSuperAdmin && (
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {selectedRole.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="admin-status" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-                    Status
-                    {isSuperAdmin && <Lock className="size-3 text-muted-foreground" />}
-                  </Label>
-                  <Select value={status} onValueChange={setStatus} disabled={isSuperAdmin}>
-                    <SelectTrigger id="admin-status" className="text-sm h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(isEdit ? STATUS_OPTIONS_EDIT : STATUS_OPTIONS_CREATE).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Status */}
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-status" className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+                  Status
+                  {isSuperAdmin && <Lock className="size-3 text-muted-foreground" />}
+                </Label>
+                <Select value={status} onValueChange={setStatus} disabled={isSuperAdmin}>
+                  <SelectTrigger id="admin-status" className="text-sm h-9 w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(isEdit ? STATUS_OPTIONS_EDIT : STATUS_OPTIONS_CREATE).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Error */}
@@ -318,22 +299,25 @@ export function AdminForm({
             </CardContent>
           </Card>
 
-          {/* ── Permissions (read-only — driven by role) ── */}
+          {/* ── Role Assignment (multi-select) ── */}
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-base">Permissions</CardTitle>
+                <CardTitle className="text-base">Roles</CardTitle>
+                {isSuperAdmin && <Lock className="size-3.5 text-muted-foreground" />}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="size-3.5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-56 text-xs">
-                    Permissions are inherited from the selected role and cannot be overridden per admin.
+                    You can assign multiple roles. The user will receive the combined permissions of all selected roles.
                   </TooltipContent>
                 </Tooltip>
               </div>
               <CardDescription className="text-xs">
-                Permissions granted by the selected role. To change, edit the role directly.
+                {isSuperAdmin
+                  ? "Super Admin has unrestricted access and cannot be changed."
+                  : "Select one or more roles. Permissions are the union of all selected roles."}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -347,10 +331,81 @@ export function AdminForm({
                     </p>
                   </div>
                 </div>
-              ) : !selectedRole ? (
+              ) : (
+                <div className="divide-y">
+                  {roles.map((role) => {
+                    const isChecked = selectedIds.includes(role.id)
+                    return (
+                      <label
+                        key={role.id}
+                        htmlFor={`role-${role.id}`}
+                        className={cn(
+                          "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors",
+                          isChecked ? "bg-primary/5" : "hover:bg-muted/40"
+                        )}
+                      >
+                        <Checkbox
+                          id={`role-${role.id}`}
+                          checked={isChecked}
+                          onCheckedChange={() => toggleRole(role.id)}
+                          className="mt-0.5 size-4"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("text-sm font-semibold", isChecked && "text-primary")}>
+                              {role.label}
+                            </span>
+                            {isChecked && (
+                              <Check className="size-3 text-primary shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                            {role.description}
+                          </p>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Permissions (read-only — union of selected roles) ── */}
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">Permissions</CardTitle>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-56 text-xs">
+                    Permissions are the union of all selected roles and cannot be overridden per admin.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <CardDescription className="text-xs">
+                {selectedRoles.length > 1
+                  ? `Combined permissions from ${selectedRoles.length} selected roles.`
+                  : "Permissions granted by the selected role. To change, edit the role directly."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isSuperAdmin ? (
+                <div className="m-4 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+                  <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold">Unrestricted access</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Super Admin has unrestricted access to everything.
+                    </p>
+                  </div>
+                </div>
+              ) : selectedIds.length === 0 ? (
                 <div className="m-4 flex items-start gap-3 rounded-lg border border-dashed p-4">
                   <Info className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Select a role above to see its permissions.</p>
+                  <p className="text-sm text-muted-foreground">Select at least one role above to see permissions.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -375,14 +430,21 @@ export function AdminForm({
                             </Tooltip>
                           </th>
                         ))}
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-r border-border">
+                          Other
+                        </th>
                         <th className="text-center px-3 py-3 text-xs font-semibold text-muted-foreground w-16">
-                          Selected
+                          Total
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {MODULES.map(({ key: module, label: moduleLabel, icon: Icon }, idx) => {
                         const count = ACTIONS.filter((a) => rolePermissions.has(`${module}:${a}`)).length
+                        const otherPerms = Array.from(rolePermissions)
+                          .filter((p) => p.startsWith(`${module}:`))
+                          .map((p) => p.split(":")[1])
+                          .filter((action) => !ACTIONS.includes(action as PermissionAction))
                         return (
                           <tr
                             key={module}
@@ -415,13 +477,22 @@ export function AdminForm({
                                 </td>
                               )
                             })}
+                            <td className="px-4 py-3 border-r border-border align-middle">
+                              <div className="flex flex-wrap gap-1">
+                                {otherPerms.map((action) => (
+                                  <Badge key={action} variant="outline" className="text-[9px] uppercase px-1.5 py-0 leading-tight">
+                                    {action.replace(/_/g, " ")}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </td>
                             <td className="text-center px-3 py-3">
                               <div className="flex justify-center">
                                 <Badge
                                   variant={count === 4 ? "default" : "outline"}
                                   className="text-[10px] tabular-nums px-1.5 py-0.5 min-w-[28px] justify-center"
                                 >
-                                  {count}/4
+                                  {Array.from(rolePermissions).filter((p) => p.startsWith(`${module}:`)).length}
                                 </Badge>
                               </div>
                             </td>
@@ -441,9 +512,9 @@ export function AdminForm({
           <p className="text-xs text-muted-foreground font-medium">
             {isSuperAdmin
               ? "Super Admin cannot be edited."
-              : selectedRole
-              ? `${rolePermissions.size} of ${MODULES.length * ACTIONS.length} permissions via "${selectedRole.label}" role.`
-              : "Select a role to see permission count."}
+              : selectedIds.length === 0
+              ? "Select roles to see permission count."
+              : `${rolePermissions.size} permissions across ${selectedRoles.length} role${selectedRoles.length !== 1 ? "s" : ""}.`}
           </p>
           <div className="flex gap-3 w-full sm:w-auto">
             <Button

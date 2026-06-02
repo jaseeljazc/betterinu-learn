@@ -50,7 +50,7 @@ const MODULES: { key: PermissionModule; label: string; icon: React.ElementType }
 
 const ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
 
-const ACTION_DESC: Record<PermissionAction, string> = {
+const ACTION_DESC: Partial<Record<PermissionAction, string>> = {
   view:   "Can read and list records",
   create: "Can create new records",
   edit:   "Can update existing records",

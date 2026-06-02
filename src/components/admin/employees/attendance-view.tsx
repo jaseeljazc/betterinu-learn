@@ -260,7 +260,7 @@ export function AttendanceView({ canMark, canEdit }: Props) {
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="h-9 rounded-xl border border-default bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="h-9 rounded-md border border-default bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
           <Select
             value={filterDept || ALL}
@@ -298,7 +298,7 @@ export function AttendanceView({ canMark, canEdit }: Props) {
           { label: "Half-Day", count: halfday, Icon: Clock, color: "bg-blue-50 text-blue-700 border-blue-200" },
           { label: "Holiday", count: holiday, Icon: Gift, color: "bg-purple-50 text-purple-700 border-purple-200" },
         ].map(({ label, count, Icon, color }) => (
-          <div key={label} className={`flex items-center gap-3 rounded-xl border p-4 ${color}`}>
+          <div key={label} className={`flex items-center gap-3 rounded-md border p-4 ${color}`}>
             <Icon className="size-5 shrink-0 opacity-70" />
             <div>
               <p className="text-2xl font-bold leading-none">{count}</p>
@@ -334,7 +334,7 @@ export function AttendanceView({ canMark, canEdit }: Props) {
       </div>
 
       {/* Attendance grid */}
-      <div className="rounded-2xl border border-default bg-white overflow-hidden">
+      <div className="rounded-md border border-default bg-white overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-muted text-sm animate-pulse">
             Loading attendance data…

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
   CalendarDays,
+  CheckSquare,
   ChevronDown,
   ClipboardList,
   GraduationCap,
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 import { clientAuth } from "@/lib/firebase-client";
+import { NotificationBell } from "@/components/tasks/notification-bell";
 import {
   Tooltip,
   TooltipContent,
@@ -148,6 +150,25 @@ export function AdminSidebar({
                   { href: "/admin/employees/payroll",     label: "Payroll" },
                   ...(can("attendance", "view")
                     ? [{ href: "/admin/employees/attendance", label: "Attendance" }]
+                    : []),
+                ],
+              } satisfies NavItem,
+            ]
+          : []),
+        ...(can("tasks_mgmt", "view_own") || can("tasks_mgmt", "view") || can("tasks_mgmt", "view_all") || can("tasks", "view")
+          ? [
+              {
+                href: "/admin/tasks",
+                label: "Tasks",
+                Icon: CheckSquare,
+                subItems: [
+                  { href: "/admin/tasks/list",      label: "All Tasks" },
+                  { href: "/admin/tasks/projects",  label: "Projects" },
+                  ...(can("tasks_mgmt", "view_dashboard")
+                    ? [{ href: "/admin/tasks/dashboard", label: "Dashboard" }]
+                    : []),
+                  ...(can("tasks_mgmt", "view_audit_log")
+                    ? [{ href: "/admin/tasks/audit",     label: "Audit Log" }]
                     : []),
                 ],
               } satisfies NavItem,
@@ -479,6 +500,23 @@ export function AdminSidebar({
             collapsed ? "px-2" : "px-3"
           }`}
         >
+          {/* Notification bell */}
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <NotificationBell collapsed={collapsed} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">Notifications</TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="mb-1 flex w-full items-center gap-2 rounded-lg px-1 py-1">
+              <NotificationBell collapsed={collapsed} />
+              <span className="text-sm font-medium text-secondary">Notifications</span>
+            </div>
+          )}
+
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>

@@ -17,19 +17,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 /* ------------------------------------------------------------------ */
 /*  Types & constants                                                    */
 /* ------------------------------------------------------------------ */
+
+type RoleInfo = {
+  id: string
+  name: AdminRole
+  label: string
+}
 
 type AdminRow = {
   id: string
   fullName: string
   email: string
   status: "active" | "inactive" | "pending"
-  roleName: AdminRole
-  roleLabel: string
-  roleId: string
+  /** All roles assigned to this admin. */
+  roles: RoleInfo[]
   createdByName: string | null
   createdAt: string
   lastLogin: string | null
@@ -38,19 +49,26 @@ type AdminRow = {
 
 type AdminsTableProps = {
   admins: AdminRow[]
+  allRoles: AdminFormRole[]
   currentAdminId: string
 }
 
-const ROLE_BADGE: Record<AdminRole, string> = {
-  super_admin: "bg-primary/10 text-primary border-primary/20",
-  admin: "bg-blue-50 text-blue-700 border-blue-200",
-  instructor: "bg-purple-50 text-purple-700 border-purple-200",
-  support: "bg-gray-50 text-gray-600 border-gray-200",
+const ROLE_BADGE: Record<string, string> = {
+  super_admin:     "bg-primary/10 text-primary border-primary/20",
+  ceo:             "bg-violet-50 text-violet-700 border-violet-200",
+  instructor:      "bg-purple-50 text-purple-700 border-purple-200",
   account_manager: "bg-amber-50 text-amber-700 border-amber-200",
+  task_manager:    "bg-cyan-50 text-cyan-700 border-cyan-200",
+  reviewer:        "bg-pink-50 text-pink-700 border-pink-200",
+  hr_manager:      "bg-emerald-50 text-emerald-700 border-emerald-200",
+  developer:       "bg-sky-50 text-sky-700 border-sky-200",
+  marketing_staff: "bg-orange-50 text-orange-700 border-orange-200",
+  sales_staff:     "bg-lime-50 text-lime-700 border-lime-200",
+  department_head: "bg-indigo-50 text-indigo-700 border-indigo-200",
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  active: "bg-green-50 text-green-700 border-green-200",
+  active:  "bg-green-50 text-green-700 border-green-200",
   pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
   inactive: "bg-gray-50 text-gray-600 border-gray-200",
 }
@@ -63,17 +81,48 @@ function fmtDate(d: string) {
   })
 }
 
+/** Renders up to `max` role badges; remaining shown as a +N tooltip. */
+function RoleBadges({ roles, max = 2 }: { roles: RoleInfo[]; max?: number }) {
+  const visible = roles.slice(0, max)
+  const overflow = roles.slice(max)
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {visible.map((r) => (
+        <Badge
+          key={r.id}
+          variant="outline"
+          className={ROLE_BADGE[r.name] ?? ""}
+        >
+          {r.label}
+        </Badge>
+      ))}
+      {overflow.length > 0 && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="cursor-default text-muted-foreground">
+                +{overflow.length}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs space-y-1 p-2">
+              {overflow.map((r) => (
+                <p key={r.id}>{r.label}</p>
+              ))}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                            */
 /* ------------------------------------------------------------------ */
 
-export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
+export function AdminsTable({ admins, allRoles, currentAdminId }: AdminsTableProps) {
   const [deactivating, setDeactivating] = useState<string | null>(null)
   const [activating, setActivating] = useState<string | null>(null)
-
-  /* ── Roles (fetched once for both modals) ── */
-  const [roles, setRoles] = useState<AdminFormRole[]>([])
-  const [rolesLoading, setRolesLoading] = useState(false)
 
   /* ── Create modal ── */
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -82,24 +131,6 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
   /* ── Edit modal ── */
   const [editingAdmin, setEditingAdmin] = useState<AdminRow | null>(null)
   const [editLoading, setEditLoading] = useState(false)
-
-  /* ── Fetch roles on first open ── */
-  useEffect(() => {
-    if (!isCreateOpen && !editingAdmin) return
-    if (roles.length > 0) return
-
-    setRolesLoading(true)
-    fetch("/api/admin/roles")
-      .then((r) => r.json())
-      .then((d) => {
-        const list: AdminFormRole[] = (d.roles ?? []).filter(
-          (r: AdminFormRole) => r.name !== "super_admin"
-        )
-        setRoles(list)
-      })
-      .catch(() => toast.error("Failed to load roles"))
-      .finally(() => setRolesLoading(false))
-  }, [isCreateOpen, editingAdmin, roles.length])
 
   /* ── Handlers ── */
   async function handleCreateAdmin(data: AdminFormData) {
@@ -134,7 +165,7 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: data.fullName,
-          roleId: data.roleId,
+          roleIds: data.roleIds,
           status: data.status,
         }),
       })
@@ -231,15 +262,11 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       },
     },
     {
-      accessorKey: "roleName",
-      header: "Role",
-      size: 140,
-      filterFn: "equals",
-      cell: ({ row }) => (
-        <Badge variant="outline" className={ROLE_BADGE[row.original.roleName]}>
-          {row.original.roleLabel}
-        </Badge>
-      ),
+      accessorKey: "roles",
+      header: "Roles",
+      size: 180,
+      enableSorting: false,
+      cell: ({ row }) => <RoleBadges roles={row.original.roles} />,
     },
     {
       accessorKey: "status",
@@ -280,7 +307,7 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       cell: ({ row }) => {
         const admin = row.original
         const isMe = admin.id === currentAdminId
-        const isSuperAdmin = admin.roleName === "super_admin"
+        const isSuperAdmin = admin.roles.some((r) => r.name === "super_admin")
         const actionsDisabled = isMe || isSuperAdmin
         return (
           <DropdownMenu>
@@ -332,10 +359,12 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
       fullName: editingAdmin.fullName,
       email: editingAdmin.email,
       status: editingAdmin.status,
-      roleName: editingAdmin.roleName,
-      roleId: editingAdmin.roleId,
+      roleNames: editingAdmin.roles.map((r) => r.name),
+      roleIds: editingAdmin.roles.map((r) => r.id),
     }
     : undefined
+
+  const isSuperAdminBeingEdited = editingAdmin?.roles.some((r) => r.name === "super_admin") ?? false
 
   return (
     <div className="w-full min-h-screen bg-subtle px-6 lg:px-10 py-10">
@@ -370,17 +399,6 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
         searchColumn="fullName"
         filters={[
           {
-            column: "roleName",
-            label: "Role",
-            options: [
-              { value: "super_admin", label: "Super Admin" },
-              { value: "admin", label: "Admin" },
-              { value: "instructor", label: "Instructor" },
-              { value: "support", label: "Support" },
-              { value: "account_manager", label: "Account Manager" },
-            ],
-          },
-          {
             column: "status",
             label: "Status",
             options: [
@@ -403,18 +421,12 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
           size="3xl"
           scrollable={false}
         >
-          {rolesLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <RoboLoader caption="Loading roles…" />
-            </div>
-          ) : (
-            <AdminForm
-              roles={roles}
-              onSubmit={handleCreateAdmin}
-              onCancel={() => setIsCreateOpen(false)}
-              loading={createLoading}
-            />
-          )}
+          <AdminForm
+            roles={allRoles}
+            onSubmit={handleCreateAdmin}
+            onCancel={() => setIsCreateOpen(false)}
+            loading={createLoading}
+          />
         </Dialog>
       )}
 
@@ -427,23 +439,13 @@ export function AdminsTable({ admins, currentAdminId }: AdminsTableProps) {
           size="3xl"
           scrollable={false}
         >
-          {rolesLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <RoboLoader caption="Loading roles…" />
-            </div>
-          ) : (
-            <AdminForm
-              initialData={editInitialData}
-              roles={
-                editingAdmin.roleName === "super_admin"
-                  ? []
-                  : roles
-              }
-              onSubmit={handleEditAdmin}
-              onCancel={() => setEditingAdmin(null)}
-              loading={editLoading}
-            />
-          )}
+          <AdminForm
+            initialData={editInitialData}
+            roles={isSuperAdminBeingEdited ? [] : allRoles}
+            onSubmit={handleEditAdmin}
+            onCancel={() => setEditingAdmin(null)}
+            loading={editLoading}
+          />
         </Dialog>
       )}
     </div>

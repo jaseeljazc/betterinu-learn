@@ -8,13 +8,32 @@ const VALID_MODULES: PermissionModule[] = [
   "courses",
   "curriculum",
   "tasks",
+  "tasks_mgmt",
   "admins",
   "accounts",
   "employees",
   "payroll",
   "attendance",
 ]
-const VALID_ACTIONS: PermissionAction[] = ["view", "create", "edit", "delete"]
+const VALID_ACTIONS: PermissionAction[] = [
+  "view",
+  "create",
+  "edit",
+  "delete",
+  "view_own",
+  "view_team",
+  "view_all",
+  "view_disabled",
+  "edit_own",
+  "edit_any",
+  "assign",
+  "self_assign",
+  "manage_projects",
+  "manage_sprints",
+  "view_audit_log",
+  "view_dashboard",
+  "manage_attachments",
+]
 
 function isValidPerm(p: unknown): p is { module: PermissionModule; action: PermissionAction } {
   if (!p || typeof p !== "object") return false
@@ -58,7 +77,8 @@ export async function GET(req: NextRequest) {
     FROM admin_roles ar
     LEFT JOIN admin_role_permissions arp ON arp.role_id = ar.id
     LEFT JOIN permissions p             ON p.id = arp.permission_id
-    LEFT JOIN admin_accounts aa         ON aa.role_id = ar.id
+    LEFT JOIN admin_account_roles aar   ON aar.role_id = ar.id
+    LEFT JOIN admin_accounts aa         ON aa.id = aar.admin_account_id
     GROUP BY ar.id
     ORDER BY ar.is_system DESC, ar.created_at ASC
   `
