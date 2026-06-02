@@ -61,7 +61,11 @@ export async function GET(req: NextRequest) {
     rows.map(async (r) => {
       const mapped = mapEmployee(r)
       if (r.profile_photo_key) {
-        mapped.profilePhotoUrl = await generateViewPresignedUrl(r.profile_photo_key as string)
+        try {
+          mapped.profilePhotoUrl = await generateViewPresignedUrl(r.profile_photo_key as string)
+        } catch {
+          // S3 unavailable or env vars missing — serve employee data without photo URL
+        }
       }
       return mapped
     })

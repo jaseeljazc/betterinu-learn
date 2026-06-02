@@ -13,8 +13,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 
-const PRIVATE_REGION = process.env.AWS_S3_PRIVATE_REGION!;
-const PRIVATE_BUCKET = process.env.AWS_S3_PRIVATE_BUCKET!;
+
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -25,8 +24,13 @@ const ALLOWED_TYPES = [
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 function getClient() {
+  const region = process.env.AWS_S3_PRIVATE_REGION
+  const bucket = process.env.AWS_S3_PRIVATE_BUCKET
+  if (!region || !bucket) {
+    throw new Error("AWS_S3_PRIVATE_REGION and AWS_S3_PRIVATE_BUCKET must be set")
+  }
   return new S3Client({
-    region: PRIVATE_REGION,
+    region,
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -74,7 +78,7 @@ export async function generateUploadPresignedUrl(
 
   const client = getClient();
   const command = new PutObjectCommand({
-    Bucket: PRIVATE_BUCKET,
+    Bucket: process.env.AWS_S3_PRIVATE_BUCKET!,
     Key: s3Key,
     ContentType: fileType,
     // Do NOT include ContentLength here — it would be signed with an empty value
@@ -92,9 +96,11 @@ export async function generateUploadPresignedUrl(
  * Generates a fresh presigned GET URL. Call this on demand — never cache.
  */
 export async function generateViewPresignedUrl(s3Key: string): Promise<string> {
+  const bucket = process.env.AWS_S3_PRIVATE_BUCKET
+  if (!bucket) throw new Error("AWS_S3_PRIVATE_BUCKET is not configured")
   const client = getClient();
   const command = new GetObjectCommand({
-    Bucket: PRIVATE_BUCKET,
+    Bucket: bucket,
     Key: s3Key,
   });
   return getSignedUrl(client, command, { expiresIn: 15 * 60 }); // 15 minutes
@@ -110,7 +116,7 @@ export async function generateDownloadPresignedUrl(
 ): Promise<string> {
   const client = getClient();
   const command = new GetObjectCommand({
-    Bucket: PRIVATE_BUCKET,
+    Bucket: process.env.AWS_S3_PRIVATE_BUCKET!,
     Key: s3Key,
     ResponseContentDisposition: `attachment; filename="${encodeURIComponent(fileName)}"`,
   });
@@ -124,7 +130,7 @@ export async function verifyObjectExists(s3Key: string): Promise<boolean> {
   try {
     const client = getClient();
     await client.send(
-      new HeadObjectCommand({ Bucket: PRIVATE_BUCKET, Key: s3Key })
+      new HeadObjectCommand({ Bucket: process.env.AWS_S3_PRIVATE_BUCKET!, Key: s3Key })
     );
     return true;
   } catch {
@@ -138,7 +144,7 @@ export async function verifyObjectExists(s3Key: string): Promise<boolean> {
 export async function deletePrivateObject(s3Key: string): Promise<void> {
   const client = getClient();
   await client.send(
-    new DeleteObjectCommand({ Bucket: PRIVATE_BUCKET, Key: s3Key })
+    new DeleteObjectCommand({ Bucket: process.env.AWS_S3_PRIVATE_BUCKET!, Key: s3Key })
   );
 }
 
