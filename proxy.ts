@@ -44,6 +44,7 @@ export function proxy(req: NextRequest) {
     }
     return NextResponse.next();
   }
+  //fsfd
 
   const isAdminRoute = effectivePathname.startsWith("/admin") || effectivePathname.startsWith("/api/admin");
 
