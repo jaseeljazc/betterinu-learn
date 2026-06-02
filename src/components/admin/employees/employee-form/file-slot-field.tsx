@@ -43,7 +43,7 @@ export function FileSlotField({
     <div className="space-y-1.5">
       <label className={labelCls}>
         {label}
-        {required ? " *" : <OptionalTag />}
+        {required ? " " : <OptionalTag />}
       </label>
       {hasFile || (hasS3Key && isUploaded) ? (
         <div className="rounded-md border border-default bg-elevated overflow-hidden">

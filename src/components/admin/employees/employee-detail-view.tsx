@@ -253,7 +253,7 @@ export function EmployeeDetailView({ employee, canEdit, roles }: Props) {
                   <InfoCell icon={UserCheck} label="Employment Type" value={typeCfg.label} />
                   <InfoCell icon={DollarSign} label="Monthly Salary" value={formatSalary(employee.monthlySalary)} />
                   <InfoCell icon={Calendar} label="Date of Joining" value={formatDate(employee.dateOfJoining)} />
-                  <InfoCell icon={User} label="Reporting Manager" value={employee.reportingManager?.fullName} />
+                  {/* <InfoCell icon={User} label="Reporting Manager" value={employee.reportingManager?.fullName} /> */}
                 </div>
               </SectionCard>
             </div>

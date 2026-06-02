@@ -267,7 +267,7 @@ export function PersonalInfoSection({
         </div>
         
         {/* Reporting Manager */}
-        <div className="sm:col-span-6">
+        {/* <div className="sm:col-span-6">
           <label className={labelCls}>
             Reporting Manager<OptionalTag />
           </label>
@@ -312,7 +312,7 @@ export function PersonalInfoSection({
               </ul>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Emergency Contact */}
         <div className="sm:col-span-6">

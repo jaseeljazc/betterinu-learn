@@ -427,7 +427,7 @@ function AttachmentUploader({ taskId, files, onChange }: AttachmentUploaderProps
                     {af.file.name}
                   </p>
                   <p className={cn("text-xs", tooBig ? "text-destructive" : "text-muted-foreground")}>
-                    {tooBig ? "Exceeds 25 MB limit" : af.status === "error" ? af.error : formatBytes(af.file.size)}
+                    {tooBig ? "Exceeds 5 MB limit" : af.status === "error" ? af.error : formatBytes(af.file.size)}
                   </p>
                 </div>
                 {af.status === "uploading" ? (

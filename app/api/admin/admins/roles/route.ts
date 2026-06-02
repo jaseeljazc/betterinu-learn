@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const rows = await sql`
     SELECT id, name, label, description, is_system
     FROM admin_roles
+    WHERE name NOT IN ('super_admin', 'ceo')
     ORDER BY
       CASE name
         WHEN 'admin'      THEN 1

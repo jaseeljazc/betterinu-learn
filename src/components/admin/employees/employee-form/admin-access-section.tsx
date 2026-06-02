@@ -94,7 +94,7 @@ export function AdminAccessSection({
                   </SelectTrigger>
                   <SelectContent>
                     {roles
-                      .filter((r) => r.name !== "super_admin")
+                      .filter((r) => r.name !== "super_admin" && r.name !== "ceo")
                       .map((r) => (
                         <SelectItem key={r.id} value={r.id}>
                           {r.label}

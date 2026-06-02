@@ -83,7 +83,9 @@ export async function GET(req: NextRequest) {
     ORDER BY ar.is_system DESC, ar.created_at ASC
   `
 
-  const roles = rows.map((r) => {
+  const roles = rows
+    .filter((r) => r.name !== "ceo" && r.name !== "super_admin")
+    .map((r) => {
     const seen = new Set<string>()
     const permissions = (r.permissions as Array<{ id: string }> || []).filter((p) => {
       if (!p || !p.id || seen.has(p.id)) return false
