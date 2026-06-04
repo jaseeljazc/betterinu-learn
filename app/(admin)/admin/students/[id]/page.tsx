@@ -159,6 +159,7 @@ export default function AdminStudentDetailPage() {
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         <StudentTabs
           studentId={id}
+          studentName={student.name}
           canEditStudent={canEditStudent}
           assigned={assigned}
           submissions={submissions}

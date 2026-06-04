@@ -20,13 +20,13 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   User,
-  UserCircle,
   Wallet,
   LibraryBig,
+  ClipboardCheck,
+  Settings,
 } from "lucide-react";
 import { useAdminPermissions } from "@/lib/hooks/useAdminPermissions";
 import { clientAuth } from "@/lib/firebase-client";
-import { NotificationBell } from "@/components/tasks/notification-bell";
 import {
   Tooltip,
   TooltipContent,
@@ -93,7 +93,8 @@ export function AdminSidebar({
     if (sub.href === "/admin/students") {
       return (
         pathname.startsWith("/admin/students") &&
-        !pathname.startsWith("/admin/students/overdue")
+        !pathname.startsWith("/admin/students/overdue") &&
+        !pathname.startsWith("/admin/students/attendance")
       )
     }
     return pathname.startsWith(sub.href)
@@ -110,9 +111,6 @@ export function AdminSidebar({
   const academicsGroupItems: SubItem[] = [
     ...(can("courses", "view")
       ? [{ href: "/admin/courses", label: "Courses" }]
-      : []),
-    ...(can("students", "view")
-      ? [{ href: "/admin/students", label: "Students" }]
       : []),
     ...(can("accounts", "view")
       ? [{ href: "/admin/students/overdue", label: "Overdue Payments" }]
@@ -135,6 +133,24 @@ export function AdminSidebar({
                 label: "Academics",
                 Icon: LibraryBig,
                 groupItems: academicsGroupItems,
+              } satisfies NavItem,
+            ]
+          : []),
+        ...(can("students", "view")
+          ? [
+              {
+                href: "/admin/students",
+                label: "Students",
+                Icon: GraduationCap,
+                subItems: [
+                  { href: "/admin/students", label: "Directory", exact: true },
+                  ...(can("attendance", "view")
+                    ? [
+                        { href: "/admin/students/attendance", label: "Attendance", exact: true },
+                        { href: "/admin/students/attendance/leave-requests", label: "Leave Requests" },
+                      ]
+                    : []),
+                ],
               } satisfies NavItem,
             ]
           : []),
@@ -190,6 +206,15 @@ export function AdminSidebar({
               } satisfies NavItem,
             ]
           : []),
+        {
+          href: "/admin/settings",
+          label: "Settings",
+          Icon: Settings,
+          subItems: [
+            { href: "/admin/settings/trusted-ips", label: "Trusted IPs" },
+            { href: "/admin/settings/student-attendance", label: "Student Attendance" },
+          ],
+        } satisfies NavItem,
         ...(isSuperAdmin
           ? [
               { href: "/admin/admins", label: "Admins",              Icon: UsersRound  },
@@ -223,8 +248,6 @@ export function AdminSidebar({
       return next;
     });
   }
-
-
 
   /* ---------------------------------------------------------------- */
   /*  Render helpers                                                    */
@@ -428,7 +451,6 @@ export function AdminSidebar({
   /* ---------------------------------------------------------------- */
 
   return (
-    <>
     <TooltipProvider delayDuration={0}>
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex h-screen flex-col border-r border-default bg-white transition-all duration-300 ${
@@ -493,65 +515,8 @@ export function AdminSidebar({
             </nav>
           </ScrollArea>
         </div>
-
-        {/* Bottom controls */}
-        <div
-          className={`shrink-0 border-t border-default py-2 ${
-            collapsed ? "px-2" : "px-3"
-          }`}
-        >
-          {/* Notification bell */}
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <NotificationBell collapsed={collapsed} />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">Notifications</TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="mb-1 flex w-full items-center gap-2 rounded-lg px-1 py-1">
-              <NotificationBell collapsed={collapsed} />
-              <span className="text-sm font-medium text-secondary">Notifications</span>
-            </div>
-          )}
-
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/profile"
-                  className={[
-                    "mb-2 flex items-center justify-center rounded-lg p-2.5 transition-colors",
-                    pathname.startsWith("/admin/profile")
-                      ? "bg-primary/10 text-primary"
-                      : "text-secondary hover:bg-subtle hover:text-primary",
-                  ].join(" ")}
-                >
-                  <UserCircle className="size-5 shrink-0" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">My Profile</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Link
-              href="/admin/profile"
-              className={[
-                "mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                pathname.startsWith("/admin/profile")
-                  ? "bg-primary/10 font-bold text-primary"
-                  : "font-medium text-secondary hover:bg-subtle hover:text-primary",
-              ].join(" ")}
-            >
-              <UserCircle className="size-5 shrink-0" />
-              My Profile
-            </Link>
-          )}
-        </div>
       </aside>
     </TooltipProvider>
-  </>
   );
 }
 
