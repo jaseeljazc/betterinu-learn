@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { onIdTokenChanged } from "firebase/auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminTopHeader } from "@/components/layout/admin-top-header";
 import { clientAuth } from "@/lib/firebase-client";
 import { ReactQueryProvider } from "@/components/providers/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -70,6 +71,7 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
         <div className={`min-h-screen bg-subtle transition-all duration-300 ${collapsed ? "pl-16" : "pl-60"}`}>
           <AdminSidebar collapsed={collapsed} onToggle={toggle} isMobile={isMobile} />
           <main className="min-h-screen flex flex-col">
+            <AdminTopHeader />
             {children}
           </main>
         </div>

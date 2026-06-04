@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     const assignees = await sql`
       SELECT id, full_name
       FROM admin_accounts
-      WHERE is_active = TRUE
+      WHERE status = 'active'
       ORDER BY full_name
     `
 

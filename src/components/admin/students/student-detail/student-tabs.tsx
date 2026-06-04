@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Eye,
   CreditCard,
+  CalendarDays,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -28,9 +29,11 @@ import {
   SUBMISSION_STATUS_CFG,
 } from "./types"
 import { FeePlanPanel } from "./fee-plan-panel"
+import { StudentAttendanceTab } from "./student-attendance-tab"
 
 type StudentTabsProps = {
   studentId: string
+  studentName: string
   canEditStudent: boolean
   assigned: AssignedCourse[]
   submissions: Submission[]
@@ -40,6 +43,7 @@ type StudentTabsProps = {
 
 export function StudentTabs({
   studentId,
+  studentName,
   canEditStudent,
   assigned,
   submissions,
@@ -47,7 +51,7 @@ export function StudentTabs({
   onReviewSubmission,
 }: StudentTabsProps) {
   const [activeTab, setActiveTab] = useState<
-    "courses" | "submissions" | "tasks" | "fee"
+    "courses" | "submissions" | "tasks" | "fee" | "attendance"
   >("courses")
   const [collapsedCourses, setCollapsedCourses] = useState<
     Set<string>
@@ -65,7 +69,7 @@ export function StudentTabs({
   return (
     <div className="flex-1 min-w-0 space-y-6 w-full">
       <div className="flex gap-1 rounded-md border border-default bg-white p-1 w-fit flex-wrap">
-        {(["courses", "submissions", "tasks", "fee"] as const).map(
+        {(["courses", "submissions", "tasks", "fee", "attendance"] as const).map(
           (tab) => (
             <Button
               key={tab}
@@ -83,12 +87,18 @@ export function StudentTabs({
                   ? `Submissions (${submissions.length})`
                   : tab === "tasks"
                     ? `Tasks (${standaloneSubs.length})`
-                    : (
-                      <span className="flex items-center gap-1.5">
-                        {/* <CreditCard className="size-3.5" /> */}
-                        Fee Plan
-                      </span>
-                    )}
+                    : tab === "attendance"
+                      ? (
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays className="size-3.5" />
+                          Attendance
+                        </span>
+                      )
+                      : (
+                        <span className="flex items-center gap-1.5">
+                          Fee Plan
+                        </span>
+                      )}
             </Button>
           )
         )}
@@ -118,6 +128,14 @@ export function StudentTabs({
         <FeePlanPanel
           studentId={studentId}
           canRecordPayment={canEditStudent}
+        />
+      )}
+
+      {activeTab === "attendance" && (
+        <StudentAttendanceTab
+          studentId={studentId}
+          studentName={studentName}
+          canMark={canEditStudent}
         />
       )}
     </div>

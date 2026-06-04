@@ -20,12 +20,15 @@ import {
   ArrowRight,
   Globe,
   BookOpen,
+  AlarmClock,
+  X,
 } from "lucide-react";
 import { clientAuth } from "@/lib/firebase-client";
 import { useProgress } from "@/lib/hooks/useProgress";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AttendanceWidget } from "@/components/student/attendance-widget";
 import type { Course } from "@/types";
 import type { User } from "firebase/auth";
 
@@ -277,9 +280,25 @@ export default function Home() {
   >(null);
   const [newTasks, setNewTasks] = useState<StandaloneAssignment[] | null>(null);
 
+  // Overtime banner state
+  const [overtimeMessage, setOvertimeMessage] = useState<string | null>(null);
+  const [overtimeDismissed, setOvertimeDismissed] = useState(false);
+
   useEffect(() => {
     const unsub = clientAuth.onAuthStateChanged((u) => setUser(u));
     return () => unsub();
+  }, []);
+
+  // Fetch overtime status for the dashboard banner
+  useEffect(() => {
+    fetch("/api/student/attendance/status", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.isOvertime && d.overtimeMessage) {
+          setOvertimeMessage(d.overtimeMessage);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -321,6 +340,7 @@ export default function Home() {
   return (
     <PageWrapper>
       <div className="mx-auto max-w-7xl pt-5">
+        <AttendanceWidget />
         {/* --- Hero / Greeting Banner --- */}
         <div className="mb-8 overflow-hidden rounded-md border border-default bg-white  relative">
           {isLoading ? (
@@ -425,6 +445,26 @@ export default function Home() {
             </>
           )}
         </div>
+
+        {/* Overtime notification banner */}
+        {overtimeMessage && !overtimeDismissed && (
+          <div className="mb-6 flex items-start gap-4 rounded-md border border-orange-200 bg-orange-50 px-5 py-4 shadow-sm">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+              <AlarmClock className="size-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-orange-900 mb-0.5">Working overtime today?</p>
+              <p className="text-sm text-orange-800 leading-relaxed">{overtimeMessage}</p>
+            </div>
+            <button
+              onClick={() => setOvertimeDismissed(true)}
+              className="shrink-0 rounded-full p-1 text-orange-400 hover:bg-orange-100 hover:text-orange-600 transition-colors"
+              aria-label="Dismiss overtime notice"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
 
         {/* --- Three-column layout --- */}
         <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
