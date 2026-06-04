@@ -239,4 +239,4 @@ enrollment → student_module_progress (one row per module, status FSM):
 ### Sign-in flow
 
 - `app/admin/auth/login/page.tsx` is a **client component**. It calls Firebase
-  JS 
+  JS
