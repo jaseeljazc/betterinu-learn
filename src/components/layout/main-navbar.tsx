@@ -70,6 +70,9 @@ export function Navbar() {
             <Link href="/profile" className="transition-colors hover:text-primary">
               My Profile
             </Link>
+            <Link href="/attendance" className="transition-colors hover:text-primary">
+              Attendance
+            </Link>
             <Link href="/about" className="transition-colors hover:text-primary">
               About
             </Link>
@@ -149,6 +152,14 @@ export function Navbar() {
               >
                 <User className="size-4" />
                 My Profile
+              </Link>
+              <Link
+                href="/attendance"
+                className="flex items-center gap-2 w-full transition-colors hover:text-primary"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <ClipboardList className="size-4" />
+                Attendance
               </Link>
               <Link
                 href="/about"
