@@ -227,7 +227,7 @@ function AddModuleDropdown({
         <Plus className="size-3.5" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-default rounded-lg shadow-lg min-w-[140px]">
+        <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-default rounded-lg shadow-lg min-w-[140px]">
           <button
             type="button"
             onClick={() => {
@@ -304,7 +304,7 @@ function SortableLessonItem({
       className={`group/lesson flex items-center gap-1.5 px-1 py-1 rounded-md cursor-pointer transition-colors ${
         isActive
           ? "bg-primary/10 text-primary font-medium"
-          : "hover:bg-subtle text-muted-foreground hover:text-foreground"
+          : "hover:bg-subtle text-muted hover:text-foreground"
       }`}
     >
       <button
@@ -812,8 +812,8 @@ function SortableSectionItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    // Prioritize section bg color, then page bg color, fallback to white
-    backgroundColor: section.bgColor || pageBgColor || "#ffffff",
+    // Prioritize section bg color, then page bg color, fallback to token
+    backgroundColor: section.bgColor || pageBgColor || "var(--bg-surface)",
   };
 
   return (
@@ -1354,7 +1354,7 @@ export function ThreePanelCurriculumBuilder({
           className="flex-1 flex flex-col overflow-hidden transition-colors"
           style={{
             backgroundColor:
-              activeModule?.pageBgColor || "var(--bg-subtle, #f8fafc)",
+              activeModule?.pageBgColor || "var(--bg-subtle)",
           }}
         >
           <div className="p-4 border-b border-default bg-surface flex items-center justify-between shrink-0">
@@ -1538,7 +1538,7 @@ export function ThreePanelCurriculumBuilder({
                 </div>
 
                 {/* Submission area preview */}
-                <div className="rounded-2xl border border-default bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted mb-3">
                     Submission Area (student view)
                   </p>
@@ -1652,7 +1652,7 @@ export function ThreePanelCurriculumBuilder({
                 </DndContext>
 
                 {/* Add Section Buttons */}
-                <div className="border border-dashed border-default rounded-xl p-6 bg-surface/50 text-center mt-8">
+                <div className="border border-dashed border-default rounded-xl p-6 bg-elevated text-center mt-8">
                   <p className="text-sm text-muted mb-4 font-medium">
                     Add new section
                   </p>
@@ -1749,7 +1749,7 @@ export function ThreePanelCurriculumBuilder({
                           type="button"
                           key={p}
                           onClick={() => updateModule({ pagePadding: p })}
-                          className={`flex-1 min-w-[45px] py-1.5 px-2 text-[8px] font-semibold rounded-md ${activeModule?.pagePadding === p || (!activeModule?.pagePadding && p === "none") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                          className={`flex-1 min-w-[45px] py-1.5 px-2 text-[8px] font-semibold rounded-md ${activeModule?.pagePadding === p || (!activeModule?.pagePadding && p === "none") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                         >
                           {p.toUpperCase()}
                         </button>
@@ -1813,21 +1813,21 @@ export function ThreePanelCurriculumBuilder({
                     <button
                       type="button"
                       onClick={() => updateSection({ align: "left" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "left" || !activeSection.align ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "left" || !activeSection.align ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                     >
                       Left
                     </button>
                     <button
                       type="button"
                       onClick={() => updateSection({ align: "center" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "center" ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "center" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                     >
                       Center
                     </button>
                     <button
                       type="button"
                       onClick={() => updateSection({ align: "right" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "right" ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "right" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                     >
                       Right
                     </button>
@@ -1845,7 +1845,7 @@ export function ThreePanelCurriculumBuilder({
                         key={p}
                         type="button"
                         onClick={() => updateSection({ paddingX: p })}
-                        className={`flex-1 min-w-[45px] py-1.5 px-2 text-[10px] font-semibold rounded-md transition-colors ${activeSection.paddingX === p || (!activeSection.paddingX && p === "md") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                        className={`flex-1 min-w-[45px] py-1.5 px-2 text-[10px] font-semibold rounded-md transition-colors ${activeSection.paddingX === p || (!activeSection.paddingX && p === "md") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                       >
                         {p === "none" ? "None" : p.toUpperCase()}
                       </button>
@@ -1858,7 +1858,7 @@ export function ThreePanelCurriculumBuilder({
                     <p className="text-sm text-muted">
                       Use the rich text editor to format your content.
                     </p>
-                    <div className="bg-white relative z-50">
+                    <div className="bg-surface relative z-50">
                       <RichTextEditor
                         key={activeSection.id}
                         value={activeSection.content}
@@ -1875,7 +1875,7 @@ export function ThreePanelCurriculumBuilder({
                         Image URL
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.url}
                         onChange={(e) => updateSection({ url: e.target.value })}
                       />
@@ -1909,7 +1909,7 @@ export function ThreePanelCurriculumBuilder({
                         Caption
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.caption || ""}
                         onChange={(e) =>
                           updateSection({ caption: e.target.value })
@@ -1926,7 +1926,7 @@ export function ThreePanelCurriculumBuilder({
                           onClick={() =>
                             updateSection({ captionAlign: "left" })
                           }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "left" || (!activeSection.captionAlign && (activeSection.align === "left" || !activeSection.align)) ? "bg-white shadow-sm border border-default text-primary" : "text-muted"}`}
+                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "left" || (!activeSection.captionAlign && (activeSection.align === "left" || !activeSection.align)) ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
                         >
                           Left
                         </button>
@@ -1935,7 +1935,7 @@ export function ThreePanelCurriculumBuilder({
                           onClick={() =>
                             updateSection({ captionAlign: "center" })
                           }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "center" || (!activeSection.captionAlign && activeSection.align === "center") ? "bg-white shadow-sm border border-default text-primary" : "text-muted"}`}
+                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "center" || (!activeSection.captionAlign && activeSection.align === "center") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
                         >
                           Center
                         </button>
@@ -1944,7 +1944,7 @@ export function ThreePanelCurriculumBuilder({
                           onClick={() =>
                             updateSection({ captionAlign: "right" })
                           }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "right" || (!activeSection.captionAlign && activeSection.align === "right") ? "bg-white shadow-sm border border-default text-primary" : "text-muted"}`}
+                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "right" || (!activeSection.captionAlign && activeSection.align === "right") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
                         >
                           Right
                         </button>
@@ -1960,7 +1960,7 @@ export function ThreePanelCurriculumBuilder({
                             type="button"
                             key={s}
                             onClick={() => updateSection({ size: s as any })}
-                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "full") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "full") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                           >
                             {s.toUpperCase()}
                           </button>
@@ -1977,7 +1977,7 @@ export function ThreePanelCurriculumBuilder({
                         Video Title
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.title || ""}
                         onChange={(e) =>
                           updateSection({ title: e.target.value })
@@ -1989,7 +1989,7 @@ export function ThreePanelCurriculumBuilder({
                         YouTube URL or ID
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.url}
                         onChange={(e) => updateSection({ url: e.target.value })}
                       />
@@ -2004,7 +2004,7 @@ export function ThreePanelCurriculumBuilder({
                             type="button"
                             key={s}
                             onClick={() => updateSection({ size: s as any })}
-                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-white shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
+                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
                           >
                             {s.toUpperCase()}
                           </button>
@@ -2021,7 +2021,7 @@ export function ThreePanelCurriculumBuilder({
                         Document Title
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.filename || ""}
                         onChange={(e) =>
                           updateSection({ filename: e.target.value })
@@ -2067,7 +2067,7 @@ export function ThreePanelCurriculumBuilder({
                         Link Title
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.title || ""}
                         onChange={(e) =>
                           updateSection({ title: e.target.value })
@@ -2079,7 +2079,7 @@ export function ThreePanelCurriculumBuilder({
                         URL
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.url || ""}
                         onChange={(e) => updateSection({ url: e.target.value })}
                       />
@@ -2089,7 +2089,7 @@ export function ThreePanelCurriculumBuilder({
                         Description
                       </label>
                       <textarea
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y"
                         value={activeSection.description || ""}
                         onChange={(e) =>
                           updateSection({ description: e.target.value })
@@ -2106,7 +2106,7 @@ export function ThreePanelCurriculumBuilder({
                         Task Title
                       </label>
                       <input
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.title || ""}
                         onChange={(e) =>
                           updateSection({ title: e.target.value })
@@ -2118,7 +2118,7 @@ export function ThreePanelCurriculumBuilder({
                         Instructions / Description
                       </label>
                       <textarea
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y min-h-[100px]"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y min-h-[100px]"
                         value={activeSection.description || ""}
                         onChange={(e) =>
                           updateSection({ description: e.target.value })
@@ -2147,7 +2147,7 @@ export function ThreePanelCurriculumBuilder({
                       </label>
                       <input
                         type="datetime-local"
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary"
+                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
                         value={activeSection.deadline || ""}
                         onChange={(e) =>
                           updateSection({ deadline: e.target.value })
@@ -2163,7 +2163,7 @@ export function ThreePanelCurriculumBuilder({
                     const colCount: 2 | 3 = s.columnCount || 2;
                     const cols: any[] = s.cols || [];
                     const inputCls =
-                      "w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary";
+                      "w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary";
                     const colTypes = [
                       { type: "rich_text", label: "Rich Text" },
                       { type: "image", label: "Image" },
@@ -2239,7 +2239,7 @@ export function ThreePanelCurriculumBuilder({
                               onClick={() => setActiveColTab(idx)}
                               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                                 activeColIdx === idx
-                                  ? "bg-primary text-white shadow-sm"
+                                  ? "bg-primary text-primary-foreground shadow-sm"
                                   : "text-muted hover:text-foreground hover:bg-black/5"
                               }`}
                             >
@@ -2248,7 +2248,7 @@ export function ThreePanelCurriculumBuilder({
                           ))}
                         </div>
 
-                        <div className="rounded-lg border border-default bg-white overflow-hidden">
+                        <div className="rounded-lg border border-default bg-surface overflow-hidden">
                           <div className="flex items-center gap-2 bg-surface px-3 py-2 border-b border-default">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
                               Type
@@ -2258,7 +2258,7 @@ export function ThreePanelCurriculumBuilder({
                               onChange={(e: any) =>
                                 changeType(activeColIdx, e.target.value)
                               }
-                              className="ml-auto text-[10px] font-semibold border border-default rounded px-2 py-0.5 bg-white text-secondary focus:outline-none focus:border-primary"
+                              className="ml-auto text-[10px] font-semibold border border-default rounded px-2 py-0.5 bg-surface text-secondary focus:outline-none focus:border-primary"
                             >
                               {colTypes.map((t: any) => (
                                 <option key={t.type} value={t.type}>
@@ -2269,7 +2269,7 @@ export function ThreePanelCurriculumBuilder({
                           </div>
                           <div className="p-2.5 space-y-2">
                             {activeCol.type === "rich_text" && (
-                              <div className="bg-white relative z-50">
+                              <div className="bg-surface relative z-50">
                                 <RichTextEditor
                                   key={`${activeSection.id}-col-${activeColIdx}`}
                                   value={activeCol.content || ""}
@@ -2499,7 +2499,7 @@ export function ThreePanelCurriculumBuilder({
                 onSave();
               }}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               <Save className="size-4" />
               {saving ? "Saving..." : "Save"}
@@ -2509,7 +2509,7 @@ export function ThreePanelCurriculumBuilder({
               onClick={() => {
                 if (onCancel) onCancel();
               }}
-              className="flex-1 px-3 py-2 rounded-lg border border-default bg-white text-sm font-semibold text-secondary hover:text-primary transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-default bg-surface text-sm font-semibold text-foreground hover:text-primary transition-colors"
             >
               Cancel
             </button>
