@@ -181,7 +181,10 @@ export default function CourseCurriculumPage() {
           setForm({
             ...course,
             outcomes: course.outcomes ?? [],
-            curriculum: course.curriculum ?? [],
+            // curriculum column was renamed to curriculum_backup in migration 029.
+            // The three-panel builder reads from course_weeks via courseId; this
+            // field is only used by the legacy JSON editor fallback.
+            curriculum: course.curriculum_backup ?? course.curriculum ?? [],
           });
       })
       .catch((err) => console.error(err));
@@ -423,6 +426,7 @@ export default function CourseCurriculumPage() {
             <ThreePanelCurriculumBuilder
               form={form}
               update={update}
+              courseId={id}
               onCancel={() => router.push("/admin/courses")}
               onSave={async () => {
                 try {
@@ -501,7 +505,7 @@ export default function CourseCurriculumPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       try {
                         const parsed = JSON.parse(jsonInput);
                         if (
@@ -509,13 +513,59 @@ export default function CourseCurriculumPage() {
                           !Array.isArray(parsed) &&
                           parsed !== null
                         ) {
+                          setJsonError("");
+                          
+                          // Helper to generate new IDs
+                          const genId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+                          
+                          // Regenerate all IDs to prevent DB constraints and progress tracking overlap
+                          const newWeekId = genId("w");
+                          const days = (parsed.days ?? []).map((day: any) => ({
+                            ...day,
+                            id: genId("d"),
+                            subModules: (day.subModules ?? []).map((mod: any) => ({
+                              ...mod,
+                              id: genId("m"),
+                              sections: (mod.sections ?? []).map((sec: any) => ({
+                                ...sec,
+                                id: genId("sec"),
+                              }))
+                            }))
+                          }));
+
+                          // POST directly to course_weeks so the data persists
+                          const res = await fetch(
+                            `/api/admin/courses/${id}/curriculum`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              credentials: "include",
+                              body: JSON.stringify({
+                                id: newWeekId,
+                                title: parsed.title ?? "Imported Week",
+                                is_locked: parsed.isLocked ?? parsed.is_locked ?? false,
+                                is_shared: parsed.isShared ?? parsed.is_shared ?? false,
+                                days: days,
+                                quiz: parsed.quiz ? { ...parsed.quiz, id: genId("q") } : null,
+                              }),
+                            }
+                          );
+                          
+                          const responseData = await res.json().catch(() => ({}));
+                          if (!res.ok) {
+                            setJsonError(responseData.error ?? "Failed to save week to server.");
+                            return;
+                          }
+                          
+                          // Update local form state in sync for the legacy JSON editor with the new IDs
                           update("curriculum", [
                             ...(form.curriculum ?? []),
-                            parsed,
+                            responseData.week ?? { ...parsed, id: newWeekId, days }
                           ]);
-                          setJsonError("");
+                          
                           setShowJson(false);
                           setJsonInput(""); // clear for next import
+                          toast.success("Week imported successfully with new unique IDs!");
                         } else {
                           setJsonError("JSON must be a single week object.");
                         }

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const {
       id, title, tagline, description, instructor, instructor_bio,
-      duration, total_modules, level, color, icon, outcomes, is_active, curriculum,
+      duration, total_modules, level, color, icon, outcomes, is_active,
       image,
       // Fee fields (migration 019)
       one_time_price, installment_total_price,
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const rows = await sql`
       INSERT INTO courses (
         id, title, tagline, description, instructor, instructor_bio,
-        duration, total_modules, level, color, icon, outcomes, is_active, curriculum, image,
+        duration, total_modules, level, color, icon, outcomes, is_active, image,
         one_time_price, installment_total_price,
         default_installment_count, default_installment_amount,
         grace_period_days
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         ${duration ?? ""}, ${total_modules ?? 0}, ${level ?? "Beginner"},
         ${color ?? "--course-default"}, ${icon ?? "Book"},
         ${JSON.stringify(outcomes ?? [])}, ${is_active ?? true},
-        ${JSON.stringify(curriculum ?? [])}, ${image ?? ""},
+        ${image ?? ""},
         ${one_time_price ?? null}, ${installment_total_price ?? null},
         ${default_installment_count ?? null}, ${default_installment_amount ?? null},
         ${grace_period_days ?? 3}

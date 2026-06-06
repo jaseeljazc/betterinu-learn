@@ -479,7 +479,7 @@ function FeeCard({ enrollment }: { enrollment: StudentFeeEnrollment }) {
           {/* Overall progress */}
           <div className="space-y-0.5 pt-1">
             <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>Payment progress</span>
+              <span>Payment progress </span>
               <span className="font-semibold text-foreground">{pct}%</span>
             </div>
             <Progress value={pct} className="h-1.5" />

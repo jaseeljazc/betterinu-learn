@@ -23,7 +23,7 @@ export async function GET(
   const rows = await sql`
     SELECT 
       c.id, c.title, c.tagline, c.description, c.instructor, c.instructor_bio,
-      c.duration, c.total_modules, c.level, c.color, c.icon, c.outcomes, c.is_active, c.curriculum, c.image
+      c.duration, c.total_modules, c.level, c.color, c.icon, c.outcomes, c.is_active, c.image
     FROM student_courses sc
     JOIN courses c ON c.id = sc.course_id
     WHERE sc.student_id = ${student.studentId} AND c.id = ${courseId} AND c.is_active = true
@@ -37,6 +37,8 @@ export async function GET(
   const r = rows[0];
 
   // Map to Course type structure (camelCase)
+  // Note: weeks is intentionally empty [] here — the student frontend
+  // loads curriculum lazily via GET /curriculum and GET /curriculum/:weekId.
   const formattedCourse = {
     id: r.id,
     title: r.title,
@@ -50,7 +52,7 @@ export async function GET(
     color: r.color,
     icon: r.icon,
     outcomes: r.outcomes || [],
-    weeks: r.curriculum || [],
+    weeks: [],
     image: r.image,
   };
 

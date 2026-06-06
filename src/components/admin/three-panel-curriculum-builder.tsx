@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -47,6 +47,7 @@ import {
 import { QuizModuleEditor } from "@/components/admin/quiz-module-editor";
 import { AssignmentModuleEditor } from "@/components/admin/assignment-module-editor";
 import { TruncatedText } from "@/components/truncated-text";
+import { toast } from "sonner";
 
 // --- HELPERS ---
 function uid() {
@@ -636,12 +637,14 @@ function WeekSection({
   onRenameLesson,
   onRemoveLesson,
   onDragEndLessons,
+  hideHeader,
 }: any) {
   const [editingWeek, setEditingWeek] = React.useState(false);
   const [weekDraft, setWeekDraft] = React.useState(
     week.title || `Week ${wIdx + 1}`,
   );
   const [expanded, setExpanded] = React.useState(true);
+  const showDays = expanded || !!hideHeader;
 
   function commitWeekRename() {
     if (weekDraft.trim()) onRenameWeek(weekDraft.trim());
@@ -651,6 +654,7 @@ function WeekSection({
   return (
     <div className="space-y-0.5">
       {/* Week header */}
+      {!hideHeader && (
       <div className="group/week flex items-center gap-1 px-1 py-1 rounded transition-colors hover:bg-subtle">
         <button
           type="button"
@@ -747,9 +751,10 @@ function WeekSection({
           </>
         )}
       </div>
+      )}
 
       {/* Days */}
-      {expanded && (
+      {showDays && (
         <div className="pl-4 ml-1.5 border-l border-default space-y-2 py-1">
           <DndContext
             collisionDetection={closestCenter}
@@ -860,6 +865,174 @@ function SortableSectionItem({
   );
 }
 
+// ─── Type for week stub (no days/quiz) ─────────────────────────────────────
+type WeekStub = {
+  id: string;
+  course_id: string;
+  position: number;
+  title: string;
+  is_locked: boolean;
+  is_shared: boolean;
+};
+
+// ─── Sortable stub row for the left panel (new courseId mode only) ────────────
+function SortableWeekStubItem({
+  stub,
+  isActive,
+  isDirty,
+  isLoading,
+  onSelect,
+  onDelete,
+  onRename,
+  onToggleLock,
+  onAddDay,
+}: {
+  stub: WeekStub;
+  isActive: boolean;
+  isDirty: boolean;
+  isLoading: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+  onRename: (title: string) => void;
+  onToggleLock: () => void;
+  onAddDay: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: stub.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(stub.title);
+
+  React.useEffect(() => {
+    if (!editing) setDraft(stub.title);
+  }, [stub.title, editing]);
+
+  function commitRename() {
+    if (draft.trim() && draft.trim() !== stub.title) onRename(draft.trim());
+    setEditing(false);
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={!editing ? onSelect : undefined}
+      className={`group/wstub flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors ${
+        isActive
+          ? "bg-primary/10 border border-primary/20"
+          : "hover:bg-subtle border border-transparent"
+      }`}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover/wstub:opacity-100 transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="size-3.5 text-muted" />
+      </button>
+
+      {isDirty && (
+        <span
+          className="shrink-0 size-1.5 rounded-full bg-amber-500"
+          title="Unsaved changes"
+        />
+      )}
+
+      {isLoading ? (
+        <span className="shrink-0 size-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      ) : stub.is_locked ? (
+        <Lock className="shrink-0 size-3 text-amber-500" />
+      ) : null}
+
+      {editing ? (
+        <input
+          autoFocus
+          className="flex-1 text-[11px] font-bold uppercase tracking-widest border border-primary rounded px-1.5 py-0.5 outline-none bg-background text-foreground"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitRename();
+            if (e.key === "Escape") {
+              setDraft(stub.title);
+              setEditing(false);
+            }
+          }}
+          onBlur={commitRename}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <TruncatedText
+          text={stub.title}
+          className={`flex-1 text-[11px] font-bold uppercase tracking-widest ${
+            isActive ? "text-primary" : "text-muted"
+          }`}
+        />
+      )}
+
+      <div
+        className="flex items-center gap-0.5 opacity-0 group-hover/wstub:opacity-100 transition-opacity"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          title="Add day"
+          onClick={(e) => { e.stopPropagation(); onAddDay(); }}
+          className="p-0.5 text-muted hover:text-primary"
+        >
+          <Plus className="size-3" />
+        </button>
+        <button
+          type="button"
+          title="Rename"
+          onClick={(e) => { e.stopPropagation(); setDraft(stub.title); setEditing(true); }}
+          className="p-0.5 text-muted hover:text-primary"
+        >
+          <Pencil className="size-3" />
+        </button>
+        <button
+          type="button"
+          title={stub.is_locked ? "Unlock week" : "Lock week"}
+          onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
+          className={`p-0.5 ${stub.is_locked ? "text-amber-500" : "text-muted hover:text-amber-500"}`}
+        >
+          <Lock className="size-3" />
+        </button>
+        <button
+          type="button"
+          title="Delete week"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-0.5 text-muted hover:text-red-500"
+        >
+          <Trash2 className="size-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Loading skeleton while a week is being fetched ──────────────────────────
+function WeekLoadingSkeleton() {
+  return (
+    <div className="pl-5 ml-1 border-l border-default space-y-2 py-2 animate-pulse">
+      {[60, 80, 50].map((w, i) => (
+        <div key={i} className="h-5 bg-muted/20 rounded-md" style={{ width: `${w}%` }} />
+      ))}
+    </div>
+  );
+}
+
 // --- MAIN COMPONENT ---
 export function ThreePanelCurriculumBuilder({
   form,
@@ -867,7 +1040,11 @@ export function ThreePanelCurriculumBuilder({
   onSave,
   onCancel,
   saving,
+  courseId,
 }: any) {
+  const isNewMode = !!courseId;
+
+  // ── Existing UI state ──────────────────────────────────────────────────────
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeNode, setActiveNode] = useState<{
     wIdx: number;
@@ -877,18 +1054,41 @@ export function ThreePanelCurriculumBuilder({
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [activeColTab, setActiveColTab] = useState(0);
 
-  // Safely get current active day
+  // ── New: lazy-load state ───────────────────────────────────────────────────
+  const [weekStubs, setWeekStubs] = useState<WeekStub[]>([]);
+  const [weekCache, setWeekCache] = useState<Record<string, any>>({});
+  const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
+  const [loadingWeekId, setLoadingWeekId] = useState<string | null>(null);
+  const [dirtyWeekIds, setDirtyWeekIds] = useState<Set<string>>(new Set());
+  const [weekSaving, setWeekSaving] = useState(false);
+  const [stubsLoading, setStubsLoading] = useState(false);
+
+  // ── Fetch stubs on mount ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isNewMode) return;
+    setStubsLoading(true);
+    fetch(`/api/admin/courses/${courseId}/curriculum`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => setWeekStubs(data.weeks ?? []))
+      .catch(console.error)
+      .finally(() => setStubsLoading(false));
+  }, [courseId, isNewMode]);
+
+  // ── Derived: active week full data from cache ─────────────────────────────
+  const activeWeekData =
+    isNewMode && activeWeekId ? (weekCache[activeWeekId] ?? null) : null;
+
+  // ── Derived: activeDay, activeModule, activeSections ──────────────────────
   const activeDay = activeNode
-    ? form.curriculum?.[activeNode.wIdx]?.days?.[activeNode.dIdx]
+    ? isNewMode
+      ? activeWeekData?.days?.[activeNode.dIdx]
+      : form.curriculum?.[activeNode.wIdx]?.days?.[activeNode.dIdx]
     : null;
-  // Safely get active module (lesson)
   const activeModule =
     activeNode && activeNode.mIdx !== undefined
       ? activeDay?.subModules?.[activeNode.mIdx]
       : activeDay?.subModules?.[0];
   const activeSections = activeModule?.sections || [];
-
-  // Safely get active section
   const activeSection = activeSections.find(
     (s: any) => s.id === activeSectionId,
   );
@@ -896,304 +1096,517 @@ export function ThreePanelCurriculumBuilder({
     (s: any) => s.id === activeSectionId,
   );
 
-  // --- ACTIONS ---
-  const addDay = (wIdx: number) => {
-    const next = [...(form.curriculum || [])];
-    const newDayId = `d-${Date.now().toString(36)}`;
-    next[wIdx].days.push({
-      id: newDayId,
-      label: `Day ${next[wIdx].days.length + 1}`,
-      title: `Day ${next[wIdx].days.length + 1}`,
-      isCompleted: false,
-      subModules: [
-        {
-          id: `m-${Date.now().toString(36)}`,
-          title: "Content",
-          type: "doc",
-          duration: "0",
-          isCompleted: false,
-          sections: [],
-        },
-      ],
+  // ── Cache mutation helper ──────────────────────────────────────────────────
+  function updateCachedWeek(weekId: string, updater: (w: any) => any) {
+    setWeekCache((prev) => {
+      const cur = prev[weekId];
+      if (!cur) return prev;
+      return { ...prev, [weekId]: updater(structuredClone(cur)) };
     });
-    update("curriculum", next);
-    setActiveNode({ wIdx, dIdx: next[wIdx].days.length - 1, mIdx: 0 });
+    setDirtyWeekIds((prev) => new Set([...prev, weekId]));
+  }
+
+  // ── Lazy-load: click a week stub ──────────────────────────────────────────
+  async function handleWeekClick(stub: WeekStub) {
+    if (
+      activeWeekId &&
+      activeWeekId !== stub.id &&
+      dirtyWeekIds.has(activeWeekId)
+    ) {
+      if (
+        !window.confirm(
+          "You have unsaved changes in the current week. Leave without saving?",
+        )
+      )
+        return;
+    }
+    setActiveWeekId(stub.id);
+    setActiveNode(null);
+    setActiveSectionId(null);
+    if (weekCache[stub.id]) return; // cache hit
+    setLoadingWeekId(stub.id);
+    try {
+      const r = await fetch(
+        `/api/admin/courses/${courseId}/curriculum/${stub.id}`,
+        { credentials: "include" },
+      );
+      const data = await r.json();
+      if (data.week)
+        setWeekCache((prev) => ({ ...prev, [stub.id]: data.week }));
+    } catch (err) {
+      console.error("Failed to load week:", err);
+    } finally {
+      setLoadingWeekId(null);
+    }
+  }
+
+  // ── Save active week ──────────────────────────────────────────────────────
+  async function saveActiveWeek() {
+    if (!activeWeekId || !weekCache[activeWeekId]) return;
+    setWeekSaving(true);
+    const week = weekCache[activeWeekId];
+    try {
+      const r = await fetch(
+        `/api/admin/courses/${courseId}/curriculum/${activeWeekId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(week),
+        },
+      );
+      if (!r.ok) throw new Error("Save failed");
+      setDirtyWeekIds((prev) => {
+        const n = new Set(prev);
+        n.delete(activeWeekId);
+        return n;
+      });
+      setWeekStubs((prev) =>
+        prev.map((s) =>
+          s.id === activeWeekId
+            ? { ...s, title: week.title, is_locked: week.is_locked ?? false, is_shared: week.is_shared ?? false }
+            : s,
+        ),
+      );
+      toast.success("Week saved!");
+    } catch {
+      toast.error("Failed to save week");
+    } finally {
+      setWeekSaving(false);
+    }
+  }
+
+  // ── Week reorder (optimistic) ─────────────────────────────────────────────
+  async function handleWeekReorder(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = weekStubs.findIndex((s) => s.id === active.id);
+    const newIdx = weekStubs.findIndex((s) => s.id === over.id);
+    const newStubs = arrayMove(weekStubs, oldIdx, newIdx);
+    const prevStubs = weekStubs;
+    setWeekStubs(newStubs);
+    try {
+      await fetch(`/api/admin/courses/${courseId}/curriculum/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ orderedIds: newStubs.map((s) => s.id) }),
+      });
+    } catch {
+      setWeekStubs(prevStubs);
+    }
+  }
+
+  // ── Add week ──────────────────────────────────────────────────────────────
+  const addWeekNew = async () => {
+    const weekId = `w-${Date.now().toString(36)}`;
+    const title = `Week ${weekStubs.length + 1}`;
+    try {
+      const r = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: weekId, title, is_locked: false, is_shared: false, days: [], quiz: null }),
+      });
+      const data = await r.json();
+      if (data.week) {
+        setWeekStubs((prev) => [...prev, data.week]);
+        setWeekCache((prev) => ({ ...prev, [data.week.id]: data.week }));
+      }
+    } catch (err) {
+      console.error("Failed to add week:", err);
+    }
+  };
+
+  // ── Delete week ───────────────────────────────────────────────────────────
+  const removeWeekNew = async (stub: WeekStub) => {
+    if (!window.confirm("Delete this entire week and all its days? This cannot be undone.")) return;
+    try {
+      await fetch(`/api/admin/courses/${courseId}/curriculum/${stub.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      setWeekStubs((prev) => prev.filter((s) => s.id !== stub.id));
+      setWeekCache((prev) => { const n = { ...prev }; delete n[stub.id]; return n; });
+      setDirtyWeekIds((prev) => { const n = new Set(prev); n.delete(stub.id); return n; });
+      if (activeWeekId === stub.id) {
+        setActiveWeekId(null);
+        setActiveNode(null);
+        setActiveSectionId(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete week:", err);
+    }
+  };
+
+  // ── Toggle week lock ──────────────────────────────────────────────────────
+  const toggleWeekLock = async (stub: WeekStub) => {
+    const newLocked = !stub.is_locked;
+    setWeekStubs((prev) => prev.map((s) => (s.id === stub.id ? { ...s, is_locked: newLocked } : s)));
+    if (weekCache[stub.id]) {
+      updateCachedWeek(stub.id, (w) => ({ ...w, is_locked: newLocked }));
+    } else {
+      try {
+        await fetch(`/api/admin/courses/${courseId}/curriculum/${stub.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ is_locked: newLocked }),
+        });
+      } catch {
+        setWeekStubs((prev) => prev.map((s) => (s.id === stub.id ? { ...s, is_locked: stub.is_locked } : s)));
+      }
+    }
+  };
+
+  // ── Rename week in cache/stub ─────────────────────────────────────────────
+  const renameWeekInCache = (stub: WeekStub, title: string) => {
+    setWeekStubs((prev) => prev.map((s) => (s.id === stub.id ? { ...s, title } : s)));
+    if (weekCache[stub.id]) {
+      updateCachedWeek(stub.id, (w) => ({ ...w, title }));
+    } else {
+      fetch(`/api/admin/courses/${courseId}/curriculum/${stub.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ title }),
+      }).catch(console.error);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // SHARED ACTION FUNCTIONS
+  // Old mode  → read/write form.curriculum[wIdx]
+  // New mode  → read/write weekCache[weekStubs[wIdx].id]
+  // ────────────────────────────────────────────────────────────────────────────
+
+  const addDay = (wIdx: number) => {
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      const week = weekCache[stub.id];
+      const newDayId = `d-${Date.now().toString(36)}`;
+      const newDay = {
+        id: newDayId,
+        label: `Day ${(week.days ?? []).length + 1}`,
+        title: `Day ${(week.days ?? []).length + 1}`,
+        isCompleted: false,
+        subModules: [{ id: `m-${Date.now().toString(36)}`, title: "Content", type: "doc", duration: "0", isCompleted: false, sections: [] }],
+      };
+      const newDays = [...(week.days ?? []), newDay];
+      setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days: newDays } }));
+      setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+      setActiveWeekId(stub.id);
+      setActiveNode({ wIdx, dIdx: newDays.length - 1, mIdx: 0 });
+    } else {
+      const next = [...(form.curriculum || [])];
+      const newDayId = `d-${Date.now().toString(36)}`;
+      next[wIdx].days.push({
+        id: newDayId,
+        label: `Day ${next[wIdx].days.length + 1}`,
+        title: `Day ${next[wIdx].days.length + 1}`,
+        isCompleted: false,
+        subModules: [{ id: `m-${Date.now().toString(36)}`, title: "Content", type: "doc", duration: "0", isCompleted: false, sections: [] }],
+      });
+      update("curriculum", next);
+      setActiveNode({ wIdx, dIdx: next[wIdx].days.length - 1, mIdx: 0 });
+    }
   };
 
   const addWeek = () => {
+    if (isNewMode) { addWeekNew(); return; }
     const next = [...(form.curriculum || [])];
-    next.push({
-      id: `w-${Date.now().toString(36)}`,
-      title: `Week ${next.length + 1}`,
-      days: [],
-    });
+    next.push({ id: `w-${Date.now().toString(36)}`, title: `Week ${next.length + 1}`, days: [] });
     update("curriculum", next);
   };
 
   const removeWeek = (wIdx: number) => {
-    if (
-      !window.confirm(
-        `Delete this entire week and all its days? This cannot be undone.`,
-      )
-    )
-      return;
+    if (isNewMode) { const stub = weekStubs[wIdx]; if (stub) removeWeekNew(stub); return; }
+    if (!window.confirm(`Delete this entire week and all its days? This cannot be undone.`)) return;
     const next = [...form.curriculum];
     next.splice(wIdx, 1);
     update("curriculum", next);
-    if (activeNode?.wIdx === wIdx) {
-      setActiveNode(null);
-      setActiveSectionId(null);
-    } else if (activeNode && activeNode.wIdx > wIdx) {
-      setActiveNode({ ...activeNode, wIdx: activeNode.wIdx - 1 });
-    }
+    if (activeNode?.wIdx === wIdx) { setActiveNode(null); setActiveSectionId(null); }
+    else if (activeNode && activeNode.wIdx > wIdx) setActiveNode({ ...activeNode, wIdx: activeNode.wIdx - 1 });
   };
 
   const renameWeek = (wIdx: number, title: string) => {
+    if (isNewMode) { const stub = weekStubs[wIdx]; if (stub) renameWeekInCache(stub, title); return; }
     const next = structuredClone(form.curriculum);
     next[wIdx].title = title;
     update("curriculum", next);
   };
 
   const renameDay = (wIdx: number, dIdx: number, title: string) => {
-    const next = structuredClone(form.curriculum);
-    next[wIdx].days[dIdx].title = title;
-    next[wIdx].days[dIdx].label = title;
-    update("curriculum", next);
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        if (days[dIdx]) { days[dIdx].title = title; days[dIdx].label = title; }
+        return { ...w, days };
+      });
+    } else {
+      const next = structuredClone(form.curriculum);
+      next[wIdx].days[dIdx].title = title;
+      next[wIdx].days[dIdx].label = title;
+      update("curriculum", next);
+    }
   };
 
   const removeDay = (wIdx: number, dIdx: number) => {
-    if (
-      !window.confirm(
-        `Delete this day and all its content? This cannot be undone.`,
-      )
-    )
-      return;
-    const next = [...form.curriculum];
-    next[wIdx].days.splice(dIdx, 1);
-    update("curriculum", next);
-    if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx) {
-      setActiveNode(null);
-      setActiveSectionId(null);
-    } else if (activeNode?.wIdx === wIdx && activeNode.dIdx > dIdx) {
-      setActiveNode({ ...activeNode, dIdx: activeNode.dIdx - 1 });
+    if (!window.confirm(`Delete this day and all its content? This cannot be undone.`)) return;
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = [...(w.days ?? [])];
+        days.splice(dIdx, 1);
+        return { ...w, days };
+      });
+    } else {
+      const next = [...form.curriculum];
+      next[wIdx].days.splice(dIdx, 1);
+      update("curriculum", next);
     }
+    if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx) { setActiveNode(null); setActiveSectionId(null); }
+    else if (activeNode?.wIdx === wIdx && activeNode.dIdx > dIdx) setActiveNode({ ...activeNode, dIdx: activeNode.dIdx - 1 });
   };
 
   const addLesson = (wIdx: number, dIdx: number) => {
-    const next = [...form.curriculum];
-    next[wIdx].days[dIdx].subModules.push({
-      id: `m-${Date.now().toString(36)}`,
-      title: "New Lesson",
-      type: "lesson",
-      duration: "0",
-      isCompleted: false,
-      sections: [],
-    });
-    update("curriculum", next);
-    setActiveNode({
-      wIdx,
-      dIdx,
-      mIdx: next[wIdx].days[dIdx].subModules.length - 1,
-    });
+    const newMod = { id: `m-${Date.now().toString(36)}`, title: "New Lesson", type: "lesson", duration: "0", isCompleted: false, sections: [] };
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      const week = weekCache[stub.id];
+      const days = structuredClone(week.days ?? []);
+      if (!days[dIdx]) return;
+      days[dIdx].subModules = [...(days[dIdx].subModules ?? []), newMod];
+      setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days } }));
+      setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+      setActiveWeekId(stub.id);
+      setActiveNode({ wIdx, dIdx, mIdx: days[dIdx].subModules.length - 1 });
+    } else {
+      const next = [...form.curriculum];
+      next[wIdx].days[dIdx].subModules.push(newMod);
+      update("curriculum", next);
+      setActiveNode({ wIdx, dIdx, mIdx: next[wIdx].days[dIdx].subModules.length - 1 });
+    }
   };
 
   const addQuiz = (wIdx: number, dIdx: number) => {
-    const next = [...form.curriculum];
-    next[wIdx].days[dIdx].subModules.push({
-      id: `m-${Date.now().toString(36)}`,
-      title: "Quiz",
-      type: "quiz",
-      duration: "0",
-      isCompleted: false,
-      quizData: { questions: [], passingScore: 70, maxAttempts: undefined },
-    });
-    update("curriculum", next);
-    setActiveNode({
-      wIdx,
-      dIdx,
-      mIdx: next[wIdx].days[dIdx].subModules.length - 1,
-    });
+    const newMod = { id: `m-${Date.now().toString(36)}`, title: "Quiz", type: "quiz", duration: "0", isCompleted: false, quizData: { questions: [], passingScore: 70, maxAttempts: undefined } };
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      const week = weekCache[stub.id];
+      const days = structuredClone(week.days ?? []);
+      if (!days[dIdx]) return;
+      days[dIdx].subModules = [...(days[dIdx].subModules ?? []), newMod];
+      setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days } }));
+      setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+      setActiveWeekId(stub.id);
+      setActiveNode({ wIdx, dIdx, mIdx: days[dIdx].subModules.length - 1 });
+    } else {
+      const next = [...form.curriculum];
+      next[wIdx].days[dIdx].subModules.push(newMod);
+      update("curriculum", next);
+      setActiveNode({ wIdx, dIdx, mIdx: next[wIdx].days[dIdx].subModules.length - 1 });
+    }
   };
 
   const addAssignment = (wIdx: number, dIdx: number) => {
-    const next = [...form.curriculum];
-    next[wIdx].days[dIdx].subModules.push({
-      id: `m-${Date.now().toString(36)}`,
-      title: "Assignment",
-      type: "assignment",
-      duration: "0",
-      isCompleted: false,
-      assignmentData: {
-        title: "",
-        instructions: "",
-        allowedSubmissionTypes: ["text"],
-        requiresApproval: true,
-      },
-    });
-    update("curriculum", next);
-    setActiveNode({
-      wIdx,
-      dIdx,
-      mIdx: next[wIdx].days[dIdx].subModules.length - 1,
-    });
+    const newMod = { id: `m-${Date.now().toString(36)}`, title: "Assignment", type: "assignment", duration: "0", isCompleted: false, assignmentData: { title: "", instructions: "", allowedSubmissionTypes: ["text"], requiresApproval: true } };
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      const week = weekCache[stub.id];
+      const days = structuredClone(week.days ?? []);
+      if (!days[dIdx]) return;
+      days[dIdx].subModules = [...(days[dIdx].subModules ?? []), newMod];
+      setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days } }));
+      setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+      setActiveWeekId(stub.id);
+      setActiveNode({ wIdx, dIdx, mIdx: days[dIdx].subModules.length - 1 });
+    } else {
+      const next = [...form.curriculum];
+      next[wIdx].days[dIdx].subModules.push(newMod);
+      update("curriculum", next);
+      setActiveNode({ wIdx, dIdx, mIdx: next[wIdx].days[dIdx].subModules.length - 1 });
+    }
   };
 
-  const renameLesson = (
-    wIdx: number,
-    dIdx: number,
-    mIdx: number,
-    title: string,
-  ) => {
-    const next = structuredClone(form.curriculum);
-    next[wIdx].days[dIdx].subModules[mIdx].title = title;
-    update("curriculum", next);
+  const renameLesson = (wIdx: number, dIdx: number, mIdx: number, title: string) => {
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        if (days[dIdx]?.subModules?.[mIdx]) days[dIdx].subModules[mIdx].title = title;
+        return { ...w, days };
+      });
+    } else {
+      const next = structuredClone(form.curriculum);
+      next[wIdx].days[dIdx].subModules[mIdx].title = title;
+      update("curriculum", next);
+    }
   };
 
   const removeLesson = (wIdx: number, dIdx: number, mIdx: number) => {
-    if (
-      !window.confirm(
-        `Delete this lesson and all its content? This cannot be undone.`,
-      )
-    )
-      return;
-    const next = [...form.curriculum];
-    next[wIdx].days[dIdx].subModules.splice(mIdx, 1);
-    update("curriculum", next);
-    if (
-      activeNode?.wIdx === wIdx &&
-      activeNode?.dIdx === dIdx &&
-      activeNode?.mIdx === mIdx
-    ) {
-      setActiveNode(null);
-      setActiveSectionId(null);
-    } else if (
-      activeNode?.wIdx === wIdx &&
-      activeNode?.dIdx === dIdx &&
-      activeNode.mIdx &&
-      activeNode.mIdx > mIdx
-    ) {
-      setActiveNode({ ...activeNode, mIdx: activeNode.mIdx - 1 });
+    if (!window.confirm(`Delete this lesson and all its content? This cannot be undone.`)) return;
+    if (isNewMode) {
+      const stub = weekStubs[wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        if (days[dIdx]?.subModules) days[dIdx].subModules.splice(mIdx, 1);
+        return { ...w, days };
+      });
+    } else {
+      const next = [...form.curriculum];
+      next[wIdx].days[dIdx].subModules.splice(mIdx, 1);
+      update("curriculum", next);
     }
+    if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx && activeNode?.mIdx === mIdx) { setActiveNode(null); setActiveSectionId(null); }
+    else if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx && activeNode.mIdx && activeNode.mIdx > mIdx) setActiveNode({ ...activeNode, mIdx: activeNode.mIdx - 1 });
   };
 
   const addSection = (type: LessonSectionType, insertIndex?: number) => {
     if (!activeNode || !activeDay) return;
-    const next = [...form.curriculum];
-    let mod =
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-        activeNode.mIdx ?? 0
-      ];
-    if (!mod) {
-      mod = {
-        id: `m-${Date.now().toString(36)}`,
-        title: "Content",
-        type: "doc",
-        duration: "0",
-        isCompleted: false,
-        sections: [],
-      };
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules.push(mod);
-      setActiveNode({
-        ...activeNode,
-        mIdx: next[activeNode.wIdx].days[activeNode.dIdx].subModules.length - 1,
-      });
-    }
-    if (!mod.sections) mod.sections = [];
-
     const newSection = defaultSection(type);
-    if (typeof insertIndex === "number") {
-      mod.sections.splice(insertIndex + 1, 0, newSection);
+    if (isNewMode) {
+      const stub = weekStubs[activeNode.wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        const mod = days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0];
+        if (!mod) return w;
+        if (!mod.sections) mod.sections = [];
+        if (typeof insertIndex === "number") mod.sections.splice(insertIndex + 1, 0, newSection);
+        else mod.sections.push(newSection);
+        return { ...w, days };
+      });
     } else {
-      mod.sections.push(newSection);
+      const next = [...form.curriculum];
+      let mod = next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0];
+      if (!mod) {
+        mod = { id: `m-${Date.now().toString(36)}`, title: "Content", type: "doc", duration: "0", isCompleted: false, sections: [] };
+        next[activeNode.wIdx].days[activeNode.dIdx].subModules.push(mod);
+        setActiveNode({ ...activeNode, mIdx: next[activeNode.wIdx].days[activeNode.dIdx].subModules.length - 1 });
+      }
+      if (!mod.sections) mod.sections = [];
+      if (typeof insertIndex === "number") mod.sections.splice(insertIndex + 1, 0, newSection);
+      else mod.sections.push(newSection);
+      update("curriculum", next);
     }
-    update("curriculum", next);
     setActiveSectionId(newSection.id);
   };
 
   const removeSection = (sectionId: string) => {
     if (!activeNode) return;
-    const next = [...form.curriculum];
-    const mod =
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-        activeNode.mIdx ?? 0
-      ];
-    if (mod && mod.sections) {
-      mod.sections = mod.sections.filter((s: any) => s.id !== sectionId);
-      update("curriculum", next);
-      if (activeSectionId === sectionId) setActiveSectionId(null);
+    if (isNewMode) {
+      const stub = weekStubs[activeNode.wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        const mod = days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0];
+        if (mod?.sections) mod.sections = mod.sections.filter((s: any) => s.id !== sectionId);
+        return { ...w, days };
+      });
+    } else {
+      const next = [...form.curriculum];
+      const mod = next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0];
+      if (mod && mod.sections) { mod.sections = mod.sections.filter((s: any) => s.id !== sectionId); update("curriculum", next); }
     }
+    if (activeSectionId === sectionId) setActiveSectionId(null);
   };
 
   const updateSection = (fields: Partial<LessonSection>) => {
     if (!activeNode || activeSectionIndex === -1) return;
-    const next = [...form.curriculum];
-    const mod =
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-        activeNode.mIdx ?? 0
-      ];
-    mod.sections[activeSectionIndex] = {
-      ...mod.sections[activeSectionIndex],
-      ...fields,
-    };
-    update("curriculum", next);
+    if (isNewMode) {
+      const stub = weekStubs[activeNode.wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        const mod = days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0];
+        if (mod?.sections) mod.sections[activeSectionIndex] = { ...mod.sections[activeSectionIndex], ...fields };
+        return { ...w, days };
+      });
+    } else {
+      const next = [...form.curriculum];
+      const mod = next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0];
+      mod.sections[activeSectionIndex] = { ...mod.sections[activeSectionIndex], ...fields };
+      update("curriculum", next);
+    }
   };
 
   const updateModule = (fields: Partial<any>) => {
     if (!activeNode) return;
-    const next = [...form.curriculum];
-    const mod =
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-        activeNode.mIdx ?? 0
-      ];
-    if (mod) {
-      Object.assign(mod, fields);
-      update("curriculum", next);
+    if (isNewMode) {
+      const stub = weekStubs[activeNode.wIdx];
+      if (!stub || !weekCache[stub.id]) return;
+      updateCachedWeek(stub.id, (w) => {
+        const days = structuredClone(w.days ?? []);
+        const mod = days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0];
+        if (mod) Object.assign(mod, fields);
+        return { ...w, days };
+      });
+    } else {
+      const next = [...form.curriculum];
+      const mod = next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0];
+      if (mod) { Object.assign(mod, fields); update("curriculum", next); }
     }
   };
 
   const handleDragEndDays = (e: DragEndEvent, wIdx: number) => {
     const { active, over } = e;
     if (over && active.id !== over.id) {
-      const next = [...form.curriculum];
-      const days = next[wIdx].days;
-      const oldIdx = days.findIndex((d: any) => d.id === active.id);
-      const newIdx = days.findIndex((d: any) => d.id === over.id);
-      next[wIdx].days = arrayMove(days, oldIdx, newIdx);
-      update("curriculum", next);
-
-      // Update activeNode to follow the dragged day
-      if (
-        activeNode &&
-        activeNode.wIdx === wIdx &&
-        activeNode.dIdx === oldIdx
-      ) {
-        setActiveNode({ ...activeNode, dIdx: newIdx });
+      if (isNewMode) {
+        const stub = weekStubs[wIdx];
+        if (!stub || !weekCache[stub.id]) return;
+        const week = weekCache[stub.id];
+        const days = [...(week.days ?? [])];
+        const oldIdx = days.findIndex((d: any) => d.id === active.id);
+        const newIdx = days.findIndex((d: any) => d.id === over.id);
+        const newDays = arrayMove(days, oldIdx, newIdx);
+        setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days: newDays } }));
+        setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+        if (activeNode?.wIdx === wIdx && activeNode?.dIdx === oldIdx) setActiveNode({ ...activeNode, dIdx: newIdx });
+      } else {
+        const next = [...form.curriculum];
+        const days = next[wIdx].days;
+        const oldIdx = days.findIndex((d: any) => d.id === active.id);
+        const newIdx = days.findIndex((d: any) => d.id === over.id);
+        next[wIdx].days = arrayMove(days, oldIdx, newIdx);
+        update("curriculum", next);
+        if (activeNode?.wIdx === wIdx && activeNode?.dIdx === oldIdx) setActiveNode({ ...activeNode, dIdx: newIdx });
       }
     }
   };
 
-  const handleDragEndLessons = (
-    e: DragEndEvent,
-    wIdx: number,
-    dIdx: number,
-  ) => {
+  const handleDragEndLessons = (e: DragEndEvent, wIdx: number, dIdx: number) => {
     const { active, over } = e;
     if (over && active.id !== over.id) {
-      const next = [...form.curriculum];
-      const lessons = next[wIdx].days[dIdx].subModules;
-      const oldIdx = lessons.findIndex((m: any) => m.id === active.id);
-      const newIdx = lessons.findIndex((m: any) => m.id === over.id);
-      next[wIdx].days[dIdx].subModules = arrayMove(lessons, oldIdx, newIdx);
-      update("curriculum", next);
-
-      // Update activeNode to follow the dragged lesson
-      if (
-        activeNode &&
-        activeNode.wIdx === wIdx &&
-        activeNode.dIdx === dIdx &&
-        activeNode.mIdx === oldIdx
-      ) {
-        setActiveNode({ ...activeNode, mIdx: newIdx });
+      if (isNewMode) {
+        const stub = weekStubs[wIdx];
+        if (!stub || !weekCache[stub.id]) return;
+        const week = weekCache[stub.id];
+        const days = structuredClone(week.days ?? []);
+        const lessons = days[dIdx]?.subModules ?? [];
+        const oldIdx = lessons.findIndex((m: any) => m.id === active.id);
+        const newIdx = lessons.findIndex((m: any) => m.id === over.id);
+        days[dIdx].subModules = arrayMove(lessons, oldIdx, newIdx);
+        setWeekCache((prev) => ({ ...prev, [stub.id]: { ...week, days } }));
+        setDirtyWeekIds((prev) => new Set([...prev, stub.id]));
+        if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx && activeNode?.mIdx === oldIdx) setActiveNode({ ...activeNode, mIdx: newIdx });
+      } else {
+        const next = [...form.curriculum];
+        const lessons = next[wIdx].days[dIdx].subModules;
+        const oldIdx = lessons.findIndex((m: any) => m.id === active.id);
+        const newIdx = lessons.findIndex((m: any) => m.id === over.id);
+        next[wIdx].days[dIdx].subModules = arrayMove(lessons, oldIdx, newIdx);
+        update("curriculum", next);
+        if (activeNode?.wIdx === wIdx && activeNode?.dIdx === dIdx && activeNode?.mIdx === oldIdx) setActiveNode({ ...activeNode, mIdx: newIdx });
       }
     }
   };
@@ -1201,39 +1614,56 @@ export function ThreePanelCurriculumBuilder({
   const handleDragEndSections = (e: DragEndEvent) => {
     const { active, over } = e;
     if (over && active.id !== over.id && activeNode) {
-      const next = [...form.curriculum];
-      const sections =
-        next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-          activeNode.mIdx ?? 0
-        ].sections;
-      const oldIdx = sections.findIndex((s: any) => s.id === active.id);
-      const newIdx = sections.findIndex((s: any) => s.id === over.id);
-      next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-        activeNode.mIdx ?? 0
-      ].sections = arrayMove(sections, oldIdx, newIdx);
-      update("curriculum", next);
+      if (isNewMode) {
+        const stub = weekStubs[activeNode.wIdx];
+        if (!stub || !weekCache[stub.id]) return;
+        updateCachedWeek(stub.id, (w) => {
+          const days = structuredClone(w.days ?? []);
+          const sections = days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0]?.sections ?? [];
+          const oldIdx = sections.findIndex((s: any) => s.id === active.id);
+          const newIdx = sections.findIndex((s: any) => s.id === over.id);
+          if (days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0])
+            days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].sections = arrayMove(sections, oldIdx, newIdx);
+          return { ...w, days };
+        });
+      } else {
+        const next = [...form.curriculum];
+        const sections = next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].sections;
+        const oldIdx = sections.findIndex((s: any) => s.id === active.id);
+        const newIdx = sections.findIndex((s: any) => s.id === over.id);
+        next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].sections = arrayMove(sections, oldIdx, newIdx);
+        update("curriculum", next);
+      }
     }
   };
 
   const helpRef = useRef<HTMLButtonElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
-
   useEffect(() => {
     const el = helpRef.current;
     if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
   }, [sidebarCollapsed]);
 
+  const totalDirty = dirtyWeekIds.size;
+
   return (
     <TooltipProvider>
       <div className="flex h-[85vh] border border-default rounded-xl overflow-hidden bg-background shadow-sm">
-        {/* LEFT PANEL: Curriculum Sidebar */}
+        {/* ── LEFT PANEL ── */}
         <div
           className={`flex flex-col border-r border-default transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-72"} bg-surface shrink-0 relative z-20`}
         >
           <div className="p-3 border-b border-default flex items-center justify-between gap-2">
             {!sidebarCollapsed && (
               <>
-                <h3 className="font-bold text-sm">Curriculum</h3>
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  Curriculum
+                  {isNewMode && totalDirty > 0 && (
+                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                      {totalDirty} unsaved
+                    </span>
+                  )}
+                </h3>
                 <button
                   type="button"
                   onClick={addWeek}
@@ -1264,73 +1694,116 @@ export function ThreePanelCurriculumBuilder({
             </Tooltip>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
             {!sidebarCollapsed &&
-              form.curriculum?.map((week: any, wIdx: number) => {
-                return (
-                  <WeekSection
-                    key={week.id}
-                    week={week}
-                    wIdx={wIdx}
-                    activeNode={activeNode}
-                    onAddDay={() => addDay(wIdx)}
-                    onRenameWeek={(title: string) => renameWeek(wIdx, title)}
-                    onRemoveWeek={() => removeWeek(wIdx)}
-                    onRenameDay={(dIdx: number, title: string) =>
-                      renameDay(wIdx, dIdx, title)
-                    }
-                    onRemoveDay={(dIdx: number) => removeDay(wIdx, dIdx)}
-                    onAddLesson={(dIdx: number) => addLesson(wIdx, dIdx)}
-                    onAddQuiz={(dIdx: number) => addQuiz(wIdx, dIdx)}
-                    onAddAssignment={(dIdx: number) =>
-                      addAssignment(wIdx, dIdx)
-                    }
-                    onSelectLesson={(dIdx: number, mIdx: number) =>
-                      setActiveNode({ wIdx, dIdx, mIdx })
-                    }
-                    onRenameLesson={(
-                      dIdx: number,
-                      mIdx: number,
-                      title: string,
-                    ) => renameLesson(wIdx, dIdx, mIdx, title)}
-                    onRemoveLesson={(dIdx: number, mIdx: number) =>
-                      removeLesson(wIdx, dIdx, mIdx)
-                    }
-                    onDragEndDays={(e: DragEndEvent) =>
-                      handleDragEndDays(e, wIdx)
-                    }
-                    onDragEndLessons={(e: DragEndEvent, dIdx: number) =>
-                      handleDragEndLessons(e, wIdx, dIdx)
-                    }
-                  />
-                );
-              })}
-            {!sidebarCollapsed &&
-              (!form.curriculum || form.curriculum.length === 0) && (
-                <div className="text-center py-8 text-muted text-xs">
-                  <p>No weeks yet.</p>
-                  <button
-                    type="button"
-                    onClick={addWeek}
-                    className="mt-2 text-primary font-semibold hover:underline"
-                  >
-                    + Add Week
-                  </button>
-                </div>
-              )}
+              (isNewMode ? (
+                // ── NEW MODE: stub list with lazy loading ──
+                stubsLoading ? (
+                  <div className="space-y-2 py-2 animate-pulse">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-7 bg-muted/20 rounded-lg" />
+                    ))}
+                  </div>
+                ) : weekStubs.length === 0 ? (
+                  <div className="text-center py-8 text-muted text-xs">
+                    <p>No weeks yet.</p>
+                    <button type="button" onClick={addWeek} className="mt-2 text-primary font-semibold hover:underline">
+                      + Add Week
+                    </button>
+                  </div>
+                ) : (
+                  <DndContext collisionDetection={closestCenter} onDragEnd={handleWeekReorder}>
+                    <SortableContext items={weekStubs.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-0.5">
+                        {weekStubs.map((stub, wIdx) => (
+                          <div key={stub.id}>
+                            <SortableWeekStubItem
+                              stub={stub}
+                              isActive={activeWeekId === stub.id}
+                              isDirty={dirtyWeekIds.has(stub.id)}
+                              isLoading={loadingWeekId === stub.id}
+                              onSelect={() => handleWeekClick(stub)}
+                              onDelete={() => removeWeekNew(stub)}
+                              onRename={(title) => renameWeekInCache(stub, title)}
+                              onToggleLock={() => toggleWeekLock(stub)}
+                              onAddDay={() => {
+                                if (weekCache[stub.id]) {
+                                  addDay(wIdx);
+                                } else {
+                                  handleWeekClick(stub);
+                                }
+                              }}
+                            />
+                            {loadingWeekId === stub.id && <WeekLoadingSkeleton />}
+                            {weekCache[stub.id] && (
+                              <WeekSection
+                                week={weekCache[stub.id]}
+                                wIdx={wIdx}
+                                hideHeader
+                                activeNode={activeNode}
+                                onAddDay={() => addDay(wIdx)}
+                                onRenameWeek={(title: string) => renameWeek(wIdx, title)}
+                                onRemoveWeek={() => removeWeek(wIdx)}
+                                onRenameDay={(dIdx: number, title: string) => renameDay(wIdx, dIdx, title)}
+                                onRemoveDay={(dIdx: number) => removeDay(wIdx, dIdx)}
+                                onAddLesson={(dIdx: number) => addLesson(wIdx, dIdx)}
+                                onAddQuiz={(dIdx: number) => addQuiz(wIdx, dIdx)}
+                                onAddAssignment={(dIdx: number) => addAssignment(wIdx, dIdx)}
+                                onSelectLesson={(dIdx: number, mIdx: number) => {
+                                  setActiveNode({ wIdx, dIdx, mIdx });
+                                  setActiveWeekId(stub.id);
+                                }}
+                                onRenameLesson={(dIdx: number, mIdx: number, title: string) => renameLesson(wIdx, dIdx, mIdx, title)}
+                                onRemoveLesson={(dIdx: number, mIdx: number) => removeLesson(wIdx, dIdx, mIdx)}
+                                onDragEndDays={(e: DragEndEvent) => handleDragEndDays(e, wIdx)}
+                                onDragEndLessons={(e: DragEndEvent, dIdx: number) => handleDragEndLessons(e, wIdx, dIdx)}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )
+              ) : (
+                // ── OLD MODE: full curriculum tree ──
+                <>
+                  {form.curriculum?.map((week: any, wIdx: number) => (
+                    <WeekSection
+                      key={week.id}
+                      week={week}
+                      wIdx={wIdx}
+                      activeNode={activeNode}
+                      onAddDay={() => addDay(wIdx)}
+                      onRenameWeek={(title: string) => renameWeek(wIdx, title)}
+                      onRemoveWeek={() => removeWeek(wIdx)}
+                      onRenameDay={(dIdx: number, title: string) => renameDay(wIdx, dIdx, title)}
+                      onRemoveDay={(dIdx: number) => removeDay(wIdx, dIdx)}
+                      onAddLesson={(dIdx: number) => addLesson(wIdx, dIdx)}
+                      onAddQuiz={(dIdx: number) => addQuiz(wIdx, dIdx)}
+                      onAddAssignment={(dIdx: number) => addAssignment(wIdx, dIdx)}
+                      onSelectLesson={(dIdx: number, mIdx: number) => setActiveNode({ wIdx, dIdx, mIdx })}
+                      onRenameLesson={(dIdx: number, mIdx: number, title: string) => renameLesson(wIdx, dIdx, mIdx, title)}
+                      onRemoveLesson={(dIdx: number, mIdx: number) => removeLesson(wIdx, dIdx, mIdx)}
+                      onDragEndDays={(e: DragEndEvent) => handleDragEndDays(e, wIdx)}
+                      onDragEndLessons={(e: DragEndEvent, dIdx: number) => handleDragEndLessons(e, wIdx, dIdx)}
+                    />
+                  ))}
+                  {(!form.curriculum || form.curriculum.length === 0) && (
+                    <div className="text-center py-8 text-muted text-xs">
+                      <p>No weeks yet.</p>
+                      <button type="button" onClick={addWeek} className="mt-2 text-primary font-semibold hover:underline">+ Add Week</button>
+                    </div>
+                  )}
+                </>
+              ))}
             {sidebarCollapsed && (
               <div className="flex flex-col items-center gap-4 mt-4">
-                <span
-                  className="text-xs font-bold tracking-widest uppercase text-muted"
-                  style={{ writingMode: "vertical-rl" }}
-                >
-                  Curriculum
-                </span>
+                <span className="text-xs font-bold tracking-widest uppercase text-muted" style={{ writingMode: "vertical-rl" }}>Curriculum</span>
               </div>
             )}
           </div>
 
-          {/* BOTTOM SIDEBAR SECTION */}
           <div className="p-3 border-t border-default bg-surface shrink-0 flex flex-col items-center gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1342,20 +1815,15 @@ export function ThreePanelCurriculumBuilder({
                   {!sidebarCollapsed && <span>Builder Help</span>}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">
-                Learn how to use the curriculum builder
-              </TooltipContent>
+              <TooltipContent side="right">Learn how to use the curriculum builder</TooltipContent>
             </Tooltip>
           </div>
         </div>
 
-        {/* CENTER PANEL */}
+        {/* ── CENTER PANEL ── */}
         <div
           className="flex-1 flex flex-col overflow-hidden transition-colors"
-          style={{
-            backgroundColor:
-              activeModule?.pageBgColor || "var(--bg-subtle)",
-          }}
+          style={{ backgroundColor: activeModule?.pageBgColor || "var(--bg-subtle)" }}
         >
           <div className="p-4 border-b border-default bg-surface flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -1363,9 +1831,7 @@ export function ThreePanelCurriculumBuilder({
                 (() => {
                   const m = getModuleTypeMeta(activeModule.type);
                   return (
-                    <span
-                      className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.bg} ${m.color}`}
-                    >
+                    <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.bg} ${m.color}`}>
                       <m.Icon className="size-3" />
                       {m.label}
                     </span>
@@ -1376,81 +1842,79 @@ export function ThreePanelCurriculumBuilder({
                   ? `${activeDay.title || activeDay.label} / ${activeModule.title || `Untitled ${getModuleTypeMeta(activeModule.type).label}`}`
                   : activeDay
                     ? `${activeDay.title || activeDay.label} - Content`
-                    : "Select a Lesson"}
+                    : isNewMode && loadingWeekId
+                      ? "Loading week…"
+                      : "Select a Lesson"}
               </h2>
             </div>
-            {activeDay &&
-              activeModule?.type !== "quiz" &&
-              activeModule?.type !== "assignment" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted">
-                    {activeSections.length} Sections
-                  </span>
-                </div>
-              )}
+            {activeDay && activeModule?.type !== "quiz" && activeModule?.type !== "assignment" && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted">{activeSections.length} Sections</span>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-6 relative">
-            {!activeDay ? (
+            {isNewMode && activeWeekId && loadingWeekId === activeWeekId ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted gap-3">
+                <span className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm">Loading week content…</p>
+              </div>
+            ) : !activeDay ? (
               <div className="h-full flex flex-col items-center justify-center text-muted">
                 <p>
-                  Select a lesson from the left sidebar to edit its content.
+                  {isNewMode && !activeWeekId
+                    ? "Click a week in the sidebar to load its content."
+                    : "Select a lesson from the left sidebar to edit its content."}
                 </p>
               </div>
             ) : activeModule?.type === "quiz" ? (
               /* QUIZ EDITOR */
               <div className="max-w-3xl mx-auto pb-20">
                 <QuizModuleEditor
-                  quizData={
-                    activeModule.quizData || { questions: [], passingScore: 70 }
-                  }
+                  quizData={activeModule.quizData || { questions: [], passingScore: 70 }}
                   onChange={(data) => {
                     if (!activeNode) return;
-                    const next = structuredClone(form.curriculum);
-                    next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-                      activeNode.mIdx ?? 0
-                    ].quizData = data;
-                    update("curriculum", next);
+                    if (isNewMode) {
+                      const stub = weekStubs[activeNode.wIdx];
+                      if (!stub || !weekCache[stub.id]) return;
+                      updateCachedWeek(stub.id, (w) => {
+                        const days = structuredClone(w.days ?? []);
+                        if (days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0])
+                          days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].quizData = data;
+                        return { ...w, days };
+                      });
+                    } else {
+                      const next = structuredClone(form.curriculum);
+                      next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].quizData = data;
+                      update("curriculum", next);
+                    }
                   }}
                 />
               </div>
             ) : activeModule?.type === "assignment" ? (
-              /* ASSIGNMENT STUDENT PREVIEW in center */
+              /* ASSIGNMENT STUDENT PREVIEW */
               <div className="max-w-4xl mx-auto pb-20 space-y-5">
-                {/* Preview header */}
                 <div className="flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5">
                   <ClipboardList className="size-4 text-orange-600 shrink-0" />
-                  <span className="text-xs font-bold text-orange-700">
-                    Student Preview — edit settings in the right panel
-                  </span>
+                  <span className="text-xs font-bold text-orange-700">Student Preview — edit settings in the right panel</span>
                 </div>
-
-                {/* Assignment card */}
                 <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="flex size-10 items-center justify-center rounded-xl bg-orange-100">
                       <ClipboardList className="size-5 text-orange-600" />
                     </span>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">
-                        Assignment
-                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">Assignment</p>
                       <h2 className="font-display text-lg font-bold text-foreground">
-                        {activeModule.assignmentData?.title ||
-                          activeModule.title ||
-                          "Untitled Assignment"}
+                        {activeModule.assignmentData?.title || activeModule.title || "Untitled Assignment"}
                       </h2>
                     </div>
                   </div>
-
-                  {/* Meta */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {activeModule.assignmentData?.dueDate && (
                       <span className="flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700 font-semibold">
-                        Due:{" "}
-                        {new Date(
-                          activeModule.assignmentData.dueDate,
-                        ).toLocaleString()}
+                        Due: {new Date(activeModule.assignmentData.dueDate).toLocaleString()}
                       </span>
                     )}
                     {activeModule.assignmentData?.totalMarks !== undefined && (
@@ -1458,131 +1922,58 @@ export function ThreePanelCurriculumBuilder({
                         {activeModule.assignmentData.totalMarks} marks
                       </span>
                     )}
-                    {(
-                      activeModule.assignmentData?.allowedSubmissionTypes || []
-                    ).map((t: string) => (
-                      <span
-                        key={t}
-                        className="rounded-full bg-surface border border-default px-2.5 py-1 text-[10px] font-bold text-muted uppercase tracking-wider"
-                      >
-                        {t}
-                      </span>
+                    {(activeModule.assignmentData?.allowedSubmissionTypes || []).map((t: string) => (
+                      <span key={t} className="rounded-full bg-surface border border-default px-2.5 py-1 text-[10px] font-bold text-muted uppercase tracking-wider">{t}</span>
                     ))}
                   </div>
-
-                  {/* Instructions */}
                   {activeModule.assignmentData?.instructions ? (
-                    <div
-                      className="prose prose-sm max-w-none text-secondary leading-relaxed"
-                      dangerouslySetInnerHTML={{
-                        __html: activeModule.assignmentData.instructions,
-                      }}
-                    />
+                    <div className="prose prose-sm max-w-none text-secondary leading-relaxed" dangerouslySetInnerHTML={{ __html: activeModule.assignmentData.instructions }} />
                   ) : (
-                    <p className="text-muted text-sm italic">
-                      No instructions added yet.
-                    </p>
+                    <p className="text-muted text-sm italic">No instructions added yet.</p>
                   )}
-
-                  {/* Attached files preview */}
-                  {(activeModule.assignmentData?.attachedFiles || []).length >
-                    0 && (
+                  {(activeModule.assignmentData?.attachedFiles || []).length > 0 && (
                     <div className="mt-5 pt-4 border-t border-default space-y-2">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                        Reference Materials
-                      </p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted">Reference Materials</p>
                       <div className="space-y-1.5">
-                        {(
-                          activeModule.assignmentData.attachedFiles as any[]
-                        ).map((f: any, i: number) => (
-                          <a
-                            key={i}
-                            href={f.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-xs text-primary hover:underline"
-                          >
-                            <FileText className="size-3.5 shrink-0" />
-                            {f.name}
+                        {(activeModule.assignmentData.attachedFiles as any[]).map((f: any, i: number) => (
+                          <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
+                            <FileText className="size-3.5 shrink-0" />{f.name}
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {/* Reference links preview */}
-                  {(activeModule.assignmentData?.referenceLinks || []).length >
-                    0 && (
+                  {(activeModule.assignmentData?.referenceLinks || []).length > 0 && (
                     <div className="mt-4 space-y-1.5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                        Reference Links
-                      </p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted">Reference Links</p>
                       <div className="space-y-1">
-                        {(
-                          activeModule.assignmentData.referenceLinks as any[]
-                        ).map((l: any, i: number) => (
-                          <a
-                            key={i}
-                            href={l.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                          >
-                            <ExternalLink className="size-3.5 shrink-0" />
-                            {l.label || l.url}
+                        {(activeModule.assignmentData.referenceLinks as any[]).map((l: any, i: number) => (
+                          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                            <ExternalLink className="size-3.5 shrink-0" />{l.label || l.url}
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Submission area preview */}
                 <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted mb-3">
-                    Submission Area (student view)
-                  </p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted mb-3">Submission Area (student view)</p>
                   <div className="space-y-3 opacity-60 pointer-events-none">
-                    {(
-                      activeModule.assignmentData?.allowedSubmissionTypes || [
-                        "text",
-                      ]
-                    ).includes("text") && (
-                      <textarea
-                        rows={4}
-                        className="w-full rounded-xl border border-default bg-surface p-3 text-sm resize-none"
-                        placeholder="Student types answer here..."
-                        readOnly
-                      />
+                    {(activeModule.assignmentData?.allowedSubmissionTypes || ["text"]).includes("text") && (
+                      <textarea rows={4} className="w-full rounded-xl border border-default bg-surface p-3 text-sm resize-none" placeholder="Student types answer here..." readOnly />
                     )}
-                    {(
-                      activeModule.assignmentData?.allowedSubmissionTypes || []
-                    ).includes("url") && (
-                      <input
-                        className="w-full rounded-xl border border-default bg-surface px-3 py-2.5 text-sm"
-                        placeholder="https://..."
-                        readOnly
-                      />
+                    {(activeModule.assignmentData?.allowedSubmissionTypes || []).includes("url") && (
+                      <input className="w-full rounded-xl border border-default bg-surface px-3 py-2.5 text-sm" placeholder="https://..." readOnly />
                     )}
-                    {((
-                      activeModule.assignmentData?.allowedSubmissionTypes || []
-                    ).includes("file") ||
-                      (
-                        activeModule.assignmentData?.allowedSubmissionTypes ||
-                        []
-                      ).includes("image")) && (
-                      <div className="rounded-xl border-2 border-dashed border-default bg-surface p-6 text-center text-xs text-muted">
-                        Drop files here or click to upload
-                      </div>
+                    {((activeModule.assignmentData?.allowedSubmissionTypes || []).includes("file") || (activeModule.assignmentData?.allowedSubmissionTypes || []).includes("image")) && (
+                      <div className="rounded-xl border-2 border-dashed border-default bg-surface p-6 text-center text-xs text-muted">Drop files here or click to upload</div>
                     )}
                   </div>
                 </div>
-
                 {activeModule.assignmentData?.requiresApproval && (
                   <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 font-semibold">
                     <Lock className="size-4 shrink-0" />
-                    Next day is locked until this assignment is approved by an
-                    admin.
+                    Next day is locked until this assignment is approved by an admin.
                   </div>
                 )}
               </div>
@@ -1590,32 +1981,18 @@ export function ThreePanelCurriculumBuilder({
               /* LESSON EDITOR */
               <div
                 className={`max-w-3xl mx-auto space-y-6 pb-20 ${
-                  activeModule?.pagePadding === "sm"
-                    ? "px-4 sm:px-8"
-                    : activeModule?.pagePadding === "md"
-                      ? "px-6 sm:px-12"
-                      : activeModule?.pagePadding === "lg"
-                        ? "px-8 sm:px-16 lg:px-24"
-                        : activeModule?.pagePadding === "xl"
-                          ? "px-10 sm:px-20 lg:px-32"
-                          : ""
+                  activeModule?.pagePadding === "sm" ? "px-4 sm:px-8"
+                    : activeModule?.pagePadding === "md" ? "px-6 sm:px-12"
+                    : activeModule?.pagePadding === "lg" ? "px-8 sm:px-16 lg:px-24"
+                    : activeModule?.pagePadding === "xl" ? "px-10 sm:px-20 lg:px-32"
+                    : ""
                 }`}
               >
-                {/* Sections List */}
-                <DndContext
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEndSections}
-                >
-                  <SortableContext
-                    items={activeSections.map((s: any) => s.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
+                <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEndSections}>
+                  <SortableContext items={activeSections.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-0">
                       {activeSections.map((section: any, idx: number) => (
-                        <div
-                          key={section.id}
-                          className="relative group/wrapper"
-                        >
+                        <div key={section.id} className="relative group/wrapper">
                           <SortableSectionItem
                             section={section}
                             isActive={activeSectionId === section.id}
@@ -1623,22 +2000,12 @@ export function ThreePanelCurriculumBuilder({
                             onRemove={() => removeSection(section.id)}
                             pageBgColor={activeModule?.pageBgColor}
                           />
-                          {/* Add button between sections (hover on wrapper) */}
                           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover/wrapper:opacity-100 transition-opacity">
                             <div className="bg-surface border border-default shadow-sm rounded-full p-1 flex items-center gap-1 group/add">
                               <Plus className="size-4 text-muted group-hover/add:hidden" />
                               <div className="hidden group-hover/add:flex items-center gap-1">
                                 {SECTION_TYPES.map((t) => (
-                                  <button
-                                    type="button"
-                                    key={t.type}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      addSection(t.type, idx);
-                                    }}
-                                    className="p-1.5 hover:bg-subtle rounded-full text-primary transition-colors"
-                                    title={`Add ${t.label}`}
-                                  >
+                                  <button type="button" key={t.type} onClick={(e) => { e.stopPropagation(); addSection(t.type, idx); }} className="p-1.5 hover:bg-subtle rounded-full text-primary transition-colors" title={`Add ${t.label}`}>
                                     <t.Icon className="size-3" />
                                   </button>
                                 ))}
@@ -1650,22 +2017,12 @@ export function ThreePanelCurriculumBuilder({
                     </div>
                   </SortableContext>
                 </DndContext>
-
-                {/* Add Section Buttons */}
                 <div className="border border-dashed border-default rounded-xl p-6 bg-elevated text-center mt-8">
-                  <p className="text-sm text-muted mb-4 font-medium">
-                    Add new section
-                  </p>
+                  <p className="text-sm text-muted mb-4 font-medium">Add new section</p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {SECTION_TYPES.map((t) => (
-                      <button
-                        type="button"
-                        key={t.type}
-                        onClick={() => addSection(t.type)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-default bg-surface hover:border-primary hover:bg-primary/5 transition-colors text-sm"
-                      >
-                        <t.Icon className="size-4 text-primary" />
-                        {t.label}
+                      <button type="button" key={t.type} onClick={() => addSection(t.type)} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-default bg-surface hover:border-primary hover:bg-primary/5 transition-colors text-sm">
+                        <t.Icon className="size-4 text-primary" />{t.label}
                       </button>
                     ))}
                   </div>
@@ -1675,195 +2032,102 @@ export function ThreePanelCurriculumBuilder({
           </div>
         </div>
 
-        {/* RIGHT PANEL: Section Editor */}
+        {/* ── RIGHT PANEL ── */}
         <div className="w-80 border-l border-default bg-surface flex flex-col shrink-0">
           <div className="p-4 border-b border-default flex items-center">
             <h3 className="font-bold">Section Editor</h3>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            {/* Assignment: right panel = editor */}
             {activeModule?.type === "assignment" ? (
               <AssignmentModuleEditor
                 moduleId={activeModule.id}
-                assignmentData={
-                  activeModule.assignmentData || {
-                    title: "",
-                    instructions: "",
-                    allowedSubmissionTypes: ["text"],
-                    requiresApproval: true,
-                  }
-                }
+                assignmentData={activeModule.assignmentData || { title: "", instructions: "", allowedSubmissionTypes: ["text"], requiresApproval: true }}
                 onChange={(data) => {
                   if (!activeNode) return;
-                  const next = structuredClone(form.curriculum);
-                  next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-                    activeNode.mIdx ?? 0
-                  ].assignmentData = data;
-                  next[activeNode.wIdx].days[activeNode.dIdx].subModules[
-                    activeNode.mIdx ?? 0
-                  ].title = data.title;
-                  update("curriculum", next);
+                  if (isNewMode) {
+                    const stub = weekStubs[activeNode.wIdx];
+                    if (!stub || !weekCache[stub.id]) return;
+                    updateCachedWeek(stub.id, (w) => {
+                      const days = structuredClone(w.days ?? []);
+                      if (days[activeNode.dIdx]?.subModules?.[activeNode.mIdx ?? 0]) {
+                        days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].assignmentData = data;
+                        days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].title = data.title;
+                      }
+                      return { ...w, days };
+                    });
+                  } else {
+                    const next = structuredClone(form.curriculum);
+                    next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].assignmentData = data;
+                    next[activeNode.wIdx].days[activeNode.dIdx].subModules[activeNode.mIdx ?? 0].title = data.title;
+                    update("curriculum", next);
+                  }
                 }}
               />
             ) : !activeSection ? (
               activeModule ? (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted border-b border-default pb-2">
-                    Page Settings
-                  </h4>
-
-                  {/* Page Background Color Picker */}
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted border-b border-default pb-2">Page Settings</h4>
                   <div className="space-y-1 mt-4">
-                    <label className="block text-xs font-bold text-muted mb-1">
-                      Page Background Color
-                    </label>
+                    <label className="block text-xs font-bold text-muted mb-1">Page Background Color</label>
                     <div className="flex items-center gap-3">
                       <div className="relative size-8 rounded-md overflow-hidden border border-default shadow-sm shrink-0">
-                        <input
-                          type="color"
-                          value={activeModule?.pageBgColor || "#f8fafc"}
-                          onChange={(e) =>
-                            updateModule({ pageBgColor: e.target.value })
-                          }
-                          className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
-                        />
+                        <input type="color" value={activeModule?.pageBgColor || "#f8fafc"} onChange={(e) => updateModule({ pageBgColor: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => updateModule({ pageBgColor: "" })}
-                        className="text-xs font-semibold text-muted hover:text-red-500"
-                      >
-                        Reset to Default
-                      </button>
+                      <button type="button" onClick={() => updateModule({ pageBgColor: "" })} className="text-xs font-semibold text-muted hover:text-red-500">Reset to Default</button>
                     </div>
                   </div>
-
                   <div className="space-y-1 mt-4">
-                    <label className="block text-xs font-bold text-muted mb-1">
-                      Page Padding (Horizontal)
-                    </label>
+                    <label className="block text-xs font-bold text-muted mb-1">Page Padding (Horizontal)</label>
                     <div className="flex bg-surface rounded-lg p-1 border border-default flex-wrap gap-1">
                       {["none", "sm", "md", "lg", "xl"].map((p) => (
-                        <button
-                          type="button"
-                          key={p}
-                          onClick={() => updateModule({ pagePadding: p })}
-                          className={`flex-1 min-w-[45px] py-1.5 px-2 text-[8px] font-semibold rounded-md ${activeModule?.pagePadding === p || (!activeModule?.pagePadding && p === "none") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                        >
-                          {p.toUpperCase()}
-                        </button>
+                        <button type="button" key={p} onClick={() => updateModule({ pagePadding: p })} className={`flex-1 min-w-[45px] py-1.5 px-2 text-[8px] font-semibold rounded-md ${activeModule?.pagePadding === p || (!activeModule?.pagePadding && p === "none") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>{p.toUpperCase()}</button>
                       ))}
                     </div>
-                    <p className="text-[10px] text-muted mt-2 leading-relaxed">
-                      Adjusts horizontal padding for the entire document page in
-                      the student view.
-                    </p>
+                    <p className="text-[10px] text-muted mt-2 leading-relaxed">Adjusts horizontal padding for the entire document page in the student view.</p>
                   </div>
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-muted text-center text-sm px-4">
-                  <p>
-                    Select a lesson to view Page Settings, or select a section
-                    to edit its properties.
-                  </p>
+                  <p>Select a lesson to view Page Settings, or select a section to edit its properties.</p>
                 </div>
               )
             ) : (
               <div className="space-y-4">
-                {/* dynamic editor based on activeSection.type */}
                 <h4 className="text-xs font-bold uppercase tracking-widest text-muted border-b border-default pb-2">
-                  {SECTION_TYPES.find((t) => t.type === activeSection.type)
-                    ?.label || "Section"}{" "}
-                  Settings
+                  {SECTION_TYPES.find((t) => t.type === activeSection.type)?.label || "Section"} Settings
                 </h4>
-
-                {/* Section Background Color Picker */}
                 <div className="space-y-1 pb-4 border-b border-default">
-                  <label className="block text-xs font-bold text-muted mb-1">
-                    Section Background Color
-                  </label>
+                  <label className="block text-xs font-bold text-muted mb-1">Section Background Color</label>
                   <div className="flex items-center gap-3">
                     <div className="relative size-8 rounded-md overflow-hidden border border-default shadow-sm shrink-0">
-                      <input
-                        type="color"
-                        value={activeSection.bgColor || "#ffffff"}
-                        onChange={(e) =>
-                          updateSection({ bgColor: e.target.value })
-                        }
-                        className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
-                      />
+                      <input type="color" value={activeSection.bgColor || "#ffffff"} onChange={(e) => updateSection({ bgColor: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => updateSection({ bgColor: "" })}
-                      className="text-xs font-semibold text-muted hover:text-red-500"
-                    >
-                      Reset to Default
-                    </button>
+                    <button type="button" onClick={() => updateSection({ bgColor: "" })} className="text-xs font-semibold text-muted hover:text-red-500">Reset to Default</button>
                   </div>
                 </div>
-
-                {/* Global Alignment Setting */}
                 <div className="space-y-1 pb-4 border-b border-default">
-                  <label className="block text-xs font-bold text-muted">
-                    Content Alignment
-                  </label>
+                  <label className="block text-xs font-bold text-muted">Content Alignment</label>
                   <div className="flex bg-surface rounded-lg p-1 border border-default">
-                    <button
-                      type="button"
-                      onClick={() => updateSection({ align: "left" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "left" || !activeSection.align ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                    >
-                      Left
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateSection({ align: "center" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "center" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                    >
-                      Center
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateSection({ align: "right" })}
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "right" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                    >
-                      Right
-                    </button>
+                    <button type="button" onClick={() => updateSection({ align: "left" })} className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "left" || !activeSection.align ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>Left</button>
+                    <button type="button" onClick={() => updateSection({ align: "center" })} className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "center" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>Center</button>
+                    <button type="button" onClick={() => updateSection({ align: "right" })} className={`flex-1 py-1.5 text-xs font-semibold rounded-md ${activeSection.align === "right" ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>Right</button>
                   </div>
                 </div>
-
-                {/* Section Horizontal Padding */}
                 <div className="space-y-1 pb-4 border-b border-default">
-                  <label className="block text-xs font-bold text-muted">
-                    Horizontal Padding
-                  </label>
+                  <label className="block text-xs font-bold text-muted">Horizontal Padding</label>
                   <div className="flex bg-surface rounded-lg p-1 border border-default overflow-x-auto">
                     {(["none", "sm", "md", "lg", "xl"] as const).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => updateSection({ paddingX: p })}
-                        className={`flex-1 min-w-[45px] py-1.5 px-2 text-[10px] font-semibold rounded-md transition-colors ${activeSection.paddingX === p || (!activeSection.paddingX && p === "md") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                      >
-                        {p === "none" ? "None" : p.toUpperCase()}
-                      </button>
+                      <button key={p} type="button" onClick={() => updateSection({ paddingX: p })} className={`flex-1 min-w-[45px] py-1.5 px-2 text-[10px] font-semibold rounded-md transition-colors ${activeSection.paddingX === p || (!activeSection.paddingX && p === "md") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>{p === "none" ? "None" : p.toUpperCase()}</button>
                     ))}
                   </div>
                 </div>
 
                 {activeSection.type === "rich_text" && (
                   <div className="space-y-3">
-                    <p className="text-sm text-muted">
-                      Use the rich text editor to format your content.
-                    </p>
+                    <p className="text-sm text-muted">Use the rich text editor to format your content.</p>
                     <div className="bg-surface relative z-50">
-                      <RichTextEditor
-                        key={activeSection.id}
-                        value={activeSection.content}
-                        onChange={(v) => updateSection({ content: v })}
-                      />
+                      <RichTextEditor key={activeSection.id} value={activeSection.content} onChange={(v) => updateSection({ content: v })} />
                     </div>
                   </div>
                 )}
@@ -1871,99 +2135,30 @@ export function ThreePanelCurriculumBuilder({
                 {activeSection.type === "image" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Image URL
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.url}
-                        onChange={(e) => updateSection({ url: e.target.value })}
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Image URL</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.url} onChange={(e) => updateSection({ url: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Upload Image
-                      </label>
-                      <FileUploader
-                        folder={`lessons/${activeDay?.id}/images`}
-                        files={
-                          activeSection.url
-                            ? [
-                                {
-                                  url: activeSection.url,
-                                  name: "image",
-                                  type: "image/*",
-                                },
-                              ]
-                            : []
-                        }
-                        onChange={(files) => {
-                          if (files.length)
-                            updateSection({ url: files[0].url });
-                        }}
-                        role="admin"
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Upload Image</label>
+                      <FileUploader folder={`lessons/${activeDay?.id}/images`} files={activeSection.url ? [{ url: activeSection.url, name: "image", type: "image/*" }] : []} onChange={(files) => { if (files.length) updateSection({ url: files[0].url }); }} role="admin" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Caption
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.caption || ""}
-                        onChange={(e) =>
-                          updateSection({ caption: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Caption</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.caption || ""} onChange={(e) => updateSection({ caption: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Caption Alignment
-                      </label>
+                      <label className="block text-xs font-bold text-muted mb-1">Caption Alignment</label>
                       <div className="flex bg-surface rounded-lg p-1 border border-default">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateSection({ captionAlign: "left" })
-                          }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "left" || (!activeSection.captionAlign && (activeSection.align === "left" || !activeSection.align)) ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
-                        >
-                          Left
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateSection({ captionAlign: "center" })
-                          }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "center" || (!activeSection.captionAlign && activeSection.align === "center") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
-                        >
-                          Center
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateSection({ captionAlign: "right" })
-                          }
-                          className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "right" || (!activeSection.captionAlign && activeSection.align === "right") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}
-                        >
-                          Right
-                        </button>
+                        <button type="button" onClick={() => updateSection({ captionAlign: "left" })} className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "left" || (!activeSection.captionAlign && (activeSection.align === "left" || !activeSection.align)) ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}>Left</button>
+                        <button type="button" onClick={() => updateSection({ captionAlign: "center" })} className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "center" || (!activeSection.captionAlign && activeSection.align === "center") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}>Center</button>
+                        <button type="button" onClick={() => updateSection({ captionAlign: "right" })} className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.captionAlign === "right" || (!activeSection.captionAlign && activeSection.align === "right") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted"}`}>Right</button>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Image Size
-                      </label>
+                      <label className="block text-xs font-bold text-muted mb-1">Image Size</label>
                       <div className="flex bg-surface rounded-lg p-1 border border-default">
                         {["sm", "md", "lg", "full"].map((s) => (
-                          <button
-                            type="button"
-                            key={s}
-                            onClick={() => updateSection({ size: s as any })}
-                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "full") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                          >
-                            {s.toUpperCase()}
-                          </button>
+                          <button type="button" key={s} onClick={() => updateSection({ size: s as any })} className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "full") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>{s.toUpperCase()}</button>
                         ))}
                       </div>
                     </div>
@@ -1973,41 +2168,18 @@ export function ThreePanelCurriculumBuilder({
                 {activeSection.type === "video" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Video Title
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.title || ""}
-                        onChange={(e) =>
-                          updateSection({ title: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Video Title</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.title || ""} onChange={(e) => updateSection({ title: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        YouTube URL or ID
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.url}
-                        onChange={(e) => updateSection({ url: e.target.value })}
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">YouTube URL or ID</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.url} onChange={(e) => updateSection({ url: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Video Size
-                      </label>
+                      <label className="block text-xs font-bold text-muted mb-1">Video Size</label>
                       <div className="flex bg-surface rounded-lg p-1 border border-default">
                         {["sm", "md", "lg", "full"].map((s) => (
-                          <button
-                            type="button"
-                            key={s}
-                            onClick={() => updateSection({ size: s as any })}
-                            className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}
-                          >
-                            {s.toUpperCase()}
-                          </button>
+                          <button type="button" key={s} onClick={() => updateSection({ size: s as any })} className={`flex-1 py-1 text-xs font-semibold rounded-md ${activeSection.size === s || (!activeSection.size && s === "lg") ? "bg-elevated shadow-sm border border-default text-primary" : "text-muted hover:text-foreground"}`}>{s.toUpperCase()}</button>
                         ))}
                       </div>
                     </div>
@@ -2017,45 +2189,12 @@ export function ThreePanelCurriculumBuilder({
                 {activeSection.type === "pdf" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Document Title
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.filename || ""}
-                        onChange={(e) =>
-                          updateSection({ filename: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Document Title</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.filename || ""} onChange={(e) => updateSection({ filename: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Upload PDF
-                      </label>
-                      <FileUploader
-                        folder={`lessons/${activeDay?.id}/pdfs`}
-                        files={
-                          activeSection.url
-                            ? [
-                                {
-                                  url: activeSection.url,
-                                  name:
-                                    activeSection.filename || "document.pdf",
-                                  type: "application/pdf",
-                                },
-                              ]
-                            : []
-                        }
-                        onChange={(files) => {
-                          if (files.length) {
-                            updateSection({
-                              url: files[0].url,
-                              filename: files[0].name,
-                            });
-                          }
-                        }}
-                        role="admin"
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Upload PDF</label>
+                      <FileUploader folder={`lessons/${activeDay?.id}/pdfs`} files={activeSection.url ? [{ url: activeSection.url, name: activeSection.filename || "document.pdf", type: "application/pdf" }] : []} onChange={(files) => { if (files.length) { updateSection({ url: files[0].url, filename: files[0].name }); } }} role="admin" />
                     </div>
                   </div>
                 )}
@@ -2063,38 +2202,16 @@ export function ThreePanelCurriculumBuilder({
                 {activeSection.type === "link" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Link Title
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.title || ""}
-                        onChange={(e) =>
-                          updateSection({ title: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Link Title</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.title || ""} onChange={(e) => updateSection({ title: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        URL
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.url || ""}
-                        onChange={(e) => updateSection({ url: e.target.value })}
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">URL</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.url || ""} onChange={(e) => updateSection({ url: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y"
-                        value={activeSection.description || ""}
-                        onChange={(e) =>
-                          updateSection({ description: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Description</label>
+                      <textarea className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y" value={activeSection.description || ""} onChange={(e) => updateSection({ description: e.target.value })} />
                     </div>
                   </div>
                 )}
@@ -2102,57 +2219,24 @@ export function ThreePanelCurriculumBuilder({
                 {activeSection.type === "task" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Task Title
-                      </label>
-                      <input
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.title || ""}
-                        onChange={(e) =>
-                          updateSection({ title: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Task Title</label>
+                      <input className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.title || ""} onChange={(e) => updateSection({ title: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Instructions / Description
-                      </label>
-                      <textarea
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y min-h-[100px]"
-                        value={activeSection.description || ""}
-                        onChange={(e) =>
-                          updateSection({ description: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Instructions / Description</label>
+                      <textarea className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary resize-y min-h-[100px]" value={activeSection.description || ""} onChange={(e) => updateSection({ description: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Submission Type
-                      </label>
-                      <select
-                        className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary bg-surface"
-                        value={activeSection.submissionType || "url"}
-                        onChange={(e) =>
-                          updateSection({ submissionType: e.target.value })
-                        }
-                      >
+                      <label className="block text-xs font-bold text-muted mb-1">Submission Type</label>
+                      <select className="w-full border border-default rounded px-3 py-2 text-sm outline-none focus:border-primary bg-surface" value={activeSection.submissionType || "url"} onChange={(e) => updateSection({ submissionType: e.target.value })}>
                         <option value="url">URL Link</option>
                         <option value="file">File Upload</option>
                         <option value="text">Text Response</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-muted mb-1">
-                        Deadline (Optional)
-                      </label>
-                      <input
-                        type="datetime-local"
-                        className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary"
-                        value={activeSection.deadline || ""}
-                        onChange={(e) =>
-                          updateSection({ deadline: e.target.value })
-                        }
-                      />
+                      <label className="block text-xs font-bold text-muted mb-1">Deadline (Optional)</label>
+                      <input type="datetime-local" className="w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary" value={activeSection.deadline || ""} onChange={(e) => updateSection({ deadline: e.target.value })} />
                     </div>
                   </div>
                 )}
@@ -2160,324 +2244,77 @@ export function ThreePanelCurriculumBuilder({
                 {(activeSection as any).type === "columns" &&
                   (() => {
                     const s = activeSection as any;
-                    const colCount: 2 | 3 = s.columnCount || 2;
                     const cols: any[] = s.cols || [];
-                    const inputCls =
-                      "w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary";
-                    const colTypes = [
-                      { type: "rich_text", label: "Rich Text" },
-                      { type: "image", label: "Image" },
-                      { type: "video", label: "Video" },
-                      { type: "pdf", label: "PDF" },
-                      { type: "link", label: "Link" },
-                    ];
+                    const inputCls = "w-full border border-default bg-surface text-foreground rounded px-3 py-2 text-sm outline-none focus:border-primary";
+                    const colTypes = [{ type: "rich_text", label: "Rich Text" }, { type: "image", label: "Image" }, { type: "video", label: "Video" }, { type: "pdf", label: "PDF" }, { type: "link", label: "Link" }];
                     function mkCol(type: string) {
                       const id = `c_${Math.random().toString(36).slice(2, 8)}`;
                       switch (type) {
-                        case "rich_text":
-                          return { id, type, content: "" };
-                        case "image":
-                          return {
-                            id,
-                            type,
-                            url: "",
-                            caption: "",
-                            size: "full",
-                          };
-                        case "video":
-                          return { id, type, url: "", title: "" };
-                        case "pdf":
-                          return { id, type, url: "", filename: "" };
-                        case "link":
-                          return {
-                            id,
-                            type,
-                            title: "",
-                            url: "",
-                            description: "",
-                            thumbnailUrl: "",
-                          };
-                        default:
-                          return { id, type: "rich_text", content: "" };
+                        case "rich_text": return { id, type, content: "" };
+                        case "image": return { id, type, url: "", caption: "", size: "full" };
+                        case "video": return { id, type, url: "", title: "" };
+                        case "pdf": return { id, type, url: "", filename: "" };
+                        case "link": return { id, type, title: "", url: "", description: "", thumbnailUrl: "" };
+                        default: return { id, type: "rich_text", content: "" };
                       }
                     }
-                    const setN = (n: 2 | 3) => {
-                      const next = [...cols];
-                      while (next.length < n) next.push(mkCol("rich_text"));
-                      updateSection({
-                        columnCount: n,
-                        cols: next.slice(0, n),
-                      } as any);
-                    };
-                    const safeCols = [
-                      cols[0] || mkCol("rich_text"),
-                      cols[1] || mkCol("rich_text"),
-                    ];
-                    const patchCol = (i: number, f: any) =>
-                      updateSection({
-                        cols: safeCols.map((c: any, ci: number) =>
-                          ci === i ? { ...c, ...f } : c,
-                        ),
-                      } as any);
-                    const changeType = (i: number, t: string) =>
-                      updateSection({
-                        cols: safeCols.map((c: any, ci: number) =>
-                          ci === i ? { ...mkCol(t), id: c.id } : c,
-                        ),
-                      } as any);
-
+                    const safeCols = [cols[0] || mkCol("rich_text"), cols[1] || mkCol("rich_text")];
+                    const patchCol = (i: number, f: any) => updateSection({ cols: safeCols.map((c: any, ci: number) => ci === i ? { ...c, ...f } : c) } as any);
+                    const changeType = (i: number, t: string) => updateSection({ cols: safeCols.map((c: any, ci: number) => ci === i ? { ...mkCol(t), id: c.id } : c) } as any);
                     const activeColIdx = activeColTab < 2 ? activeColTab : 0;
                     const activeCol = safeCols[activeColIdx];
-
                     return (
                       <div className="space-y-4">
                         <div className="flex bg-surface rounded-lg p-1 border border-default">
                           {[0, 1].map((idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setActiveColTab(idx)}
-                              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                                activeColIdx === idx
-                                  ? "bg-primary text-primary-foreground shadow-sm"
-                                  : "text-muted hover:text-foreground hover:bg-black/5"
-                              }`}
-                            >
-                              Column {idx + 1}
-                            </button>
+                            <button key={idx} type="button" onClick={() => setActiveColTab(idx)} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${activeColIdx === idx ? "bg-primary text-primary-foreground shadow-sm" : "text-muted hover:text-foreground hover:bg-black/5"}`}>Column {idx + 1}</button>
                           ))}
                         </div>
-
                         <div className="rounded-lg border border-default bg-surface overflow-hidden">
                           <div className="flex items-center gap-2 bg-surface px-3 py-2 border-b border-default">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
-                              Type
-                            </span>
-                            <select
-                              value={activeCol.type}
-                              onChange={(e: any) =>
-                                changeType(activeColIdx, e.target.value)
-                              }
-                              className="ml-auto text-[10px] font-semibold border border-default rounded px-2 py-0.5 bg-surface text-secondary focus:outline-none focus:border-primary"
-                            >
-                              {colTypes.map((t: any) => (
-                                <option key={t.type} value={t.type}>
-                                  {t.label}
-                                </option>
-                              ))}
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Type</span>
+                            <select value={activeCol.type} onChange={(e: any) => changeType(activeColIdx, e.target.value)} className="ml-auto text-[10px] font-semibold border border-default rounded px-2 py-0.5 bg-surface text-secondary focus:outline-none focus:border-primary">
+                              {colTypes.map((t: any) => <option key={t.type} value={t.type}>{t.label}</option>)}
                             </select>
                           </div>
                           <div className="p-2.5 space-y-2">
                             {activeCol.type === "rich_text" && (
                               <div className="bg-surface relative z-50">
-                                <RichTextEditor
-                                  key={`${activeSection.id}-col-${activeColIdx}`}
-                                  value={activeCol.content || ""}
-                                  onChange={(v: string) =>
-                                    patchCol(activeColIdx, { content: v })
-                                  }
-                                  placeholder={`Column ${activeColIdx + 1}…`}
-                                />
+                                <RichTextEditor key={`${activeSection.id}-col-${activeColIdx}`} value={activeCol.content || ""} onChange={(v: string) => patchCol(activeColIdx, { content: v })} placeholder={`Column ${activeColIdx + 1}…`} />
                               </div>
                             )}
                             {activeCol.type === "image" && (
                               <>
-                                {activeCol.url && (
-                                  <Image
-                                    src={activeCol.url}
-                                    alt=""
-                                    width={400}
-                                    height={112}
-                                    unoptimized
-                                    className="max-h-28 w-full object-contain rounded border border-default"
-                                  />
-                                )}
-                                <input
-                                  value={activeCol.url || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      url: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Image URL…"
-                                  className={inputCls}
-                                />
-                                <FileUploader
-                                  folder={`lessons/${activeDay?.id}/images`}
-                                  files={
-                                    activeCol.url
-                                      ? [
-                                          {
-                                            url: activeCol.url,
-                                            name: "image",
-                                            type: "image/*",
-                                          },
-                                        ]
-                                      : []
-                                  }
-                                  onChange={(files: any[]) => {
-                                    if (files.length)
-                                      patchCol(activeColIdx, {
-                                        url: files[0].url,
-                                      });
-                                  }}
-                                  role="admin"
-                                />
-                                <input
-                                  value={activeCol.caption || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      caption: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Caption"
-                                  className={inputCls}
-                                />
-                                <select
-                                  value={activeCol.size || "full"}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      size: e.target.value,
-                                    })
-                                  }
-                                  className={inputCls}
-                                >
-                                  <option value="sm">Small</option>
-                                  <option value="md">Medium</option>
-                                  <option value="lg">Large</option>
-                                  <option value="full">Full</option>
+                                {activeCol.url && <Image src={activeCol.url} alt="" width={400} height={112} unoptimized className="max-h-28 w-full object-contain rounded border border-default" />}
+                                <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="Image URL…" className={inputCls} />
+                                <FileUploader folder={`lessons/${activeDay?.id}/images`} files={activeCol.url ? [{ url: activeCol.url, name: "image", type: "image/*" }] : []} onChange={(files: any[]) => { if (files.length) patchCol(activeColIdx, { url: files[0].url }); }} role="admin" />
+                                <input value={activeCol.caption || ""} onChange={(e: any) => patchCol(activeColIdx, { caption: e.target.value })} placeholder="Caption" className={inputCls} />
+                                <select value={activeCol.size || "full"} onChange={(e: any) => patchCol(activeColIdx, { size: e.target.value })} className={inputCls}>
+                                  <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option><option value="full">Full</option>
                                 </select>
                               </>
                             )}
                             {activeCol.type === "video" && (
                               <>
-                                <input
-                                  value={activeCol.url || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      url: e.target.value,
-                                    })
-                                  }
-                                  placeholder="YouTube / Vimeo URL…"
-                                  className={inputCls}
-                                />
-                                <input
-                                  value={activeCol.title || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      title: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Title (optional)"
-                                  className={inputCls}
-                                />
+                                <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="YouTube / Vimeo URL…" className={inputCls} />
+                                <input value={activeCol.title || ""} onChange={(e: any) => patchCol(activeColIdx, { title: e.target.value })} placeholder="Title (optional)" className={inputCls} />
                               </>
                             )}
                             {activeCol.type === "pdf" && (
                               <>
-                                <input
-                                  value={activeCol.url || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      url: e.target.value,
-                                    })
-                                  }
-                                  placeholder="PDF URL…"
-                                  className={inputCls}
-                                />
-                                <FileUploader
-                                  folder={`lessons/${activeDay?.id}/pdfs`}
-                                  files={
-                                    activeCol.url
-                                      ? [
-                                          {
-                                            url: activeCol.url,
-                                            name:
-                                              activeCol.filename || "doc.pdf",
-                                            type: "application/pdf",
-                                          },
-                                        ]
-                                      : []
-                                  }
-                                  onChange={(files: any[]) => {
-                                    if (files.length)
-                                      patchCol(activeColIdx, {
-                                        url: files[0].url,
-                                        filename: files[0].name,
-                                      });
-                                  }}
-                                  role="admin"
-                                />
-                                <input
-                                  value={activeCol.filename || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      filename: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Filename"
-                                  className={inputCls}
-                                />
+                                <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="PDF URL…" className={inputCls} />
+                                <FileUploader folder={`lessons/${activeDay?.id}/pdfs`} files={activeCol.url ? [{ url: activeCol.url, name: activeCol.filename || "doc.pdf", type: "application/pdf" }] : []} onChange={(files: any[]) => { if (files.length) patchCol(activeColIdx, { url: files[0].url, filename: files[0].name }); }} role="admin" />
+                                <input value={activeCol.filename || ""} onChange={(e: any) => patchCol(activeColIdx, { filename: e.target.value })} placeholder="Filename" className={inputCls} />
                               </>
                             )}
                             {activeCol.type === "link" && (
                               <>
-                                <input
-                                  value={activeCol.title || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      title: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Link title…"
-                                  className={inputCls}
-                                />
-                                <input
-                                  value={activeCol.url || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      url: e.target.value,
-                                    })
-                                  }
-                                  placeholder="https://…"
-                                  className={inputCls}
-                                />
-                                <input
-                                  value={activeCol.description || ""}
-                                  onChange={(e: any) =>
-                                    patchCol(activeColIdx, {
-                                      description: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Description (optional)"
-                                  className={inputCls}
-                                />
+                                <input value={activeCol.title || ""} onChange={(e: any) => patchCol(activeColIdx, { title: e.target.value })} placeholder="Link title…" className={inputCls} />
+                                <input value={activeCol.url || ""} onChange={(e: any) => patchCol(activeColIdx, { url: e.target.value })} placeholder="https://…" className={inputCls} />
+                                <input value={activeCol.description || ""} onChange={(e: any) => patchCol(activeColIdx, { description: e.target.value })} placeholder="Description (optional)" className={inputCls} />
                                 <div className="mt-2 space-y-1">
-                                  <label className="text-[9px] font-bold uppercase text-muted">
-                                    Icon / Thumbnail
-                                  </label>
-                                  <FileUploader
-                                    folder={`lessons/${activeDay?.id}/links`}
-                                    files={
-                                      activeCol.thumbnailUrl
-                                        ? [
-                                            {
-                                              url: activeCol.thumbnailUrl,
-                                              name: "icon",
-                                              type: "image/*",
-                                            },
-                                          ]
-                                        : []
-                                    }
-                                    onChange={(files) => {
-                                      if (files.length) {
-                                        patchCol(activeColIdx, {
-                                          thumbnailUrl: files[0].url,
-                                        });
-                                      }
-                                    }}
-                                    role="admin"
-                                  />
+                                  <label className="text-[9px] font-bold uppercase text-muted">Icon / Thumbnail</label>
+                                  <FileUploader folder={`lessons/${activeDay?.id}/links`} files={activeCol.thumbnailUrl ? [{ url: activeCol.thumbnailUrl, name: "icon", type: "image/*" }] : []} onChange={(files) => { if (files.length) patchCol(activeColIdx, { thumbnailUrl: files[0].url }); }} role="admin" />
                                 </div>
                               </>
                             )}
@@ -2490,29 +2327,49 @@ export function ThreePanelCurriculumBuilder({
             )}
           </div>
 
-          {/* Sticky footer: Save + Cancel */}
+          {/* Sticky footer */}
           <div className="shrink-0 border-t border-default p-3 bg-surface flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                onSave();
-              }}
-              disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              <Save className="size-4" />
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (onCancel) onCancel();
-              }}
-              className="flex-1 px-3 py-2 rounded-lg border border-default bg-surface text-sm font-semibold text-foreground hover:text-primary transition-colors"
-            >
-              Cancel
-            </button>
+            {isNewMode ? (
+              // New mode: per-week Save
+              <>
+                <button
+                  type="button"
+                  onClick={saveActiveWeek}
+                  disabled={weekSaving || !activeWeekId || !weekCache[activeWeekId]}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Save className="size-4" />
+                  {weekSaving ? "Saving…" : activeWeekId && dirtyWeekIds.has(activeWeekId) ? "Save Week ●" : "Save Week"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { if (onCancel) onCancel(); }}
+                  className="px-3 py-2 rounded-lg border border-default bg-surface text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              // Old mode: global Save / Cancel
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); onSave(); }}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Save className="size-4" />
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { if (onCancel) onCancel(); }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-default bg-surface text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

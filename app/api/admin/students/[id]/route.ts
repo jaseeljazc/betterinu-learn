@@ -29,7 +29,7 @@ export async function GET(
       WHERE s.id = ${id}
     `,
     sql`
-      SELECT sc.course_id, sc.assigned_at, c.title, c.level, c.duration, c.curriculum
+      SELECT sc.course_id, sc.assigned_at, c.title, c.level, c.duration
       FROM student_courses sc
       JOIN courses c ON c.id = sc.course_id
       WHERE sc.student_id = ${id}
@@ -44,6 +44,25 @@ export async function GET(
 
   if (!studentRows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Fetch all weeks for the assigned courses from course_weeks
+  const assignedCourseIds = assignedRows.map((r) => r.course_id as string);
+  const weeksRows = assignedCourseIds.length
+    ? await sql`
+        SELECT id, course_id, title, is_locked, is_shared, days, quiz, position
+        FROM course_weeks
+        WHERE course_id = ANY(${assignedCourseIds})
+        ORDER BY course_id, position ASC
+      `
+    : [];
+
+  // Group weeks by course_id for easy lookup
+  const weeksByCourse: Record<string, any[]> = {};
+  for (const w of weeksRows) {
+    const cid = w.course_id as string;
+    if (!weeksByCourse[cid]) weeksByCourse[cid] = [];
+    weeksByCourse[cid].push(w);
+  }
+
   // Source 1: rows from student_progress table
   const progressMap: Record<string, Set<string>> = {};
   for (const row of progressRows) {
@@ -56,15 +75,13 @@ export async function GET(
   // This captures lessons marked via the client-side progress hook
   const progressState = studentRows[0].progress_state as any;
   if (progressState?.completedSubModules && Array.isArray(progressState.completedSubModules)) {
-    // Map each submodule ID back to its course by scanning the curricula
+    // Map each submodule ID back to its course by scanning course_weeks
     const subModuleToCourse: Record<string, string> = {};
-    for (const row of assignedRows) {
-      const curriculum = (row.curriculum as any[]) || [];
-      for (const week of curriculum) {
-        for (const day of week.days || []) {
-          for (const mod of day.subModules || []) {
-            subModuleToCourse[mod.id] = row.course_id as string;
-          }
+    for (const w of weeksRows) {
+      const days = (w.days as any[]) ?? [];
+      for (const day of days) {
+        for (const mod of day.subModules ?? []) {
+          subModuleToCourse[mod.id] = w.course_id as string;
         }
       }
     }
@@ -78,7 +95,7 @@ export async function GET(
     }
   }
 
-  // Strip curriculum from the response (large payload) but keep it for mapping
+  // Build response — curriculum comes from course_weeks (not the old JSONB column)
   return NextResponse.json({
     student: studentRows[0],
     courses: assignedRows.map((r) => {
@@ -89,7 +106,7 @@ export async function GET(
         title: r.title,
         level: r.level,
         duration: r.duration,
-        curriculum: r.curriculum,   // keep for admin UI
+        curriculum: weeksByCourse[r.course_id as string] ?? [], // from course_weeks
         completedSubModules: ids.length,
         completedSubModuleIds: ids,
       };
