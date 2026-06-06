@@ -15,6 +15,7 @@ import { clientAuth } from "@/lib/firebase-client";
 import { EnrolledCourseCard } from "./enrolled-course-card";
 import { AssignmentsList } from "./assignments-list";
 import { StreakBanner } from "./streak-banner";
+import { EventsWidget } from "@/components/student/dashboard/events-widget";
 import RoboLoader from "@/components/loading/robo-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,9 +164,10 @@ export function DashboardClient() {
       <StreakBanner streak={progress.streak} />
 
       {/* Main grid */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        {/* Courses section */}
-        <section>
+      <div className="grid gap-8 items-start lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="space-y-8">
+          {/* Courses section */}
+          <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-xl font-bold">Enrolled Courses</h2>
             <TrendingUp className="size-4 text-muted-foreground" />
@@ -209,6 +211,7 @@ export function DashboardClient() {
           </div>
           <AssignmentsList enrolledCourses={enrolled} />
         </section>
+        </div>
 
         {/* Sidebar */}
         <aside className="space-y-5">
@@ -265,6 +268,9 @@ export function DashboardClient() {
               )}
             </CardContent>
           </Card>
+
+          {/* Events Widget */}
+          <EventsWidget />
         </aside>
       </div>
     </div>

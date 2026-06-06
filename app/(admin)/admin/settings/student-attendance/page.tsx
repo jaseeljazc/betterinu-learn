@@ -179,9 +179,9 @@ export default function StudentAttendanceSettingsPage() {
       current.work_start_time !== settings.work_start_time ||
       current.work_end_time !== settings.work_end_time ||
       current.grace_period_minutes !== settings.grace_period_minutes ||
-      current.late_after_minutes !== settings.late_after_minutes ||
-      current.half_day_min_hours !== settings.half_day_min_hours ||
-      (current.min_hours_for_half_day ?? 2) !== (settings.min_hours_for_half_day ?? 2) ||
+      current.half_day_min_minutes !== settings.half_day_min_minutes ||
+      current.half_day_threshold_minutes !== settings.half_day_threshold_minutes ||
+      current.early_punch_in_minutes !== settings.early_punch_in_minutes ||
       current.auto_absent_if_no_punchin !== settings.auto_absent_if_no_punchin ||
       JSON.stringify([...(current.weekend_days ?? ["sunday"])].sort()) !== JSON.stringify([...(settings.weekend_days ?? ["sunday"])].sort()) ||
       (current.overtime_message_enabled ?? true) !== (settings.overtime_message_enabled ?? true) ||
@@ -191,8 +191,9 @@ export default function StudentAttendanceSettingsPage() {
 
   // ── Page ───────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full min-h-screen bg-subtle px-5 lg:px-8 py-6">
-      {/* Page header */}
+    <div className="w-full min-h-[calc(100vh-64px)] flex flex-col bg-subtle relative">
+      <div className="flex-1 px-5 lg:px-8 py-6">
+        {/* Page header */}
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-1">
           <Clock className="size-5 text-primary" />
@@ -205,7 +206,15 @@ export default function StudentAttendanceSettingsPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-4">
+      <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600" />
+        <div>
+          <span className="font-bold">Best Practice: </span>
+          To avoid confusion with the Catch-Up system and past records, it is highly recommended to only change these settings on the 1st day of the month.
+        </div>
+      </div>
+
+      <form id="attendance-settings-form" onSubmit={handleSave} className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
           {/* ── Column 1: Core Schedule + Weekly Off Days ── */}
@@ -235,6 +244,23 @@ export default function StudentAttendanceSettingsPage() {
                     onChange={(e) => updateField("work_end_time", e.target.value)}
                     required
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="early_punch_in_minutes" className="text-xs font-semibold text-foreground">
+                    Early Punch-In Window (minutes) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="early_punch_in_minutes"
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={current.early_punch_in_minutes ?? 60}
+                    onChange={(e) => updateField("early_punch_in_minutes", Number(e.target.value))}
+                    required
+                  />
+                  <p className="text-[10px] text-muted">
+                    How early students can punch in before work start time (e.g., 60 = 1 hour before)
+                  </p>
                 </div>
               </div>
 
@@ -324,7 +350,6 @@ export default function StudentAttendanceSettingsPage() {
                     setDraft((prev) => ({
                       ...(prev ?? current),
                       grace_period_minutes: val,
-                      late_after_minutes: val,
                     }));
                   }}
                   required
@@ -404,76 +429,89 @@ export default function StudentAttendanceSettingsPage() {
             <div className="space-y-3">
               <p className="text-xs font-bold text-foreground">Full-Day Benchmark</p>
               <div className="space-y-1.5">
-                <Label htmlFor="half_day_min_hours" className="text-xs font-semibold text-foreground">
-                  Minimum Hours for Full Day ({current.half_day_min_hours} Hours)
+                <Label htmlFor="half_day_min_minutes" className="text-xs font-semibold text-foreground">
+                  Minimum Minutes for Full Day ({current.half_day_min_minutes ?? 240} min = {Math.round((current.half_day_min_minutes ?? 240) / 60 * 10) / 10}h)
                 </Label>
                 <Input
-                  id="half_day_min_hours"
+                  id="half_day_min_minutes"
                   type="number"
-                  step={0.5}
-                  min={1}
-                  max={24}
-                  value={current.half_day_min_hours}
-                  onChange={(e) => updateField("half_day_min_hours", Number(e.target.value))}
+                  step={30}
+                  min={60}
+                  max={720}
+                  value={current.half_day_min_minutes ?? 240}
+                  onChange={(e) => updateField("half_day_min_minutes", Number(e.target.value))}
                   required
                 />
               </div>
               <InfoNotice>
                 Staying fewer than{" "}
-                <span className="font-bold text-foreground">[{current.half_day_min_hours} hours]</span>{" "}
+                <span className="font-bold text-foreground">[{current.half_day_min_minutes ?? 240} min]</span>{" "}
                 will count as HALF DAY.
               </InfoNotice>
             </div>
 
             <div className="border-t border-default" />
 
-            {/* Half-day minimum hours */}
             <div className="space-y-3">
-              <p className="text-xs font-bold text-foreground">Half-Day Threshold</p>
+              <p className="text-xs font-bold text-foreground">Half-Day Benchmark</p>
               <div className="space-y-1.5">
-                <Label htmlFor="min_hours_for_half_day" className="text-xs font-semibold text-foreground">
-                  Minimum Hours for Half Day ({current.min_hours_for_half_day ?? 2} Hours)
+                <Label htmlFor="half_day_threshold_minutes" className="text-xs font-semibold text-foreground">
+                  Minimum Minutes for Half Day ({current.half_day_threshold_minutes ?? 120} min = {Math.round((current.half_day_threshold_minutes ?? 120) / 60 * 10) / 10}h)
                 </Label>
                 <Input
-                  id="min_hours_for_half_day"
+                  id="half_day_threshold_minutes"
                   type="number"
-                  step={0.5}
-                  min={0.5}
-                  max={current.half_day_min_hours - 0.5}
-                  value={current.min_hours_for_half_day ?? 2}
-                  onChange={(e) => updateField("min_hours_for_half_day", Number(e.target.value))}
+                  step={30}
+                  min={30}
+                  max={current.half_day_min_minutes ?? 240}
+                  value={current.half_day_threshold_minutes ?? 120}
+                  onChange={(e) => updateField("half_day_threshold_minutes", Number(e.target.value))}
                   required
                 />
               </div>
               <InfoNotice>
                 Staying fewer than{" "}
-                <span className="font-bold text-foreground">
-                  [{current.min_hours_for_half_day ?? 2} hours]
-                </span>{" "}
-                will be marked as <span className="font-bold text-foreground">ABSENT</span> instead of Half Day.
+                <span className="font-bold text-foreground">[{current.half_day_threshold_minutes ?? 120} min]</span>{" "}
+                will count as ABSENT.
               </InfoNotice>
             </div>
+
+            <div className="border-t border-default" />
+
 
           </SectionCard>
         </div>
 
 
-        {/* Save bar */}
-        <div className="flex justify-end">
+        </form>
+      </div>
+
+      {/* Sticky Footer */}
+      <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-default bg-white px-5 lg:px-8 py-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+        {hasChanges && (
           <button
-            type="submit"
-            disabled={saveMutation.isPending || !hasChanges}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+            type="button"
+            onClick={() => setDraft(null)}
+            disabled={saveMutation.isPending}
+            className="inline-flex items-center justify-center rounded-md border border-default bg-white px-5 py-2.5 text-sm font-semibold text-secondary hover:bg-slate-50 transition-all shadow-sm"
           >
-            {saveMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            Save Settings
+            Cancel
           </button>
-        </div>
-      </form>
+        )}
+        <button
+          type="submit"
+          form="attendance-settings-form"
+          disabled={saveMutation.isPending || !hasChanges}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+        >
+          {saveMutation.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Save className="size-4" />
+          )}
+          Save Settings
+        </button>
+      </div>
     </div>
   );
 }

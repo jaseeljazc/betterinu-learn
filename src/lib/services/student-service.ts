@@ -84,15 +84,18 @@ export async function assignTask(
 export async function reviewSubmission(
   submissionId: string,
   action: "approve" | "reject",
-  feedback: string
+  feedback: string,
+  isStandalone?: boolean,
+  marks_obtained?: number | null
 ) {
-  return apiClient<{ ok: boolean }>(
-    `/api/admin/assignments/${submissionId}`,
-    {
-      method: "POST",
-      body: { action, feedback },
-    }
-  )
+  const endpoint = isStandalone 
+    ? `/api/admin/standalone-submissions/${submissionId}`
+    : `/api/admin/assignments/${submissionId}`;
+  
+  return apiClient<{ ok: boolean }>(endpoint, {
+    method: "POST",
+    body: { action, feedback, marks_obtained },
+  })
 }
 
 export async function createStudent(payload: any) {

@@ -177,6 +177,7 @@ export async function PATCH(
     emergency_contact_name,
     emergency_contact_relation,
     emergency_contact_phone,
+    started_at,
     // Academic fields
     highest_qualification,
     current_status,
@@ -223,6 +224,7 @@ export async function PATCH(
         emergency_contact_name = ${emergency_contact_name ?? null},
         emergency_contact_relation = ${emergency_contact_relation ?? null},
         emergency_contact_phone = ${emergency_contact_phone ?? null},
+        started_at = ${started_at !== undefined ? (started_at ? new Date(started_at) : null) : sql`students.started_at`},
         updated_at = NOW()
       WHERE id = ${id}
     `;

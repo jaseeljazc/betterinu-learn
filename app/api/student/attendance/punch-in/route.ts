@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     // Check if a row already exists for today (IST-aware)
     const existing = await sql`
-    SELECT id, punch_in, marked_by FROM student_attendance
+    SELECT id, punch_in, marked_by, status, holiday_type FROM student_attendance
     WHERE student_id = ${student.studentId}
       AND date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
     LIMIT 1
@@ -34,13 +34,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already punched in today" }, { status: 409 });
     }
     if (existing[0].marked_by !== null) {
-      return NextResponse.json({ error: "This day has been manually marked by an admin." }, { status: 403 });
+      const rowStatus = existing[0].status as string;
+      const holidayType = existing[0].holiday_type as string | null;
+      // Required holiday — block punch-in
+      if (rowStatus === "Holiday" && holidayType !== "optional") {
+        return NextResponse.json(
+          { error: "Today is a Required Holiday. The institution is closed." },
+          { status: 403 }
+        );
+      }
+      // Optional holiday — allow punch-in to continue
+      if (rowStatus === "Holiday" && holidayType === "optional") {
+        // Fall through — let punch-in proceed
+      } else {
+        // Any other admin-marked status
+        return NextResponse.json({ error: "This day has been manually marked by an admin." }, { status: 403 });
+      }
     }
   }
 
   // Block punch-in on configured weekly off days
   const settings = await getStudentAttendanceSettings();
   const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  
+  // Check early punch-in restriction
+  const currentMinutes = nowIST.getHours() * 60 + nowIST.getMinutes();
+  const [startHour, startMin] = settings.work_start_time.split(":").map(Number);
+  const startMinutes = startHour * 60 + startMin;
+  const earliestMinutes = startMinutes - (settings.early_punch_in_minutes ?? 60);
+  
+  if (currentMinutes < earliestMinutes) {
+    const earliestHour = Math.floor(earliestMinutes / 60) % 24;
+    const earliestMin = earliestMinutes % 60;
+    const earliestTime = `${String(earliestHour).padStart(2, "0")}:${String(earliestMin).padStart(2, "0")}`;
+    return NextResponse.json(
+      { error: `Too early to punch in. You can punch in from ${earliestTime} onwards.` },
+      { status: 403 }
+    );
+  }
+  
   const DAY_NUM: Record<string, number> = {
     sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
     thursday: 4, friday: 5, saturday: 6,
@@ -66,10 +98,6 @@ export async function POST(req: NextRequest) {
 
   // Calculate status (Present vs Late) based on attendance settings
   // (settings already fetched above)
-  const currentMinutes = nowIST.getHours() * 60 + nowIST.getMinutes();
-
-  const [startHour, startMin] = settings.work_start_time.split(":").map(Number);
-  const startMinutes = startHour * 60 + startMin;
   const graceMinutes = settings.grace_period_minutes;
 
   const status = currentMinutes > (startMinutes + graceMinutes) ? "Late" : "Present";

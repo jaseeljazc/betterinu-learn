@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
       s.status        AS submission_status,
       s.feedback,
       s.reviewed_at,
+      s.marks_obtained,
       c.title         AS course_title,
       c.curriculum    AS course_curriculum
     FROM assignment_submissions s

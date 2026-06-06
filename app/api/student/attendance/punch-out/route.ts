@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyStudentToken, extractToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { getClientIp } from "@/lib/attendance";
-import { getStudentAttendanceSettings } from "@/lib/app-settings";
+import { getStudentAttendanceSettings, DEFAULT_STUDENT_ATTENDANCE_SETTINGS } from "@/lib/app-settings";
 
 export async function POST(req: NextRequest) {
   const token =
@@ -38,34 +38,30 @@ export async function POST(req: NextRequest) {
 
   const punchInTime = new Date(openRow[0].punch_in as string);
   const now = new Date();
-  const durationHours = (now.getTime() - punchInTime.getTime()) / (1000 * 60 * 60);
-
   const nowIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   const checkoutMinutes = nowIST.getHours() * 60 + nowIST.getMinutes();
-
   const [endHour, endMin] = settings.work_end_time.split(":").map(Number);
   const endMinutes = endHour * 60 + endMin;
-
-  // ── Classify status based on duration + checkout time ──────────────────
-  // Tier 1: too few hours to even count as Half Day → Absent
-  // Tier 2: not enough hours for Full Day           → Half_Day
-  // Tier 3: left before the work end time           → Early_Checkout
-  // Tier 4: everything else                          → keep punch-in status (Present / Late)
-  const minHalfDayHours = settings.min_hours_for_half_day ?? 2;
-  const fullDayHours    = settings.half_day_min_hours;
 
   let status = openRow[0].status as string;
 
   // Only automatically classify if an admin hasn't manually overridden the day
   if (openRow[0].marked_by === null) {
-    if (durationHours < minHalfDayHours) {
+    const durationMinutes = (now.getTime() - punchInTime.getTime()) / (1000 * 60);
+    const halfDayThreshold = settings.half_day_threshold_minutes ?? DEFAULT_STUDENT_ATTENDANCE_SETTINGS.half_day_threshold_minutes;
+    const halfDayMin = settings.half_day_min_minutes ?? DEFAULT_STUDENT_ATTENDANCE_SETTINGS.half_day_min_minutes;
+
+    if (durationMinutes < halfDayThreshold) {
+      // Too short to count as work
       status = "Absent";
-    } else if (durationHours < fullDayHours) {
-      status = "Half_Day";
     } else if (checkoutMinutes < endMinutes) {
-      // NOTE: Here we could preserve a "Late" status, but currently it's overwritten by Early_Checkout
-      status = "Early_Checkout";
+      // Present long enough to count, but left before end time
+      status = "Half_Day";
+    } else if (durationMinutes < halfDayMin) {
+      // Left at/after end time but didn't work full day threshold
+      status = "Half_Day";
     }
+    // else: worked full duration and left at/after end time → keep Present / Late
   }
 
   await sql`

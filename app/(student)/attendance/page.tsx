@@ -20,13 +20,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { LeaveApplyModal } from "@/components/student/leave-apply-modal";
 
 type DayRecord = {
   date: string;
-  status: "present" | "late" | "early_checkout" | "half_day" | "absent" | "leave" | "holiday" | "open" | "future" | "pending_leave";
+  status: "present" | "late" | "half_day" | "absent" | "leave" | "holiday" | "open" | "future" | "pending_leave";
   punchIn?: string | null;
   punchOut?: string | null;
   duration?: string | null;
@@ -48,7 +49,6 @@ type MonthSummary = {
   leave: number;
   holiday: number;
   late: number;
-  earlyCheckout: number;
   halfDay: number;
   percentage: number;
 };
@@ -56,6 +56,7 @@ type MonthSummary = {
 type HistoryResponse = {
   days: DayRecord[];
   summary: MonthSummary;
+  startedAt?: string | null;
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -91,6 +92,29 @@ export default function StudentAttendanceCalendarPage() {
   const [selectedDay, setSelectedDay] = useState<DayRecord | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [finesModalOpen, setFinesModalOpen] = useState(false);
+  
+  type FineRecord = {
+    id: string;
+    fine_type: "absent" | "leave";
+    period_label: string;
+    fine_amount: number;
+    status: "pending" | "paid" | "waived";
+    waive_reason?: string | null;
+    leave_date?: string | null;
+    absent_date?: string | null;
+    created_at: string;
+  };
+  const [allFines, setAllFines] = useState<FineRecord[]>([]);
+
+  useEffect(() => {
+    fetch("/api/student/fines", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setAllFines(d.fines ?? []))
+      .catch(() => {});
+  }, []);
+
+  const pendingFines = allFines.filter((f) => f.status === "pending");
 
   useEffect(() => {
     setLoading(true);
@@ -197,6 +221,36 @@ export default function StudentAttendanceCalendarPage() {
           </div>
         </div>
 
+        {/* Fine warning banner — collapsed into one */}
+        {pendingFines.length > 0 && (() => {
+          const total = pendingFines.reduce((sum, f) => sum + Number(f.fine_amount), 0);
+          const periods = [...new Set(pendingFines.map((f) =>
+            f.period_label.length === 7
+              ? new Date(Number(f.period_label.split("-")[0]), Number(f.period_label.split("-")[1]) - 1)
+                  .toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+              : f.period_label
+          ))].join(", ");
+          return (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600" />
+              <div className="flex-1">
+                <span className="font-bold">Leave Fine{pendingFines.length > 1 ? "s" : ""} Pending — {periods}</span>
+                <span className="ml-2">
+                  You have <span className="font-bold">{pendingFines.length}</span> pending fine{pendingFines.length > 1 ? "s" : ""} totalling <span className="font-bold">₹{total.toLocaleString("en-IN")}</span>. Please contact admin.
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-auto bg-white text-amber-800 border-amber-300 hover:bg-amber-50 shrink-0"
+                onClick={() => setFinesModalOpen(true)}
+              >
+                View Details
+              </Button>
+            </div>
+          );
+        })()}
+
         {/* Loading skeleton */}
         {loading && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -234,14 +288,19 @@ export default function StudentAttendanceCalendarPage() {
                     const dayNum = parseInt(day.date.split("-")[2], 10);
                     const isSelected = selectedDay?.date === day.date;
 
+                    // Check if day is past AND before start date (future dates before start are normal)
+                    const today = `${year}-${String(month).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+                    const isBeforeStart = Boolean(data.startedAt && day.date < data.startedAt && day.date < today);
+                    const isStartDay = data.startedAt && day.date === data.startedAt;
+
                     // Color schemes based on status
                     let statusClasses = "";
-                    if (day.status === "present") {
+                    if (isBeforeStart) {
+                      statusClasses = "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed";
+                    } else if (day.status === "present") {
                       statusClasses = "bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200 text-emerald-700";
                     } else if (day.status === "late") {
                       statusClasses = "bg-amber-50 hover:bg-amber-100/80 border-amber-200 text-amber-700";
-                    } else if (day.status === "early_checkout") {
-                      statusClasses = "bg-orange-50 hover:bg-orange-100/80 border-orange-200 text-orange-700";
                     } else if (day.status === "half_day") {
                       statusClasses = "bg-blue-50 hover:bg-blue-100/80 border-blue-200 text-blue-700";
                     } else if (day.status === "open") {
@@ -254,6 +313,8 @@ export default function StudentAttendanceCalendarPage() {
                       statusClasses = "bg-sky-50 hover:bg-sky-100/80 border-sky-200 text-sky-700 border-dashed";
                     } else if (day.status === "holiday") {
                       statusClasses = "bg-purple-50 hover:bg-purple-100/80 border-purple-200 text-purple-700";
+                    } else if (day.status === "future") {
+                      statusClasses = "bg-white border-slate-100 text-slate-400";
                     } else {
                       statusClasses = "bg-slate-50 border-slate-100 text-slate-400/80 opacity-60";
                     }
@@ -261,16 +322,23 @@ export default function StudentAttendanceCalendarPage() {
                     const tileButton = (
                       <button
                         key={day.date}
-                        onClick={() => setSelectedDay(day)}
+                        onClick={() => !isBeforeStart && setSelectedDay(day)}
+                        disabled={isBeforeStart}
                         className={cn(
                           "aspect-square border rounded-lg flex flex-col items-center justify-center text-sm font-semibold transition-all relative overflow-hidden",
                           statusClasses,
-                          isSelected && "ring-2 ring-primary ring-offset-2 scale-102 z-10"
+                          isSelected && !isBeforeStart && "ring-2 ring-primary ring-offset-2 scale-102 z-10"
                         )}
                       >
                         <span>{dayNum}</span>
+                        {/* Start day text inside tile */}
+                        {isStartDay && (
+                          <span className="text-[8px] font-semibold leading-tight px-0.5 mt-0.5 w-full text-center">
+                            Started
+                          </span>
+                        )}
                         {/* Inline note text on the tile */}
-                        {day.note && day.status !== "future" && (
+                        {day.note && day.status !== "future" && !isStartDay && (
                           <span
                             className="text-[10px] font-normal leading-tight px-1 mt-0.5 w-full text-center truncate opacity-80"
                           >
@@ -281,6 +349,10 @@ export default function StudentAttendanceCalendarPage() {
                         {day.note && day.status !== "future" && (
                           <span className="absolute top-1 right-1 size-1.5 rounded-full bg-amber-400" />
                         )}
+                        {/* Start day marker — top left */}
+                        {isStartDay && (
+                          <span className="absolute top-0.5 left-0.5 text-xs">🎯</span>
+                        )}
                         {/* Status bullet indicator — bottom center */}
                         {day.status !== "future" && (
                           <span
@@ -288,7 +360,6 @@ export default function StudentAttendanceCalendarPage() {
                               "absolute bottom-1 size-1.5 rounded-full",
                               day.status === "present" && "bg-emerald-500",
                               day.status === "late" && "bg-amber-500",
-                              day.status === "early_checkout" && "bg-orange-500",
                               day.status === "half_day" && "bg-blue-500",
                               day.status === "open" && "bg-amber-500",
                               day.status === "absent" && "bg-rose-500",
@@ -324,9 +395,6 @@ export default function StudentAttendanceCalendarPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="size-3 rounded bg-amber-50 border border-amber-200 inline-block" /> Late
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded bg-orange-50 border border-orange-200 inline-block" /> Early Checkout
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="size-3 rounded bg-blue-50 border border-blue-200 inline-block" /> Half Day
@@ -365,7 +433,6 @@ export default function StudentAttendanceCalendarPage() {
                           "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold mt-1 uppercase",
                           selectedDay.status === "present" && "bg-emerald-50 text-emerald-700 border border-emerald-200",
                           selectedDay.status === "late" && "bg-amber-50 text-amber-700 border border-amber-200",
-                          selectedDay.status === "early_checkout" && "bg-orange-50 text-orange-700 border border-orange-200",
                           selectedDay.status === "half_day" && "bg-blue-50 text-blue-700 border border-blue-200",
                           selectedDay.status === "open" && "bg-amber-50 text-amber-700 border border-amber-200",
                           selectedDay.status === "absent" && "bg-rose-50 text-rose-700 border border-rose-200",
@@ -376,7 +443,6 @@ export default function StudentAttendanceCalendarPage() {
                       >
                         {selectedDay.status === "present" && <CheckCircle2 className="size-3" />}
                         {selectedDay.status === "late" && <Timer className="size-3" />}
-                        {selectedDay.status === "early_checkout" && <Timer className="size-3" />}
                         {selectedDay.status === "half_day" && <CheckCircle2 className="size-3" />}
                         {selectedDay.status === "open" && <Timer className="size-3 animate-spin" />}
                         {selectedDay.status === "absent" && <XCircle className="size-3" />}
@@ -409,6 +475,15 @@ export default function StudentAttendanceCalendarPage() {
                             <p className="text-xs font-semibold text-secondary mt-0.5">{selectedDay.duration}</p>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {(selectedDay as any).leaveReason && (
+                      <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-lg mt-2">
+                        <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wider flex items-center gap-1 mb-1">
+                          <StickyNote className="size-3" /> Leave Reason
+                        </p>
+                        <p className="text-xs text-indigo-900 leading-relaxed">{(selectedDay as any).leaveReason}</p>
                       </div>
                     )}
 
@@ -445,10 +520,6 @@ export default function StudentAttendanceCalendarPage() {
                   <div className="bg-amber-50/50 border border-amber-100 p-2.5 rounded-lg">
                     <span className="text-muted block font-medium">Late</span>
                     <span className="text-base font-bold text-amber-700 mt-0.5 block">{data.summary.late} Days</span>
-                  </div>
-                  <div className="bg-orange-50/50 border border-orange-100 p-2.5 rounded-lg">
-                    <span className="text-muted block font-medium">Early Checkout</span>
-                    <span className="text-base font-bold text-orange-700 mt-0.5 block">{data.summary.earlyCheckout} Days</span>
                   </div>
                   <div className="bg-blue-50/50 border border-blue-100 p-2.5 rounded-lg">
                     <span className="text-muted block font-medium">Half Day</span>
@@ -503,6 +574,62 @@ export default function StudentAttendanceCalendarPage() {
                   </div>
                 </div>
               )}
+
+              {/* Fine History */}
+              {allFines.length > 0 ? (
+                <div className="bg-white border border-default rounded-xl p-6 shadow-sm space-y-3">
+                  <h3 className="text-sm font-bold text-foreground">Fine History</h3>
+                  <div className="space-y-2">
+                    {allFines.map((fine) => {
+                      const isAbsent = fine.fine_type === "absent";
+                      const displayDate = isAbsent 
+                        ? new Date(fine.period_label).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                        : fine.period_label;
+
+                      return (
+                        <div key={fine.id} className="rounded-lg border border-default p-3 bg-subtle/40">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                                isAbsent ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+                              )}
+                            >
+                              {isAbsent ? "Absence Fine" : "Leave Fine"}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
+                                fine.status === "pending" && "bg-amber-50 text-amber-700 border-amber-200",
+                                fine.status === "paid" && "bg-green-50 text-green-700 border-green-200",
+                                fine.status === "waived" && "bg-slate-50 text-slate-500 border-slate-200"
+                              )}
+                            >
+                              {fine.status}
+                            </span>
+                          </div>
+                          <p className="text-xs font-semibold text-foreground">{displayDate}</p>
+                          <p className={cn(
+                            "text-sm font-bold mt-1",
+                            fine.status === "waived" ? "line-through text-slate-400" : "text-foreground"
+                          )}>
+                            ₹{fine.fine_amount.toLocaleString("en-IN")}
+                          </p>
+                          {fine.waive_reason && (
+                            <p className="text-xs text-muted italic mt-1">
+                              "{fine.waive_reason}"
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border border-default rounded-xl p-4 shadow-sm">
+                  <p className="text-xs text-muted-foreground text-center">No fines on record.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -523,6 +650,45 @@ export default function StudentAttendanceCalendarPage() {
           }}
         />
       )}
+
+      {/* Fine Details Modal */}
+      <Dialog 
+        open={finesModalOpen} 
+        onClose={() => setFinesModalOpen(false)}
+        title="Pending Fines Details"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {pendingFines.map((fine) => {
+            const isAbsent = fine.fine_type === "absent";
+            const displayDate = isAbsent 
+              ? fmtDate(fine.period_label)
+              : fine.period_label;
+
+            return (
+              <div key={fine.id} className="flex justify-between items-start border rounded-lg p-3 bg-slate-50">
+                <div>
+                  <p className="font-bold text-sm text-slate-800">
+                    {isAbsent ? "Unexcused Absence Fine" : "Leave Quota Exceeded Fine"}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    <span className="font-medium text-slate-700">Date/Period:</span> {displayDate}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Generated on: {fmtDate(fine.created_at)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-red-600">₹{fine.fine_amount}</span>
+                  <p className="text-[10px] uppercase font-bold text-amber-600 mt-1 px-2 py-0.5 bg-amber-100 rounded-full inline-block">
+                    Pending
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Dialog>
     </PageWrapper>
   );
 }

@@ -119,6 +119,7 @@ export function StudentForm({ student }: StudentFormProps = {}) {
   const [email, setEmail] = useState(student?.email ?? "")
   const [phone, setPhone] = useState(student?.phone ?? student?.phone_number ?? "")
   const [dob, setDob] = useState(formatDateToString(student?.date_of_birth || student?.dob))
+  const [startedAt, setStartedAt] = useState(formatDateToString(student?.started_at))
   const [gender, setGender] = useState(student?.gender ?? "")
   const [address, setAddress] = useState(student?.address ?? "")
   const [studentType, setStudentType] = useState<"online" | "offline" | "">(student?.student_type ?? "offline")
@@ -249,6 +250,7 @@ export function StudentForm({ student }: StudentFormProps = {}) {
           email,
           phone: phone || undefined,
           date_of_birth: dob || undefined,
+          started_at: startedAt || undefined,
           gender: gender || undefined,
           address: address || undefined,
           student_type: studentType || undefined,
@@ -435,6 +437,18 @@ export function StudentForm({ student }: StudentFormProps = {}) {
               value={dob}
               onChange={setDob}
               placeholder="Pick date of birth"
+            />
+          </div>
+
+          {/* Programme Start Date */}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>
+              Programme Start Date <OptionalTag />
+            </label>
+            <DatePickerField
+              value={startedAt}
+              onChange={setStartedAt}
+              placeholder="Pick programme start date"
             />
           </div>
 

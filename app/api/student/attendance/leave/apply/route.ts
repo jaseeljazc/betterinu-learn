@@ -54,15 +54,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "You already punched in on this date — leave cannot be applied" }, { status: 409 });
   }
 
-  // Insert (UNIQUE constraint on student_id + date handles duplicates)
+  // Check if leave request already exists for this date
+  const existingLeave = await sql`
+    SELECT id, status FROM student_leave_requests
+    WHERE student_id = ${student.studentId}
+      AND date = ${date}::date
+    LIMIT 1
+  `;
+  if (existingLeave.length > 0) {
+    return NextResponse.json({ error: "You have already applied for leave on this date" }, { status: 409 });
+  }
+
+  // Insert new leave request
   try {
     const rows = await sql`
       INSERT INTO student_leave_requests (student_id, date, reason)
       VALUES (${student.studentId}, ${date}::date, ${reason.trim()})
-      ON CONFLICT (student_id, date) DO UPDATE
-        SET reason = EXCLUDED.reason,
-            status = 'pending',
-            updated_at = NOW()
       RETURNING id, status
     `;
     return NextResponse.json({ ok: true, id: rows[0].id, status: rows[0].status });

@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
       sub.submitted_files,
       sub.submitted_at,
       sub.status          AS submission_status,
-      sub.feedback
+      sub.feedback,
+      sub.marks_obtained
     FROM standalone_assignment_student sas
     JOIN standalone_assignments sa ON sa.id = sas.assignment_id
     LEFT JOIN courses c ON c.id = sa.course_id

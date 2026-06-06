@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
-import { getStudentAttendanceSettings } from "@/lib/app-settings";
+import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
+import { processAbsentDay } from "@/lib/attendance-fines";
 
 /**
  * POST /api/admin/student-attendance/mark
@@ -13,7 +14,7 @@ import { getStudentAttendanceSettings } from "@/lib/app-settings";
  * Removes an admin override (row must have marked_by set).
  */
 
-const VALID_STATUSES = ["Present", "Late", "Early_Checkout", "Half_Day", "Absent", "Leave", "Holiday"] as const;
+const VALID_STATUSES = ["Present", "Late", "Half_Day", "Absent", "Leave", "Holiday"] as const;
 
 export async function POST(req: NextRequest) {
   const session = await resolveSession(req);
@@ -22,11 +23,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { studentId, date, status, note } = body as {
+  const { studentId, date, status, note, holiday_type } = body as {
     studentId?: string;
     date?: string;
     status?: string;
     note?: string;
+    holiday_type?: string;
   };
 
   if (!studentId || !date || !status) {
@@ -42,6 +44,12 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  // If marking as Holiday, validate/default holiday_type
+  const resolvedHolidayType: string | null =
+    status === "Holiday"
+      ? (holiday_type === "optional" ? "optional" : "required")
+      : null;
 
   // Block marking on configured weekly off days (uses global settings, not hardcoded Sunday)
   const [yr, mo, dy] = date.split("-").map(Number);
@@ -64,18 +72,41 @@ export async function POST(req: NextRequest) {
 
   try {
     const rows = await sql`
-      INSERT INTO student_attendance (student_id, date, status, note, marked_by)
-      VALUES (${studentId}, ${date}::date, ${status}, ${note ?? null}, ${session.adminId})
+      INSERT INTO student_attendance (student_id, date, status, note, marked_by, holiday_type)
+      VALUES (${studentId}, ${date}::date, ${status}, ${note ?? null}, ${session.adminId}, ${resolvedHolidayType})
       ON CONFLICT (student_id, date)
       DO UPDATE SET
-        status     = EXCLUDED.status,
-        note       = EXCLUDED.note,
-        marked_by  = EXCLUDED.marked_by,
-        updated_at = NOW()
+        status       = EXCLUDED.status,
+        note         = EXCLUDED.note,
+        marked_by    = EXCLUDED.marked_by,
+        holiday_type = EXCLUDED.holiday_type,
+        updated_at   = NOW()
       RETURNING id
     `;
 
-    return NextResponse.json({ ok: true, id: rows[0].id }, { status: 201 });
+    const attendanceId = rows[0].id as string;
+
+    if (status === "Absent") {
+      // Generate absent fine if applicable
+      const [attSettings, fineSettings] = await Promise.all([
+        getStudentAttendanceSettings(),
+        getStudentLeaveFineSettings(),
+      ]);
+      await processAbsentDay(studentId, attendanceId, date, fineSettings, attSettings).catch((e) =>
+        console.error("processAbsentDay failed:", e)
+      );
+    } else {
+      // Status changed away from Absent — waive any pending absent fine for this attendance row
+      await sql`
+        UPDATE student_leave_fines
+        SET status = 'waived', waive_reason = 'Attendance status changed by admin', updated_at = NOW()
+        WHERE attendance_id = ${attendanceId}
+          AND fine_type = 'absent'
+          AND status = 'pending'
+      `.catch((e) => console.error("waive absent fine failed:", e));
+    }
+
+    return NextResponse.json({ ok: true, id: attendanceId }, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/admin/student-attendance/mark:", err);
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });

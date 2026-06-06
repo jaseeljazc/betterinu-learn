@@ -39,6 +39,7 @@ interface AssignmentDetail {
   submitted_at: string | null;
   submission_status: "pending" | "approved" | "rejected" | null;
   feedback: string | null;
+  marks_obtained: number | null;
 }
 
 const STATUS_CFG = {
@@ -302,7 +303,7 @@ export default function AssignmentDetailPage() {
         {isApproved && (
           <div className="rounded-2xl border border-green-200 bg-green-50 p-5 mb-5 flex items-center gap-3">
             <CheckCircle2 className="size-5 text-green-600 shrink-0" />
-            <div>
+            <div className="flex-1">
               <p className="font-bold text-green-800 text-sm">
                 Assignment Approved
               </p>
@@ -312,6 +313,11 @@ export default function AssignmentDetailPage() {
                 </p>
               )}
             </div>
+            {assignment.marks_obtained !== null && assignment.marks_obtained !== undefined && (
+              <div className="shrink-0 flex items-center gap-1.5 rounded-full bg-green-100 border border-green-300 text-green-800 px-3 py-1.5 text-sm font-bold">
+                🏆 {assignment.marks_obtained} / 10
+              </div>
+            )}
           </div>
         )}
 

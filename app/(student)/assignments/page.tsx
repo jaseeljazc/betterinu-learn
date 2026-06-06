@@ -29,6 +29,7 @@ interface StandaloneAssignment {
   submission_status: "pending" | "approved" | "rejected" | null;
   submitted_at: string | null;
   feedback: string | null;
+  marks_obtained: number | null;
 }
 
 interface CourseAssignment {
@@ -44,6 +45,7 @@ interface CourseAssignment {
   submission_status: "pending" | "approved" | "rejected";
   submitted_at: string;
   feedback: string | null;
+  marks_obtained: number | null;
 }
 
 // ── Status Config ─────────────────────────────────────────────────────────────
@@ -362,6 +364,11 @@ function CourseAssignmentCard({
         <cfg.Icon size={11} />
         {cfg.label}
       </span>
+      {a.marks_obtained !== null && a.marks_obtained !== undefined && (
+        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 text-green-700 px-2.5 py-0.5 text-[10px] font-bold">
+          🏆 {a.marks_obtained} out of 10
+        </span>
+      )}
     </div>
   );
 }
@@ -427,6 +434,11 @@ function StandaloneCard({
         <cfg.Icon size={11} />
         {cfg.label}
       </span>
+      {a.marks_obtained !== null && a.marks_obtained !== undefined && (
+        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 text-green-700 px-2.5 py-0.5 text-[10px] font-bold">
+          🏆 {a.marks_obtained} out of 10
+        </span>
+      )}
       <ChevronRight
         size={14}
         className="shrink-0 text-muted opacity-0 group-hover:opacity-100 transition-opacity"

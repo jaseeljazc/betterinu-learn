@@ -5,26 +5,24 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import type { StudentAttendanceRecord } from "./student-attendance-view";
 
-const STATUSES = ["Present", "Late", "Early_Checkout", "Half_Day", "Absent", "Leave", "Holiday"] as const;
+const STATUSES = ["Present", "Late", "Half_Day", "Absent", "Leave", "Holiday"] as const;
 type Status = typeof STATUSES[number];
 
 const STATUS_STYLE: Record<Status, string> = {
-  Present:        "border-green-500 bg-green-500 text-white",
-  Late:           "border-amber-500 bg-amber-500 text-white",
-  Early_Checkout: "border-orange-500 bg-orange-500 text-white",
-  Half_Day:       "border-blue-500 bg-blue-500 text-white",
-  Absent:         "border-red-500 bg-red-500 text-white",
-  Leave:          "border-amber-500 bg-amber-500 text-white",
-  Holiday:        "border-purple-500 bg-purple-500 text-white",
+  Present:  "border-green-500 bg-green-500 text-white",
+  Late:     "border-amber-500 bg-amber-500 text-white",
+  Half_Day: "border-blue-500 bg-blue-500 text-white",
+  Absent:   "border-red-500 bg-red-500 text-white",
+  Leave:    "border-amber-500 bg-amber-500 text-white",
+  Holiday:  "border-purple-500 bg-purple-500 text-white",
 };
 const STATUS_INACTIVE: Record<Status, string> = {
-  Present:        "border-green-200 text-green-700 hover:bg-green-50",
-  Late:           "border-amber-200 text-amber-700 hover:bg-amber-50",
-  Early_Checkout: "border-orange-200 text-orange-600 hover:bg-orange-50",
-  Half_Day:       "border-blue-200 text-blue-700 hover:bg-blue-50",
-  Absent:         "border-red-200 text-red-600 hover:bg-red-50",
-  Leave:          "border-amber-200 text-amber-700 hover:bg-amber-50",
-  Holiday:        "border-purple-200 text-purple-700 hover:bg-purple-50",
+  Present:  "border-green-200 text-green-700 hover:bg-green-50",
+  Late:     "border-amber-200 text-amber-700 hover:bg-amber-50",
+  Half_Day: "border-blue-200 text-blue-700 hover:bg-blue-50",
+  Absent:   "border-red-200 text-red-600 hover:bg-red-50",
+  Leave:    "border-amber-200 text-amber-700 hover:bg-amber-50",
+  Holiday:  "border-purple-200 text-purple-700 hover:bg-purple-50",
 };
 
 interface Props {
@@ -43,6 +41,9 @@ export function StudentAttendanceModal({
 }: Props) {
   const [status, setStatus] = useState<Status | "">(
     (existingRecord?.status as Status) ?? ""
+  );
+  const [holidayType, setHolidayType] = useState<"required" | "optional">(
+    ((existingRecord as any)?.holiday_type as "required" | "optional") ?? "required"
   );
   const [note, setNote]     = useState(existingRecord?.note ?? "");
   const [saving, setSaving] = useState(false);
@@ -66,6 +67,7 @@ export function StudentAttendanceModal({
           date: initDate,
           status,
           note: note || null,
+          ...(status === "Holiday" ? { holiday_type: holidayType } : {}),
         }),
       });
       const data = await res.json();
@@ -162,6 +164,40 @@ export function StudentAttendanceModal({
                 </button>
               ))}
             </div>
+          {/* Holiday type picker */}
+          {status === "Holiday" && !readonly && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Holiday Type *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHolidayType("required")}
+                  className={[
+                    "rounded-md border-2 px-4 py-2.5 text-xs font-bold transition-all text-left",
+                    holidayType === "required"
+                      ? "border-red-500 bg-red-500 text-white"
+                      : "border-red-200 text-red-700 hover:bg-red-50 bg-white",
+                  ].join(" ")}
+                >
+                  🔴 Required
+                  <span className="block text-[10px] font-normal mt-0.5 opacity-80">Institution closed</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHolidayType("optional")}
+                  className={[
+                    "rounded-md border-2 px-4 py-2.5 text-xs font-bold transition-all text-left",
+                    holidayType === "optional"
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-amber-200 text-amber-700 hover:bg-amber-50 bg-white",
+                  ].join(" ")}
+                >
+                  🟡 Optional
+                  <span className="block text-[10px] font-normal mt-0.5 opacity-80">Student may attend</span>
+                </button>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Note */}
