@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Users, UserX, Clock, Gift, Eraser } from "lucide-react";
+import { Users, UserX, Clock, Gift, Eraser, X } from "lucide-react";
 import { StudentAttendanceModal } from "./student-attendance-modal";
 import { toast } from "sonner";
 
@@ -74,6 +74,11 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
     studentName?: string;
     date?: string;
   }>({ open: false });
+  const [bulkHolidayModal, setBulkHolidayModal] = useState<{
+    open: boolean;
+    day?: number;
+  }>({ open: false });
+  const [tempHolidayType, setTempHolidayType] = useState<"required" | "optional">("required");
 
   // Fetch weekend_days from settings
   useEffect(() => {
@@ -136,42 +141,45 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
     return records.find((r) => r.student_id === studentId && r.date === dateStr);
   }
 
-  async function handleBulkMark(day: number, status: string) {
+  async function handleBulkMark(day: number, status: string, holidayType?: "required" | "optional") {
     if (isConfiguredWeekend(day)) {
       toast.error("Cannot bulk-mark a weekly off day — it is an automatic holiday");
       return;
     }
+    if (status === "Holiday" && !holidayType) {
+      setBulkHolidayModal({ open: true, day });
+      return;
+    }
     const dateStr = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-    let ok = 0;
-    let failed = 0;
-    for (const student of students) {
-      try {
-        let res;
-        if (status === "CLEAR") {
-          res = await fetch("/api/admin/student-attendance/mark", {
-            method: "DELETE",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ studentId: student.id, date: dateStr }),
-          });
-        } else {
-          res = await fetch("/api/admin/student-attendance/mark", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ studentId: student.id, date: dateStr, status }),
-          });
-        }
-        if (!res.ok) { failed++; } else { ok++; }
-      } catch { failed++; }
+    const studentIds = students.map((s) => s.id);
+    if (studentIds.length === 0) return;
+
+    try {
+      const res = await fetch("/api/admin/student-attendance/bulk-mark", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentIds,
+          date: dateStr,
+          status,
+          ...(status === "Holiday" ? { holiday_type: holidayType } : {}),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to bulk mark");
+
+      if (data.failed > 0) {
+        toast.error(`${data.failed} students failed to mark`);
+      } else {
+        toast.success(`Marked ${studentIds.length} students as ${status === "CLEAR" ? "Clear" : status} ${status === "Holiday" ? `(${holidayType}) ` : ""}for day ${day}`);
+      }
+    } catch (e: any) {
+      toast.error(e.message);
     }
 
-    if (failed > 0) {
-      toast.error(`${failed} students failed to mark`);
-    } else {
-      toast.success(`Marked ${ok} students as ${status} for day ${day}`);
-    }
     fetchRecords();
     fetchTodayRecords();
   }
@@ -452,6 +460,81 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
             fetchTodayRecords();
           }}
         />
+      )}
+
+      {bulkHolidayModal.open && bulkHolidayModal.day && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-default">
+              <h2 className="text-base font-bold text-foreground">Bulk Mark Holiday</h2>
+              <button
+                onClick={() => setBulkHolidayModal({ open: false })}
+                className="rounded-md p-1.5 text-muted hover:text-primary hover:bg-subtle transition-colors"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-secondary">
+                You are marking day <strong>{bulkHolidayModal.day}</strong> of the month as a Holiday for all students.
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">Holiday Type *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTempHolidayType("required")}
+                    className={[
+                      "rounded-md border-2 px-4 py-3 text-xs font-bold transition-all text-left",
+                      tempHolidayType === "required"
+                        ? "border-red-500 bg-red-500 text-white"
+                        : "border-red-200 text-red-700 hover:bg-red-50 bg-white",
+                    ].join(" ")}
+                  >
+                    🔴 Required
+                    <span className="block text-[10px] font-normal mt-0.5 opacity-80">Institution closed</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTempHolidayType("optional")}
+                    className={[
+                      "rounded-md border-2 px-4 py-3 text-xs font-bold transition-all text-left",
+                      tempHolidayType === "optional"
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-amber-200 text-amber-700 hover:bg-amber-50 bg-white",
+                    ].join(" ")}
+                  >
+                    🟡 Optional
+                    <span className="block text-[10px] font-normal mt-0.5 opacity-80">Student may attend</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-6 py-4 border-t border-default">
+              <button
+                onClick={() => {
+                  const day = bulkHolidayModal.day!;
+                  setBulkHolidayModal({ open: false });
+                  handleBulkMark(day, "Holiday", tempHolidayType);
+                }}
+                className="flex-1 rounded-md bg-primary py-2.5 text-sm font-semibold text-white hover:opacity-90 shadow-xs transition-all"
+              >
+                Confirm Bulk Holiday
+              </button>
+              <button
+                onClick={() => setBulkHolidayModal({ open: false })}
+                className="flex-1 rounded-md border border-default py-2.5 text-sm font-semibold text-secondary hover:bg-subtle transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

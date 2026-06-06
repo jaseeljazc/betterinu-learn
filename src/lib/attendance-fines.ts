@@ -112,6 +112,16 @@ export async function runCatchUp(
     `;
     if (leaveCheck.length > 0) continue;
 
+    // Skip if this day is marked as a Holiday (required or optional — both are exempt)
+    const holidayCheck = await sql`
+      SELECT id FROM student_attendance
+      WHERE student_id = ${studentId}
+        AND date = ${dateStr}::date
+        AND status = 'Holiday'
+      LIMIT 1
+    `;
+    if (holidayCheck.length > 0) continue;
+
     const result = await sql`
       INSERT INTO student_attendance (student_id, date, status, note, updated_at)
       VALUES (${studentId}, ${dateStr}::date, 'Absent', 'Auto-marked: no punch-in recorded', NOW())

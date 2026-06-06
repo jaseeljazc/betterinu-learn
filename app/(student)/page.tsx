@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AttendanceWidget } from "@/components/student/attendance-widget";
+import { EventsWidget } from "@/components/student/dashboard/events-widget";
 import type { Course } from "@/types";
 import type { User } from "firebase/auth";
 
@@ -632,11 +633,12 @@ export default function Home() {
             )}
           </section>
 
-          {/* --- Course Tasks column --- */}
-          <section className="flex flex-col">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-foreground">
-                Course Tasks
+          {/* --- Course Tasks & Events column --- */}
+          <section className="flex flex-col gap-6">
+            <div className="flex flex-col flex-1">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-display text-base font-bold text-foreground">
+                  Course Tasks
               </h2>
               <Link
                 href="/assignments"
@@ -676,7 +678,11 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            )}
+              )}
+            </div>
+
+            {/* Events Widget */}
+            <EventsWidget />
           </section>
         </div>
       </div>

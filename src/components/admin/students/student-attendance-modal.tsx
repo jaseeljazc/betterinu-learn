@@ -42,6 +42,9 @@ export function StudentAttendanceModal({
   const [status, setStatus] = useState<Status | "">(
     (existingRecord?.status as Status) ?? ""
   );
+  const [holidayType, setHolidayType] = useState<"required" | "optional">(
+    ((existingRecord as any)?.holiday_type as "required" | "optional") ?? "required"
+  );
   const [note, setNote]     = useState(existingRecord?.note ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState("");
@@ -64,6 +67,7 @@ export function StudentAttendanceModal({
           date: initDate,
           status,
           note: note || null,
+          ...(status === "Holiday" ? { holiday_type: holidayType } : {}),
         }),
       });
       const data = await res.json();
@@ -160,6 +164,40 @@ export function StudentAttendanceModal({
                 </button>
               ))}
             </div>
+          {/* Holiday type picker */}
+          {status === "Holiday" && !readonly && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Holiday Type *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHolidayType("required")}
+                  className={[
+                    "rounded-md border-2 px-4 py-2.5 text-xs font-bold transition-all text-left",
+                    holidayType === "required"
+                      ? "border-red-500 bg-red-500 text-white"
+                      : "border-red-200 text-red-700 hover:bg-red-50 bg-white",
+                  ].join(" ")}
+                >
+                  🔴 Required
+                  <span className="block text-[10px] font-normal mt-0.5 opacity-80">Institution closed</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHolidayType("optional")}
+                  className={[
+                    "rounded-md border-2 px-4 py-2.5 text-xs font-bold transition-all text-left",
+                    holidayType === "optional"
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-amber-200 text-amber-700 hover:bg-amber-50 bg-white",
+                  ].join(" ")}
+                >
+                  🟡 Optional
+                  <span className="block text-[10px] font-normal mt-0.5 opacity-80">Student may attend</span>
+                </button>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Note */}

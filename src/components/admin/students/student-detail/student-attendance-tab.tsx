@@ -341,7 +341,7 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
               <div className="rounded-md border border-default bg-white p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-foreground">Day Details</p>
-                  {canMark && selectedDay.status !== "future" && selectedDay.status !== "holiday" && (
+                  {canMark && selectedDay.status !== "future" && (
                     <Button
                       onClick={() => setModal({ open: true, date: selectedDay.date })}
                       className="h-7 px-2.5 text-[10px] font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors rounded-md"

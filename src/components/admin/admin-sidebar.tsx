@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
+  Calendar,
   CalendarDays,
   CheckSquare,
   ChevronDown,
@@ -62,10 +63,21 @@ const FALLBACK_NAV: NavItem[] = [
     Icon: LibraryBig,
     groupItems: [
       { href: "/admin/courses",                label: "Courses" },
-      { href: "/admin/students",               label: "Students" },
-      { href: "/admin/students/overdue",       label: "Overdue Payments" },
       { href: "/admin/submissions",            label: "Submissions" },
       { href: "/admin/standalone-assignments", label: "Standalone Tasks" },
+    ],
+  },
+  {
+    href: "/admin/students",
+    label: "Students",
+    Icon: GraduationCap,
+    subItems: [
+      { href: "/admin/students", label: "Directory", exact: true },
+      { href: "/admin/students/attendance", label: "Attendance", exact: true },
+      { href: "/admin/students/attendance/leave-requests", label: "Leave Requests" },
+      { href: "/admin/students/fines", label: "Fines" },
+      { href: "/admin/students/overdue", label: "Overdue Payments" },
+      { href: "/admin/events", label: "Events" },
     ],
   },
 ];
@@ -112,9 +124,6 @@ export function AdminSidebar({
     ...(can("courses", "view")
       ? [{ href: "/admin/courses", label: "Courses" }]
       : []),
-    ...(can("accounts", "view")
-      ? [{ href: "/admin/students/overdue", label: "Overdue Payments" }]
-      : []),
     ...(can("tasks", "view")
       ? [{ href: "/admin/submissions", label: "Submissions" }]
       : []),
@@ -151,6 +160,10 @@ export function AdminSidebar({
                         { href: "/admin/students/fines", label: "Fines" },
                       ]
                     : []),
+                  ...(can("accounts", "view")
+                    ? [{ href: "/admin/students/overdue", label: "Overdue Payments" }]
+                    : []),
+                  { href: "/admin/events", label: "Events" },
                 ],
               } satisfies NavItem,
             ]
@@ -207,6 +220,7 @@ export function AdminSidebar({
               } satisfies NavItem,
             ]
           : []),
+        { href: "/admin/events", label: "Events", Icon: Calendar },
         {
           href: "/admin/settings",
           label: "Settings",

@@ -23,11 +23,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { studentId, date, status, note } = body as {
+  const { studentId, date, status, note, holiday_type } = body as {
     studentId?: string;
     date?: string;
     status?: string;
     note?: string;
+    holiday_type?: string;
   };
 
   if (!studentId || !date || !status) {
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  // If marking as Holiday, validate/default holiday_type
+  const resolvedHolidayType: string | null =
+    status === "Holiday"
+      ? (holiday_type === "optional" ? "optional" : "required")
+      : null;
 
   // Block marking on configured weekly off days (uses global settings, not hardcoded Sunday)
   const [yr, mo, dy] = date.split("-").map(Number);
@@ -65,14 +72,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const rows = await sql`
-      INSERT INTO student_attendance (student_id, date, status, note, marked_by)
-      VALUES (${studentId}, ${date}::date, ${status}, ${note ?? null}, ${session.adminId})
+      INSERT INTO student_attendance (student_id, date, status, note, marked_by, holiday_type)
+      VALUES (${studentId}, ${date}::date, ${status}, ${note ?? null}, ${session.adminId}, ${resolvedHolidayType})
       ON CONFLICT (student_id, date)
       DO UPDATE SET
-        status     = EXCLUDED.status,
-        note       = EXCLUDED.note,
-        marked_by  = EXCLUDED.marked_by,
-        updated_at = NOW()
+        status       = EXCLUDED.status,
+        note         = EXCLUDED.note,
+        marked_by    = EXCLUDED.marked_by,
+        holiday_type = EXCLUDED.holiday_type,
+        updated_at   = NOW()
       RETURNING id
     `;
 

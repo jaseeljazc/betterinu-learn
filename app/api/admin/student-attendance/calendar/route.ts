@@ -82,7 +82,8 @@ export async function GET(req: NextRequest) {
         sa.punch_in,
         sa.punch_out,
         sa.note,
-        sa.marked_by
+        sa.marked_by,
+        sa.holiday_type
       FROM student_attendance sa
       WHERE sa.student_id = ${studentId}
         AND sa.date >= ${firstDay}::date

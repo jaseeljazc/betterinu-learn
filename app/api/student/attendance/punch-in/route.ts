@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     // Check if a row already exists for today (IST-aware)
     const existing = await sql`
-    SELECT id, punch_in, marked_by FROM student_attendance
+    SELECT id, punch_in, marked_by, status, holiday_type FROM student_attendance
     WHERE student_id = ${student.studentId}
       AND date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
     LIMIT 1
@@ -34,7 +34,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already punched in today" }, { status: 409 });
     }
     if (existing[0].marked_by !== null) {
-      return NextResponse.json({ error: "This day has been manually marked by an admin." }, { status: 403 });
+      const rowStatus = existing[0].status as string;
+      const holidayType = existing[0].holiday_type as string | null;
+      // Required holiday — block punch-in
+      if (rowStatus === "Holiday" && holidayType !== "optional") {
+        return NextResponse.json(
+          { error: "Today is a Required Holiday. The institution is closed." },
+          { status: 403 }
+        );
+      }
+      // Optional holiday — allow punch-in to continue
+      if (rowStatus === "Holiday" && holidayType === "optional") {
+        // Fall through — let punch-in proceed
+      } else {
+        // Any other admin-marked status
+        return NextResponse.json({ error: "This day has been manually marked by an admin." }, { status: 403 });
+      }
     }
   }
 
