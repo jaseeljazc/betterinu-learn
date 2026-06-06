@@ -57,7 +57,7 @@ export async function POST(
   if (!admin) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const { id } = await params;
-  const { action, feedback } = await req.json().catch(() => ({ action: "approve", feedback: "" }));
+  const { action, feedback, marks_obtained = null } = await req.json().catch(() => ({ action: "approve", feedback: "", marks_obtained: null }));
 
   if (!["approve", "reject"].includes(action)) {
     return NextResponse.json({ error: "Invalid action. Use 'approve' or 'reject'." }, { status: 400 });
@@ -77,6 +77,7 @@ export async function POST(
     SET
       status      = ${action === "approve" ? "approved" : "rejected"},
       feedback    = ${feedback ?? null},
+      marks_obtained = ${marks_obtained ?? null},
       reviewed_at = NOW(),
       reviewed_by = ${admin.adminId}
     WHERE id = ${id}

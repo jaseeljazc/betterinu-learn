@@ -33,6 +33,7 @@ export function ReviewSubmissionModal({
   const [feedback, setFeedback] = useState(
     submission.feedback ?? ""
   )
+  const [marksObtained, setMarksObtained] = useState("")
   const [actionError, setActionError] = useState("")
 
   const reviewMutation = useReviewSubmission(studentId)
@@ -45,15 +46,20 @@ export function ReviewSubmissionModal({
       return
     }
     setActionError("")
+    const isStandalone = !!(submission as any).scope;
+    const marks = marksObtained.trim() ? parseFloat(marksObtained) : null;
     reviewMutation.mutate(
       {
         submissionId: submission.id,
         action,
         feedback,
+        isStandalone,
+        marks_obtained: marks,
       },
       {
         onSuccess: () => {
           setFeedback("")
+          setMarksObtained("")
           onClose()
         },
       }
@@ -148,6 +154,25 @@ export function ReviewSubmissionModal({
               </div>
             ) : (
               <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
+                    Score Awarded
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      placeholder="0"
+                      value={marksObtained}
+                      onChange={(e) => setMarksObtained(e.target.value)}
+                      className="w-24 rounded-md border border-default bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+                    <span className="text-sm text-muted">out of 10</span>
+                  </div>
+                  <p className="text-xs text-muted mt-1">Leave blank to skip awarding a score.</p>
+                </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
                     Feedback (required for rejection)

@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
   const rows = await sql`
     SELECT
       s.id, s.name, s.email, s.student_type, s.is_active,
-      s.profile_image_url, s.created_at, s.temp_password,
+      s.profile_image_url, s.created_at, s.temp_password, s.started_at,
       COUNT(sc.id)::int AS course_count
     FROM students s
     LEFT JOIN student_courses sc ON sc.student_id = s.id
-    GROUP BY s.id, s.name, s.email, s.student_type, s.is_active, s.profile_image_url, s.created_at, s.temp_password
+    GROUP BY s.id, s.name, s.email, s.student_type, s.is_active, s.profile_image_url, s.created_at, s.temp_password, s.started_at
     ORDER BY s.created_at DESC
   `;
 
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
     emergency_contact_name,
     emergency_contact_relation,
     emergency_contact_phone,
+    started_at,
     // Academic profile (all optional)
     highest_qualification,
     current_status,
@@ -144,7 +145,8 @@ export async function POST(req: NextRequest) {
         emergency_contact_phone,
         is_active,
         temp_password,
-        student_code
+        student_code,
+        started_at
       )
       VALUES (
         ${name},
@@ -161,7 +163,8 @@ export async function POST(req: NextRequest) {
         ${emergency_contact_phone ?? null},
         TRUE,
         ${password},
-        ${studentCode}
+        ${studentCode},
+        ${started_at ? new Date(started_at) : null}
       )
       RETURNING id
     `;

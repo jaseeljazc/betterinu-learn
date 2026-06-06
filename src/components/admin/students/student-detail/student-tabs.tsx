@@ -30,6 +30,7 @@ import {
 } from "./types"
 import { FeePlanPanel } from "./fee-plan-panel"
 import { StudentAttendanceTab } from "./student-attendance-tab"
+import { StudentFinesTab } from "./student-fines-tab"
 
 type StudentTabsProps = {
   studentId: string
@@ -51,7 +52,7 @@ export function StudentTabs({
   onReviewSubmission,
 }: StudentTabsProps) {
   const [activeTab, setActiveTab] = useState<
-    "courses" | "submissions" | "tasks" | "fee" | "attendance"
+    "courses" | "submissions" | "tasks" | "fee" | "attendance" | "fines"
   >("courses")
   const [collapsedCourses, setCollapsedCourses] = useState<
     Set<string>
@@ -69,7 +70,7 @@ export function StudentTabs({
   return (
     <div className="flex-1 min-w-0 space-y-6 w-full">
       <div className="flex gap-1 rounded-md border border-default bg-white p-1 w-fit flex-wrap">
-        {(["courses", "submissions", "tasks", "fee", "attendance"] as const).map(
+        {(["courses", "submissions", "tasks", "fee", "attendance", "fines"] as const).map(
           (tab) => (
             <Button
               key={tab}
@@ -94,7 +95,9 @@ export function StudentTabs({
                           Attendance
                         </span>
                       )
-                      : (
+                      : tab === "fines"
+                        ? "Fines"
+                        : (
                         <span className="flex items-center gap-1.5">
                           Fee Plan
                         </span>
@@ -121,7 +124,10 @@ export function StudentTabs({
       )}
 
       {activeTab === "tasks" && (
-        <TasksTabContent standaloneSubs={standaloneSubs} />
+        <TasksTabContent 
+          standaloneSubs={standaloneSubs} 
+          onReviewSubmission={onReviewSubmission}
+        />
       )}
 
       {activeTab === "fee" && (
@@ -137,6 +143,12 @@ export function StudentTabs({
           studentName={studentName}
           canMark={canEditStudent}
         />
+      )}
+
+      {activeTab === "fines" && (
+        <div className="rounded-md border border-default bg-white overflow-hidden">
+          <StudentFinesTab studentId={studentId} />
+        </div>
       )}
     </div>
   )
@@ -524,8 +536,10 @@ function SubmissionsTabContent({
 
 function TasksTabContent({
   standaloneSubs,
+  onReviewSubmission,
 }: {
   standaloneSubs: any[]
+  onReviewSubmission: (sub: Submission) => void
 }) {
   if (standaloneSubs.length === 0) {
     return (
@@ -589,12 +603,33 @@ function TasksTabContent({
                 </span>
               </td>
               <td className="px-4 py-3 text-right">
-                <a
-                  href="/admin/standalone-submissions"
+                <button
+                  onClick={() => {
+                    // Transform standalone submission to match Submission type
+                    const transformed: Submission & { scope?: string } = {
+                      id: sub.id,
+                      assignment_id: sub.assignment_id,
+                      assignment_title: sub.assignment_title,
+                      assignment_data: {
+                        description: sub.assignment_instructions,
+                        files: sub.assignment_files,
+                      },
+                      course_id: sub.course_id || "",
+                      course_title: sub.course_title || "",
+                      submitted_text: sub.submitted_text,
+                      submitted_files: sub.submitted_files,
+                      submitted_at: sub.submitted_at,
+                      reviewed_at: sub.reviewed_at,
+                      status: sub.status,
+                      feedback: sub.feedback,
+                      scope: sub.scope, // Mark as standalone
+                    };
+                    onReviewSubmission(transformed);
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white transition-colors"
                 >
                   <Eye className="size-3.5" /> Review
-                </a>
+                </button>
               </td>
             </tr>
           ))}

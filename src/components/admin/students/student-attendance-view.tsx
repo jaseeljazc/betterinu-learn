@@ -179,20 +179,18 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
   // Today stats
   const present = todayRecords.filter((r) => r.status === "Present").length;
   const late = todayRecords.filter((r) => r.status === "Late").length;
-  const earlyCheckout = todayRecords.filter((r) => r.status === "Early_Checkout").length;
   const halfDay = todayRecords.filter((r) => r.status === "Half_Day").length;
   const absent  = todayRecords.filter((r) => r.status === "Absent").length;
   const leave   = todayRecords.filter((r) => r.status === "Leave").length;
   const holiday = todayRecords.filter((r) => r.status === "Holiday").length;
 
   const STATUS_CFG: Record<string, { short: string; cls: string; ring: string }> = {
-    Present:        { short: "P", cls: "bg-green-500 text-white",  ring: "ring-green-300" },
-    Late:           { short: "LT", cls: "bg-amber-500 text-white",  ring: "ring-amber-300" },
-    Early_Checkout: { short: "EC", cls: "bg-orange-500 text-white", ring: "ring-orange-300" },
-    Half_Day:       { short: "HD", cls: "bg-blue-500 text-white",   ring: "ring-blue-300" },
-    Absent:         { short: "A", cls: "bg-red-500 text-white",    ring: "ring-red-300" },
-    Leave:          { short: "L", cls: "bg-amber-500 text-white",  ring: "ring-amber-300" },
-    Holiday:        { short: "H", cls: "bg-purple-500 text-white", ring: "ring-purple-300" },
+    Present:  { short: "P",  cls: "bg-green-500 text-white",  ring: "ring-green-300" },
+    Late:     { short: "LT", cls: "bg-amber-500 text-white",  ring: "ring-amber-300" },
+    Half_Day: { short: "HD", cls: "bg-blue-500 text-white",   ring: "ring-blue-300" },
+    Absent:   { short: "A",  cls: "bg-red-500 text-white",    ring: "ring-red-300" },
+    Leave:    { short: "L",  cls: "bg-amber-500 text-white",  ring: "ring-amber-300" },
+    Holiday:  { short: "H",  cls: "bg-purple-500 text-white", ring: "ring-purple-300" },
   };
 
   return (
@@ -216,7 +214,7 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Present", count: present + late + earlyCheckout, Icon: Users, color: "bg-green-50 text-green-700 border-green-200" },
+          { label: "Present", count: present + late, Icon: Users, color: "bg-green-50 text-green-700 border-green-200" },
           { label: "Absent",  count: absent,  Icon: UserX, color: "bg-red-50 text-red-600 border-red-200" },
           { label: "Leave",   count: leave,   Icon: Clock, color: "bg-amber-50 text-amber-700 border-amber-200" },
           { label: "Half Day", count: halfDay, Icon: Clock, color: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -355,7 +353,7 @@ export function StudentAttendanceView({ canMark, canEdit }: Props) {
 
                     const rec    = stuRecs.find((r) => r.date === dateStr);
                     const status = rec?.status;
-                    if (status === "Present" || status === "Late" || status === "Early_Checkout") pCount++;
+                    if (status === "Present" || status === "Late") pCount++;
                     else if (status === "Absent")  aCount++;
                     else if (status === "Leave")   lCount++;
                     else if (status === "Half_Day") hdCount++;

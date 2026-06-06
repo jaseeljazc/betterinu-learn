@@ -12,6 +12,7 @@ import {
   FileText,
   Loader2,
   ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,9 +78,41 @@ function ReviewModal({
 }) {
   const [adminNote, setAdminNote] = useState("");
   const [saving, setSaving]       = useState(false);
+  const [warningMsg, setWarningMsg] = useState("");
+  const [finePreview, setFinePreview] = useState<{amount: number; period: string} | null>(null);
+
+  // Check if fine will be triggered on approval
+  useEffect(() => {
+    if (action !== "approved" || !summary) return;
+    
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/settings/leave-fines", { credentials: "include" });
+        if (!res.ok) return;
+        const settings = await res.json();
+        
+        if (!settings.enabled) return;
+        
+        // summary.leave = approved leaves this month/year (depending on period)
+        const currentApproved = summary.leave;
+        const afterApproval = currentApproved + 1;
+        
+        if (afterApproval > settings.free_leaves_per_period) {
+          const [year, month] = request.date.split("-");
+          const periodLabel = settings.fine_period === "monthly" 
+            ? new Date(Number(year), Number(month) - 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+            : year;
+          setFinePreview({ amount: settings.fine_amount, period: periodLabel });
+        }
+      } catch (err) {
+        console.error("Failed to check fine preview:", err);
+      }
+    })();
+  }, [action, summary, request.date]);
 
   async function handleConfirm() {
     setSaving(true);
+    setWarningMsg("");
     try {
       const res = await fetch(
         `/api/admin/student-attendance/leave-requests/${request.id}`,
@@ -92,8 +125,17 @@ function ReviewModal({
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
-      toast.success(action === "approved" ? "Leave approved ✓" : "Leave rejected");
-      onDone();
+      
+      if (data.warning) {
+        setWarningMsg(data.warning);
+        setTimeout(() => {
+          toast.success("Leave approved ✓");
+          onDone();
+        }, 3000);
+      } else {
+        toast.success(action === "approved" ? "Leave approved ✓" : "Leave rejected");
+        onDone();
+      }
     } catch (err: any) {
       toast.error(err.message);
       setSaving(false);
@@ -129,16 +171,22 @@ function ReviewModal({
           </div>
 
           {/* Request details */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <CalendarDays className="size-3.5 text-muted shrink-0" />
-              <span className="text-xs font-semibold text-foreground">
+              <CalendarDays className="size-4 text-muted shrink-0" />
+              <span className="text-sm font-semibold text-foreground">
                 {fmtDate(request.date)}
               </span>
             </div>
-            <div className="flex items-start gap-2">
-              <FileText className="size-3.5 text-muted shrink-0 mt-0.5" />
-              <span className="text-xs text-secondary">{request.reason}</span>
+            
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Reason for Leave
+              </label>
+              <div className="flex items-start gap-2.5 rounded-md border border-default bg-white px-3 py-2.5">
+                <FileText className="size-4 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-foreground leading-relaxed">{request.reason}</span>
+              </div>
             </div>
           </div>
 
@@ -161,6 +209,30 @@ function ReviewModal({
                   <p className="font-bold text-sky-700 text-base leading-none">{summary.pending}</p>
                   <p className="text-muted text-[10px] mt-0.5">Pending</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Fine warning banner - before approval */}
+          {isApprove && finePreview && !warningMsg && (
+            <div className="flex items-start gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3">
+              <AlertCircle className="size-5 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-bold text-amber-900 text-sm">⚠️ Fine Will Be Generated</p>
+                <p className="text-xs text-amber-800 mt-1">
+                  Approving this leave will generate a fine of <span className="font-bold">₹{finePreview.amount}</span> for {finePreview.period}. The student has exceeded their free leave quota.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Fine warning banner - after approval */}
+          {warningMsg && (
+            <div className="flex items-start gap-3 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <AlertCircle className="size-4 shrink-0 mt-0.5 text-green-600" />
+              <div>
+                <p className="font-bold">Leave Approved - Fine Generated</p>
+                <p className="text-xs mt-1">{warningMsg}</p>
               </div>
             </div>
           )}

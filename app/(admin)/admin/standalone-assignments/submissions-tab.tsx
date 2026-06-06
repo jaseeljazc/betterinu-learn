@@ -27,6 +27,7 @@ export function StandaloneSubmissionsTab({ initialId }: { initialId?: string | n
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [marksObtained, setMarksObtained] = useState("");
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
@@ -51,13 +52,14 @@ export function StandaloneSubmissionsTab({ initialId }: { initialId?: string | n
     if (action === "reject" && !feedback.trim()) { setActionError("Please provide feedback before rejecting."); return; }
     setActing(true); setActionError("");
     try {
+      const marks = marksObtained.trim() ? parseFloat(marksObtained) : null;
       const res = await fetch(`/api/admin/standalone-submissions/${selected.id}`, {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, feedback }),
+        body: JSON.stringify({ action, feedback, marks_obtained: marks }),
       });
       if (!res.ok) throw new Error("Action failed");
-      setSelected(null); setFeedback(""); await load();
+      setSelected(null); setFeedback(""); setMarksObtained(""); await load();
     } catch (e: any) { setActionError(e.message); } finally { setActing(false); }
   }
 
@@ -123,7 +125,7 @@ export function StandaloneSubmissionsTab({ initialId }: { initialId?: string | n
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => { setSelected(sub); setFeedback(sub.feedback ?? ""); setActionError(""); }}
+                      <button onClick={() => { setSelected(sub); setFeedback(sub.feedback ?? ""); setMarksObtained(""); setActionError(""); }}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white transition-colors">
                         <Eye className="size-3.5" /> Review
                       </button>
@@ -165,6 +167,15 @@ export function StandaloneSubmissionsTab({ initialId }: { initialId?: string | n
                 </div>
               </div>
               {(selected.submitted_files || []).length > 0 && <FileViewer files={selected.submitted_files} title="Student's Uploaded Files" />}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-muted mb-2 block">Score Awarded</label>
+                <div className="flex items-center gap-2">
+                  <input type="number" min={0} max={10} step={0.5} placeholder="0" value={marksObtained} onChange={(e) => setMarksObtained(e.target.value)}
+                    className="w-24 rounded-lg border border-default bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                  <span className="text-sm text-muted">out of 10</span>
+                </div>
+                <p className="text-xs text-muted mt-1">Leave blank to skip awarding a score.</p>
+              </div>
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-muted mb-2 block">Feedback (required for rejection)</label>
                 <textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Write feedback for the student..." rows={4}

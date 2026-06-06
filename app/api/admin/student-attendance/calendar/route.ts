@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
-import { getStudentAttendanceSettings } from "@/lib/app-settings";
+import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
+import { runCatchUp } from "@/lib/attendance-fines";
 
 /**
  * GET /api/admin/student-attendance/calendar
@@ -61,6 +62,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const [attSettings, fineSettings, studentRow] = await Promise.all([
+      getStudentAttendanceSettings(),
+      getStudentLeaveFineSettings(),
+      sql`SELECT started_at::text AS started_at FROM students WHERE id = ${studentId} LIMIT 1`,
+    ]);
+    const startedAt = studentRow[0]?.started_at ?? null;
+
+    // Run catch-up silently before serving calendar data
+    await runCatchUp(studentId, attSettings, fineSettings, startedAt).catch((e) =>
+      console.error("runCatchUp failed:", e)
+    );
+
     const rows = await sql`
       SELECT
         sa.id,
@@ -78,29 +91,34 @@ export async function GET(req: NextRequest) {
     `;
 
     const leaveReqRows = await sql`
-      SELECT date::text AS date, status AS lr_status
+      SELECT date::text AS date, status AS lr_status, reason
       FROM student_leave_requests
       WHERE student_id = ${studentId}
         AND date >= ${firstDay}::date
         AND date <= ${lastDay}::date
     `;
 
-    const settings = await getStudentAttendanceSettings();
+    // Build weekend set (attSettings already fetched above)
     const weekendSet = new Set(
-      (settings.weekend_days ?? ["sunday"]).map((d) => DAY_NUM[d.toLowerCase()] ?? -1)
+      (attSettings.weekend_days ?? ["sunday"]).map((d) => DAY_NUM[d.toLowerCase()] ?? -1)
     );
 
     // Build lookup maps
     const rowMap = new Map<string, typeof rows[0]>();
     for (const row of rows) rowMap.set(row.date as string, row);
 
-    const leaveReqMap = new Map<string, string>();
-    for (const lr of leaveReqRows) leaveReqMap.set(lr.date as string, lr.lr_status as string);
+    const leaveReqMap = new Map<string, { status: string; reason: string | null }>();
+    for (const lr of leaveReqRows) {
+      leaveReqMap.set(lr.date as string, { 
+        status: lr.lr_status as string, 
+        reason: lr.reason as string | null 
+      });
+    }
 
     // Build day-by-day calendar
     const days: object[] = [];
     let present = 0, absent = 0, leave = 0, holiday = 0;
-    let late = 0, earlyCheckout = 0, halfDay = 0;
+    let late = 0, halfDay = 0;
 
     for (let d = 1; d <= lastDayNum; d++) {
       const dateStr   = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -108,13 +126,6 @@ export async function GET(req: NextRequest) {
       const isWeekend = weekendSet.has(dayOfWeek);
       const isFuture  = dateStr > todayStr;
       const row       = rowMap.get(dateStr);
-
-      // Weekend with no override → auto-holiday
-      if (isWeekend && !row) {
-        holiday++;
-        days.push({ date: dateStr, status: "holiday", note: DAY_NAME[dayOfWeek] });
-        continue;
-      }
 
       // Admin-marked rows take priority over everything
       if (row && row.marked_by) {
@@ -124,14 +135,17 @@ export async function GET(req: NextRequest) {
         else if (row.status === "Absent")         absent++;
         else if (row.status === "Half_Day")       halfDay++;
         else if (row.status === "Late")           late++;
-        else if (row.status === "Early_Checkout") earlyCheckout++;
         else                                      present++;
+
+        // Include leave reason separately for leave days
+        const leaveReq = leaveReqMap.get(dateStr);
 
         days.push({
           id:       row.id,
           date:     dateStr,
-          status:   s === "early_checkout" ? "early_checkout" : s === "half_day" ? "half_day" : s,
+          status:   s === "half_day" ? "half_day" : s,
           note:     row.note ?? null,
+          leaveReason: row.status === "Leave" ? (leaveReq?.reason ?? null) : null,
           punchIn:  row.punch_in ?? null,
           punchOut: row.punch_out ?? null,
           duration: duration(row.punch_in, row.punch_out),
@@ -141,15 +155,28 @@ export async function GET(req: NextRequest) {
 
       // Future date
       if (isFuture) {
-        const lrStatus = leaveReqMap.get(dateStr);
-        if (lrStatus === "approved" || (row && row.status === "Leave")) {
+        const leaveReq = leaveReqMap.get(dateStr);
+        if (leaveReq?.status === "approved" || (row && row.status === "Leave")) {
           leave++;
-          days.push({ date: dateStr, status: "leave", note: "Leave approved" });
-        } else if (lrStatus === "pending") {
-          days.push({ date: dateStr, status: "pending_leave" });
+          days.push({ date: dateStr, status: "leave", note: "Leave approved", leaveReason: leaveReq?.reason ?? null });
+        } else if (leaveReq?.status === "pending") {
+          days.push({ date: dateStr, status: "pending_leave", note: null, leaveReason: leaveReq?.reason ?? null });
         } else {
           days.push({ date: dateStr, status: "future" });
         }
+        continue;
+      }
+
+      // Past date before program start
+      if (!row && startedAt && dateStr < startedAt) {
+        days.push({ date: dateStr, status: "future" }); // Renders as before_start in UI
+        continue;
+      }
+
+      // Weekend with no override → auto-holiday
+      if (isWeekend && !row) {
+        holiday++;
+        days.push({ date: dateStr, status: "holiday", note: DAY_NAME[dayOfWeek] });
         continue;
       }
 
@@ -159,15 +186,14 @@ export async function GET(req: NextRequest) {
         const dbStatus = (row.status as string) || "Present";
         const s        = dbStatus.toLowerCase();
 
-        if (dbStatus === "Late")              late++;
-        else if (dbStatus === "Early_Checkout") earlyCheckout++;
-        else if (dbStatus === "Half_Day")     halfDay++;
-        else                                  present++;
+        if (dbStatus === "Late")          late++;
+        else if (dbStatus === "Half_Day") halfDay++;
+        else                              present++;
 
         days.push({
           id:       row.id,
           date:     dateStr,
-          status:   isOpen ? "open" : s === "early_checkout" ? "early_checkout" : s === "half_day" ? "half_day" : s,
+          status:   isOpen ? "open" : s === "half_day" ? "half_day" : s,
           punchIn:  row.punch_in,
           punchOut: row.punch_out ?? null,
           duration: duration(row.punch_in, row.punch_out),
@@ -181,8 +207,8 @@ export async function GET(req: NextRequest) {
       days.push({ date: dateStr, status: "absent" });
     }
 
-    const workDays     = present + late + earlyCheckout + halfDay + absent + leave;
-    const presentScore = present + late + earlyCheckout + halfDay * 0.5;
+    const workDays     = present + late + halfDay + absent + leave;
+    const presentScore = present + late + halfDay * 0.5;
     const percentage   = workDays > 0 ? Math.round((presentScore / workDays) * 100) : 0;
 
     let pendingLeave = 0;
@@ -192,7 +218,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       days,
-      summary: { present, absent, leave, holiday, late, earlyCheckout, halfDay, pendingLeave, percentage },
+      summary: { present, absent, leave, holiday, late, halfDay, pendingLeave, percentage },
+      startedAt,
     });
   } catch (err: any) {
     console.error("GET /api/admin/student-attendance/calendar:", err);

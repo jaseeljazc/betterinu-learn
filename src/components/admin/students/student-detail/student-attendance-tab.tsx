@@ -27,7 +27,7 @@ import { StudentAttendanceModal } from "@/components/admin/students/student-atte
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type DayStatus =
-  | "present" | "late" | "early_checkout" | "half_day"
+  | "present" | "late" | "half_day"
   | "absent" | "leave" | "holiday" | "open" | "future"
   | "pending_leave";
 
@@ -47,7 +47,6 @@ type MonthSummary = {
   leave: number;
   holiday: number;
   late: number;
-  earlyCheckout: number;
   halfDay: number;
   pendingLeave: number;
   percentage: number;
@@ -56,6 +55,7 @@ type MonthSummary = {
 type CalendarResponse = {
   days: DayRecord[];
   summary: MonthSummary;
+  startedAt?: string | null;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -88,29 +88,28 @@ function statusClasses(status: DayStatus): string {
   switch (status) {
     case "present":       return "bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200 text-emerald-700";
     case "late":          return "bg-amber-50 hover:bg-amber-100/80 border-amber-200 text-amber-700";
-    case "early_checkout":return "bg-orange-50 hover:bg-orange-100/80 border-orange-200 text-orange-700";
     case "half_day":      return "bg-blue-50 hover:bg-blue-100/80 border-blue-200 text-blue-700";
     case "open":          return "bg-amber-50 hover:bg-amber-100/80 border-amber-200 text-amber-700 animate-pulse";
     case "absent":        return "bg-rose-50 hover:bg-rose-100/80 border-rose-200 text-rose-700";
     case "leave":         return "bg-indigo-50 hover:bg-indigo-100/80 border-indigo-200 text-indigo-700";
     case "pending_leave": return "bg-sky-50 hover:bg-sky-100/80 border-sky-200 text-sky-700 border-dashed";
     case "holiday":       return "bg-purple-50 hover:bg-purple-100/80 border-purple-200 text-purple-700";
+    case "future":        return "bg-white border-slate-100 text-slate-400";
     default:              return "bg-slate-50 border-slate-100 text-slate-400/80 opacity-60";
   }
 }
 
 function bulletColor(status: DayStatus): string {
   switch (status) {
-    case "present":        return "bg-emerald-500";
-    case "late":           return "bg-amber-500";
-    case "early_checkout": return "bg-orange-500";
-    case "half_day":       return "bg-blue-500";
-    case "open":           return "bg-amber-500";
-    case "absent":         return "bg-rose-500";
-    case "leave":          return "bg-indigo-500";
-    case "pending_leave":  return "bg-sky-400";
-    case "holiday":        return "bg-purple-500";
-    default:               return "";
+    case "present":       return "bg-emerald-500";
+    case "late":          return "bg-amber-500";
+    case "half_day":      return "bg-blue-500";
+    case "open":          return "bg-amber-500";
+    case "absent":        return "bg-rose-500";
+    case "leave":         return "bg-indigo-500";
+    case "pending_leave": return "bg-sky-400";
+    case "holiday":       return "bg-purple-500";
+    default:              return "";
   }
 }
 
@@ -258,26 +257,42 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                 {data.days.map((day) => {
                   const dayNum    = parseInt(day.date.split("-")[2], 10);
                   const isSelected = selectedDay?.date === day.date;
-                  const cls       = statusClasses(day.status);
+                  const today = `${year}-${String(month).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+                  const isBeforeStart = data.startedAt && day.date < data.startedAt && day.date < today;
+                  const isStartDay = data.startedAt && day.date === data.startedAt;
+                  const cls       = isBeforeStart 
+                    ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed"
+                    : statusClasses(day.status);
 
                   const tileBtn = (
                     <button
                       key={day.date}
-                      onClick={() => setSelectedDay(day)}
+                      onClick={() => !isBeforeStart && setSelectedDay(day)}
+                      disabled={isBeforeStart}
                       className={cn(
                         "aspect-square border rounded-md flex flex-col items-center justify-center text-xs font-semibold transition-all relative overflow-hidden",
                         cls,
-                        isSelected && "ring-2 ring-primary ring-offset-1 scale-105 z-10"
+                        isSelected && !isBeforeStart && "ring-2 ring-primary ring-offset-1 scale-105 z-10"
                       )}
                     >
                       <span>{dayNum}</span>
-                      {day.note && day.status !== "future" && (
+                      {/* Start day text inside tile */}
+                      {isStartDay && (
+                        <span className="text-[7px] font-semibold leading-tight px-0.5 mt-0.5 w-full text-center">
+                          Started
+                        </span>
+                      )}
+                      {day.note && day.status !== "future" && !isStartDay && (
                         <span className="text-[9px] font-normal leading-tight px-0.5 mt-0.5 w-full text-center truncate opacity-75">
                           {day.note}
                         </span>
                       )}
                       {day.note && day.status !== "future" && (
                         <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-amber-400" />
+                      )}
+                      {/* Start day marker — top left */}
+                      {isStartDay && (
+                        <span className="absolute top-0 left-0 text-[10px]">🎯</span>
                       )}
                       {day.status !== "future" && bulletColor(day.status) && (
                         <span className={cn("absolute bottom-0.5 size-1 rounded-full", bulletColor(day.status))} />
@@ -306,7 +321,6 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
               {[
                 ["bg-emerald-50 border-emerald-200", "Present"],
                 ["bg-amber-50 border-amber-200",     "Late"],
-                ["bg-orange-50 border-orange-200",   "Early Checkout"],
                 ["bg-blue-50 border-blue-200",       "Half Day"],
                 ["bg-rose-50 border-rose-200",       "Absent"],
                 ["bg-indigo-50 border-indigo-200",   "Leave"],
@@ -352,7 +366,6 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                         "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold mt-1 uppercase border",
                         selectedDay.status === "present"        && "bg-emerald-50 text-emerald-700 border-emerald-200",
                         selectedDay.status === "late"           && "bg-amber-50 text-amber-700 border-amber-200",
-                        selectedDay.status === "early_checkout" && "bg-orange-50 text-orange-700 border-orange-200",
                         selectedDay.status === "half_day"       && "bg-blue-50 text-blue-700 border-blue-200",
                         selectedDay.status === "open"           && "bg-amber-50 text-amber-700 border-amber-200",
                         selectedDay.status === "absent"         && "bg-rose-50 text-rose-700 border-rose-200",
@@ -364,7 +377,6 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                     >
                       {selectedDay.status === "present"        && <CheckCircle2 className="size-3" />}
                       {selectedDay.status === "late"           && <Timer className="size-3" />}
-                      {selectedDay.status === "early_checkout" && <Timer className="size-3" />}
                       {selectedDay.status === "half_day"       && <CheckCircle2 className="size-3" />}
                       {selectedDay.status === "open"           && <Timer className="size-3 animate-spin" />}
                       {selectedDay.status === "absent"         && <XCircle className="size-3" />}
@@ -400,6 +412,16 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                     </div>
                   )}
 
+                  {/* Leave reason */}
+                  {(selectedDay as any).leaveReason && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-md p-3">
+                      <p className="text-[9px] text-indigo-700 font-bold uppercase tracking-wider flex items-center gap-1 mb-1">
+                        <StickyNote className="size-2.5" /> Leave Reason
+                      </p>
+                      <p className="text-xs text-indigo-900 leading-relaxed">{(selectedDay as any).leaveReason}</p>
+                    </div>
+                  )}
+
                   {/* Admin note */}
                   {selectedDay.note && (
                     <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
@@ -427,13 +449,12 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
               </div>
               <div className="grid grid-cols-2 gap-2 text-[10px]">
                 {[
-                  { label: "Present",        val: data.summary.present,       cls: "bg-emerald-50 border-emerald-100 text-emerald-700" },
-                  { label: "Late",           val: data.summary.late,           cls: "bg-amber-50 border-amber-100 text-amber-700" },
-                  { label: "Early Checkout", val: data.summary.earlyCheckout,  cls: "bg-orange-50 border-orange-100 text-orange-700" },
-                  { label: "Half Day",       val: data.summary.halfDay,        cls: "bg-blue-50 border-blue-100 text-blue-700" },
-                  { label: "Absent",         val: data.summary.absent,         cls: "bg-rose-50 border-rose-100 text-rose-700" },
-                  { label: "Leave",          val: data.summary.leave,          cls: "bg-indigo-50 border-indigo-100 text-indigo-700" },
-                  { label: "Holidays",       val: data.summary.holiday,        cls: "bg-purple-50 border-purple-100 text-purple-700 col-span-2" },
+                  { label: "Present",  val: data.summary.present,  cls: "bg-emerald-50 border-emerald-100 text-emerald-700" },
+                  { label: "Late",     val: data.summary.late,      cls: "bg-amber-50 border-amber-100 text-amber-700" },
+                  { label: "Half Day", val: data.summary.halfDay,   cls: "bg-blue-50 border-blue-100 text-blue-700" },
+                  { label: "Absent",   val: data.summary.absent,    cls: "bg-rose-50 border-rose-100 text-rose-700" },
+                  { label: "Leave",    val: data.summary.leave,     cls: "bg-indigo-50 border-indigo-100 text-indigo-700" },
+                  { label: "Holidays", val: data.summary.holiday,   cls: "bg-purple-50 border-purple-100 text-purple-700 col-span-2" },
                 ].map(({ label, val, cls }) => (
                   <div key={label} className={cn("border rounded-md p-2", cls)}>
                     <span className="block font-medium opacity-70">{label}</span>

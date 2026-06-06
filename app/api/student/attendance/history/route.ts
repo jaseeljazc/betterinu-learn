@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyStudentToken, extractToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getStudentAttendanceSettings } from "@/lib/app-settings";
+import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
+import { runCatchUp } from "@/lib/attendance-fines";
 
 /**
  * GET /api/student/attendance/history
@@ -45,6 +46,17 @@ export async function GET(req: NextRequest) {
   const lastDay  = `${year}-${String(month).padStart(2, "0")}-${lastDayNum}`;
 
   try {
+    // Run catch-up before fetching (silently marks missed absent days)
+    const [attSettings, fineSettings, studentRow] = await Promise.all([
+      getStudentAttendanceSettings(),
+      getStudentLeaveFineSettings(),
+      sql`SELECT started_at::text AS started_at FROM students WHERE id = ${student.studentId} LIMIT 1`,
+    ]);
+    const startedAt = studentRow[0]?.started_at ?? null;
+    await runCatchUp(student.studentId, attSettings, fineSettings, startedAt).catch((e) =>
+      console.error("runCatchUp failed:", e)
+    );
+
     // Fetch all attendance rows for this student in the month
     const rows = await sql`
     SELECT
@@ -63,15 +75,18 @@ export async function GET(req: NextRequest) {
 
   // Fetch leave requests for the same month
   const leaveReqRows = await sql`
-    SELECT date::text AS date, status AS lr_status
+    SELECT date::text AS date, status AS lr_status, reason
     FROM student_leave_requests
     WHERE student_id = ${student.studentId}
       AND date >= ${firstDay}::date
       AND date <= ${lastDay}::date
   `;
-  const leaveReqMap = new Map<string, string>(); // date → 'pending' | 'approved' | 'rejected'
+  const leaveReqMap = new Map<string, { status: string; reason: string | null }>(); // date → {status, reason}
   for (const lr of leaveReqRows) {
-    leaveReqMap.set(lr.date as string, lr.lr_status as string);
+    leaveReqMap.set(lr.date as string, { 
+      status: lr.lr_status as string, 
+      reason: lr.reason as string | null 
+    });
   }
 
   // Build lookup map: date-string → row
@@ -102,15 +117,14 @@ export async function GET(req: NextRequest) {
   };
   const DAY_NAME = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
-  // Fetch settings once — needed for weekend_days
-  const settings = await getStudentAttendanceSettings();
+  // Fetch settings once — needed for weekend_days (already fetched above via runCatchUp)
   const weekendSet = new Set(
-    (settings.weekend_days ?? ["sunday"]).map((d) => DAY_NUM[d.toLowerCase()] ?? -1)
+    (attSettings.weekend_days ?? ["sunday"]).map((d) => DAY_NUM[d.toLowerCase()] ?? -1)
   );
 
   const days: object[] = [];
   let present = 0, absent = 0, leave = 0, holiday = 0;
-  let late = 0, earlyCheckout = 0, halfDay = 0;
+  let late = 0, halfDay = 0;
 
   for (let d = 1; d <= lastDayNum; d++) {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -118,6 +132,52 @@ export async function GET(req: NextRequest) {
     const isWeekend = weekendSet.has(dayOfWeek);
     const isFuture  = dateStr > todayStr;
     const row       = rowMap.get(dateStr);
+
+    // Admin has explicitly set a status — always takes full priority over isFuture logic.
+    // Must be checked BEFORE isFuture so that admin-marked holidays/leaves on future dates appear correctly.
+    if (row && row.marked_by) {
+      const statusLower = row.status.toLowerCase();
+      if (row.status === "Leave")               leave++;
+      else if (row.status === "Holiday")        holiday++;
+      else if (row.status === "Absent")         absent++;
+      else if (row.status === "Half_Day")       halfDay++;
+      else if (row.status === "Late")           late++;
+      else present++;
+
+      // Include leave reason separately for leave days
+      const leaveReq = leaveReqMap.get(dateStr);
+      
+      days.push({
+        date: dateStr,
+        status: statusLower === "half_day" ? "half_day" : statusLower,
+        note: row.note ?? null,
+        leaveReason: row.status === "Leave" ? (leaveReq?.reason ?? null) : null,
+        punchIn: row.punch_in,
+        punchOut: row.punch_out ?? null,
+        duration: duration(row.punch_in, row.punch_out),
+      });
+      continue;
+    }
+
+    if (isFuture) {
+      // Check if admin has already approved leave for this future date
+      const leaveReq = leaveReqMap.get(dateStr);
+      if (leaveReq?.status === "approved" || (row && row.status === "Leave")) {
+        leave++;
+        days.push({ date: dateStr, status: "leave", note: "Leave approved", leaveReason: leaveReq?.reason ?? null });
+      } else if (leaveReq?.status === "pending") {
+        days.push({ date: dateStr, status: "pending_leave", note: null, leaveReason: leaveReq?.reason ?? null });
+      } else {
+        days.push({ date: dateStr, status: "future" });
+      }
+      continue;
+    }
+
+    // Past date before program start
+    if (!row && startedAt && dateStr < startedAt) {
+      days.push({ date: dateStr, status: "future" }); // Renders as before_start in UI
+      continue;
+    }
 
     if (isWeekend) {
       // Only treat as holiday if NO real DB record exists for this day.
@@ -130,43 +190,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Admin has explicitly set a status — always takes full priority over isFuture logic.
-    // Must be checked BEFORE isFuture so that admin-marked holidays/leaves on future dates appear correctly.
-    if (row && row.marked_by) {
-      const statusLower = row.status.toLowerCase();
-      if (row.status === "Leave")               leave++;
-      else if (row.status === "Holiday")        holiday++;
-      else if (row.status === "Absent")         absent++;
-      else if (row.status === "Half_Day")       halfDay++;
-      else if (row.status === "Late")           late++;
-      else if (row.status === "Early_Checkout") earlyCheckout++;
-      else present++;
-
-      days.push({
-        date: dateStr,
-        status: statusLower === "early_checkout" ? "early_checkout" : statusLower === "half_day" ? "half_day" : statusLower,
-        note: row.note ?? null,
-        punchIn: row.punch_in,
-        punchOut: row.punch_out ?? null,
-        duration: duration(row.punch_in, row.punch_out),
-      });
-      continue;
-    }
-
-    if (isFuture) {
-      // Check if admin has already approved leave for this future date
-      const lrStatus = leaveReqMap.get(dateStr);
-      if (lrStatus === "approved" || (row && row.status === "Leave")) {
-        leave++;
-        days.push({ date: dateStr, status: "leave", note: "Leave approved" });
-      } else if (lrStatus === "pending") {
-        days.push({ date: dateStr, status: "pending_leave" });
-      } else {
-        days.push({ date: dateStr, status: "future" });
-      }
-      continue;
-    }
-
     // Student punched in (self-service)
     if (row && row.punch_in) {
       const isOpen = row.punch_out === null && dateStr === todayStr;
@@ -174,14 +197,13 @@ export async function GET(req: NextRequest) {
       const dbStatus = row.status || "Present";
       const statusLower = dbStatus.toLowerCase();
       
-      if (dbStatus === "Late")             late++;
-      else if (dbStatus === "Early_Checkout") earlyCheckout++;
-      else if (dbStatus === "Half_Day")    halfDay++;
+      if (dbStatus === "Late")          late++;
+      else if (dbStatus === "Half_Day") halfDay++;
       else present++;
 
       days.push({
         date:      dateStr,
-        status:    isOpen ? "open" : (statusLower === "early_checkout" ? "early_checkout" : statusLower === "half_day" ? "half_day" : statusLower),
+        status:    isOpen ? "open" : (statusLower === "half_day" ? "half_day" : statusLower),
         punchIn:   row.punch_in,
         punchOut:  row.punch_out ?? null,
         duration:  duration(row.punch_in, row.punch_out),
@@ -196,8 +218,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Percentage calculation
-  const workDays = present + late + earlyCheckout + halfDay + absent + leave;
-  const presentScore = present + late + earlyCheckout + (halfDay * 0.5);
+  const workDays = present + late + halfDay + absent + leave;
+  const presentScore = present + late + (halfDay * 0.5);
   const percentage = workDays > 0 ? Math.round((presentScore / workDays) * 100) : 0;
 
   // Count pending leave requests for this month
@@ -208,7 +230,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       days,
-      summary: { present, absent, leave, holiday, late, earlyCheckout, halfDay, pendingLeave, percentage },
+      summary: { present, absent, leave, holiday, late, halfDay, pendingLeave, percentage },
+      startedAt,
     });
   } catch (error: any) {
     console.error("GET /api/student/attendance/history error:", error);

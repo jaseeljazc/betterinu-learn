@@ -148,6 +148,7 @@ export function AdminSidebar({
                     ? [
                         { href: "/admin/students/attendance", label: "Attendance", exact: true },
                         { href: "/admin/students/attendance/leave-requests", label: "Leave Requests" },
+                        { href: "/admin/students/fines", label: "Fines" },
                       ]
                     : []),
                 ],
@@ -213,6 +214,7 @@ export function AdminSidebar({
           subItems: [
             { href: "/admin/settings/trusted-ips", label: "Trusted IPs" },
             { href: "/admin/settings/student-attendance", label: "Student Attendance" },
+            { href: "/admin/settings/leave-fines", label: "Leave Fine Rules" },
           ],
         } satisfies NavItem,
         ...(isSuperAdmin

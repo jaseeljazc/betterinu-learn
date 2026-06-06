@@ -5,26 +5,24 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import type { StudentAttendanceRecord } from "./student-attendance-view";
 
-const STATUSES = ["Present", "Late", "Early_Checkout", "Half_Day", "Absent", "Leave", "Holiday"] as const;
+const STATUSES = ["Present", "Late", "Half_Day", "Absent", "Leave", "Holiday"] as const;
 type Status = typeof STATUSES[number];
 
 const STATUS_STYLE: Record<Status, string> = {
-  Present:        "border-green-500 bg-green-500 text-white",
-  Late:           "border-amber-500 bg-amber-500 text-white",
-  Early_Checkout: "border-orange-500 bg-orange-500 text-white",
-  Half_Day:       "border-blue-500 bg-blue-500 text-white",
-  Absent:         "border-red-500 bg-red-500 text-white",
-  Leave:          "border-amber-500 bg-amber-500 text-white",
-  Holiday:        "border-purple-500 bg-purple-500 text-white",
+  Present:  "border-green-500 bg-green-500 text-white",
+  Late:     "border-amber-500 bg-amber-500 text-white",
+  Half_Day: "border-blue-500 bg-blue-500 text-white",
+  Absent:   "border-red-500 bg-red-500 text-white",
+  Leave:    "border-amber-500 bg-amber-500 text-white",
+  Holiday:  "border-purple-500 bg-purple-500 text-white",
 };
 const STATUS_INACTIVE: Record<Status, string> = {
-  Present:        "border-green-200 text-green-700 hover:bg-green-50",
-  Late:           "border-amber-200 text-amber-700 hover:bg-amber-50",
-  Early_Checkout: "border-orange-200 text-orange-600 hover:bg-orange-50",
-  Half_Day:       "border-blue-200 text-blue-700 hover:bg-blue-50",
-  Absent:         "border-red-200 text-red-600 hover:bg-red-50",
-  Leave:          "border-amber-200 text-amber-700 hover:bg-amber-50",
-  Holiday:        "border-purple-200 text-purple-700 hover:bg-purple-50",
+  Present:  "border-green-200 text-green-700 hover:bg-green-50",
+  Late:     "border-amber-200 text-amber-700 hover:bg-amber-50",
+  Half_Day: "border-blue-200 text-blue-700 hover:bg-blue-50",
+  Absent:   "border-red-200 text-red-600 hover:bg-red-50",
+  Leave:    "border-amber-200 text-amber-700 hover:bg-amber-50",
+  Holiday:  "border-purple-200 text-purple-700 hover:bg-purple-50",
 };
 
 interface Props {

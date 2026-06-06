@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, AlertCircle } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
@@ -41,6 +42,16 @@ export function StudentSidebar({
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
 
   const assignTaskMutation = useAssignTask(studentId)
+
+  // Fetch pending fines
+  const { data: fines = [] } = useQuery({
+    queryKey: ["student-fines", studentId, "pending"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/student-fines?student_id=${studentId}&status=pending`)
+      if (!res.ok) throw new Error("Failed to fetch fines")
+      return res.json()
+    },
+  })
 
   const unassigned = allCourses.filter(
     (c) => !assigned.some((a) => a.course_id === c.id),
@@ -143,6 +154,32 @@ export function StudentSidebar({
             )}
           </div>
         </>
+      )}
+
+      {/* ── Pending Fines card ────────────────────────────────────────── */}
+      {fines.length > 0 && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="size-4 text-amber-600" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800">
+              Pending Fines
+            </p>
+          </div>
+          <div className="space-y-2">
+            {fines.map((fine: any) => (
+              <div key={fine.id} className="flex justify-between py-1.5 border-b border-amber-200 last:border-0">
+                <span className="text-xs text-amber-900">{fine.period_label}</span>
+                <span className="text-sm font-bold text-amber-700">₹{fine.fine_amount}</span>
+              </div>
+            ))}
+            <div className="flex justify-between pt-2 border-t-2 border-amber-300">
+              <span className="text-xs font-bold text-amber-900">Total Pending</span>
+              <span className="text-base font-bold text-amber-700">
+                ₹{fines.reduce((sum: number, f: any) => sum + f.fine_amount, 0)}
+              </span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Quick stats card ──────────────────────────────────────────── */}

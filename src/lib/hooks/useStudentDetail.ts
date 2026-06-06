@@ -208,14 +208,21 @@ export function useReviewSubmission(studentId: string) {
       submissionId,
       action,
       feedback,
+      isStandalone,
+      marks_obtained,
     }: {
       submissionId: string
       action: "approve" | "reject"
       feedback: string
-    }) => reviewSubmission(submissionId, action, feedback),
+      isStandalone?: boolean
+      marks_obtained?: number | null
+    }) => reviewSubmission(submissionId, action, feedback, isStandalone, marks_obtained),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: studentKeys.submissions(studentId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: studentKeys.standaloneSubs(studentId),
       })
       queryClient.invalidateQueries({
         queryKey: studentKeys.detail(studentId),

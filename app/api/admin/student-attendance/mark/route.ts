@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
-import { getStudentAttendanceSettings } from "@/lib/app-settings";
+import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
+import { processAbsentDay } from "@/lib/attendance-fines";
 
 /**
  * POST /api/admin/student-attendance/mark
@@ -13,7 +14,7 @@ import { getStudentAttendanceSettings } from "@/lib/app-settings";
  * Removes an admin override (row must have marked_by set).
  */
 
-const VALID_STATUSES = ["Present", "Late", "Early_Checkout", "Half_Day", "Absent", "Leave", "Holiday"] as const;
+const VALID_STATUSES = ["Present", "Late", "Half_Day", "Absent", "Leave", "Holiday"] as const;
 
 export async function POST(req: NextRequest) {
   const session = await resolveSession(req);
@@ -75,7 +76,29 @@ export async function POST(req: NextRequest) {
       RETURNING id
     `;
 
-    return NextResponse.json({ ok: true, id: rows[0].id }, { status: 201 });
+    const attendanceId = rows[0].id as string;
+
+    if (status === "Absent") {
+      // Generate absent fine if applicable
+      const [attSettings, fineSettings] = await Promise.all([
+        getStudentAttendanceSettings(),
+        getStudentLeaveFineSettings(),
+      ]);
+      await processAbsentDay(studentId, attendanceId, date, fineSettings, attSettings).catch((e) =>
+        console.error("processAbsentDay failed:", e)
+      );
+    } else {
+      // Status changed away from Absent — waive any pending absent fine for this attendance row
+      await sql`
+        UPDATE student_leave_fines
+        SET status = 'waived', waive_reason = 'Attendance status changed by admin', updated_at = NOW()
+        WHERE attendance_id = ${attendanceId}
+          AND fine_type = 'absent'
+          AND status = 'pending'
+      `.catch((e) => console.error("waive absent fine failed:", e));
+    }
+
+    return NextResponse.json({ ok: true, id: attendanceId }, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/admin/student-attendance/mark:", err);
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
