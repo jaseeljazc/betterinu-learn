@@ -225,8 +225,8 @@ export async function GET(req: NextRequest) {
 
   // Count pending leave requests for this month
   let pendingLeave = 0;
-  for (const status of leaveReqMap.values()) {
-    if (status === "pending") pendingLeave++;
+  for (const req of leaveReqMap.values()) {
+    if (req.status === "pending") pendingLeave++;
   }
 
     return NextResponse.json({

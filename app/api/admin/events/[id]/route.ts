@@ -4,13 +4,14 @@ import { sql } from "@/lib/db";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await resolveSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   try {
     const { title, description, date, time, location } = await req.json();
+    const params = await context.params;
     const { id } = params;
 
     const rows = await sql`
@@ -38,12 +39,13 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await resolveSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   try {
+    const params = await context.params;
     const { id } = params;
 
     const rows = await sql`

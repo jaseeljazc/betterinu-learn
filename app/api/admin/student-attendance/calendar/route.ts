@@ -213,8 +213,8 @@ export async function GET(req: NextRequest) {
     const percentage   = workDays > 0 ? Math.round((presentScore / workDays) * 100) : 0;
 
     let pendingLeave = 0;
-    for (const s of leaveReqMap.values()) {
-      if (s === "pending") pendingLeave++;
+    for (const req of leaveReqMap.values()) {
+      if (req.status === "pending") pendingLeave++;
     }
 
     return NextResponse.json({

@@ -290,7 +290,7 @@ export default function StudentAttendanceCalendarPage() {
 
                     // Check if day is past AND before start date (future dates before start are normal)
                     const today = `${year}-${String(month).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
-                    const isBeforeStart = data.startedAt && day.date < data.startedAt && day.date < today;
+                    const isBeforeStart = Boolean(data.startedAt && day.date < data.startedAt && day.date < today);
                     const isStartDay = data.startedAt && day.date === data.startedAt;
 
                     // Color schemes based on status

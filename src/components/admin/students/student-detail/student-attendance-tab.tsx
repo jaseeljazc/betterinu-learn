@@ -258,7 +258,7 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                   const dayNum    = parseInt(day.date.split("-")[2], 10);
                   const isSelected = selectedDay?.date === day.date;
                   const today = `${year}-${String(month).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
-                  const isBeforeStart = data.startedAt && day.date < data.startedAt && day.date < today;
+                  const isBeforeStart = Boolean(data.startedAt && day.date < data.startedAt && day.date < today);
                   const isStartDay = data.startedAt && day.date === data.startedAt;
                   const cls       = isBeforeStart 
                     ? "bg-slate-50 border-slate-200 text-slate-400 opacity-50 cursor-not-allowed"
