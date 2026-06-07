@@ -12,7 +12,7 @@ type StudentRow = {
   email: string;
   status: "active" | "inactive" | "pending";
   created_at: string;
-  course_count: number;
+  enrolled_courses: string[];
   temp_password?: string;
 };
 
@@ -28,6 +28,11 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export function StudentsTable({ students, canCreate }: StudentsTableProps) {
+  // Derive unique sorted course names for the filter dropdown
+  const uniqueCourses = Array.from(
+    new Set(students.flatMap((s) => s.enrolled_courses ?? []))
+  ).sort();
+
   const columns: ColumnDef<StudentRow>[] = [
     {
       accessorKey: "name",
@@ -48,7 +53,7 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
       cell: ({ getValue }) => {
         const val = getValue() as string;
         return val ? (
-          <code className="font-mono text-xs  px-1.5 py-0.5 rounded border border-default select-all">
+          <code className="font-mono text-xs px-1.5 py-0.5 rounded border border-default select-all">
             {val}
           </code>
         ) : (
@@ -57,14 +62,31 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
       },
     },
     {
-      accessorKey: "course_count",
-      header: "Courses",
-      size: 100,
-      cell: ({ getValue }) => (
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
-          {getValue() as number}
-        </span>
-      ),
+      accessorKey: "enrolled_courses",
+      header: "Enrolled Courses",
+      size: 260,
+      enableSorting: false,
+      // arrIncludes: built-in TanStack filter that checks if the selected value
+      // is present inside the array stored in this cell
+      filterFn: "arrIncludes",
+      cell: ({ getValue }) => {
+        const courses = (getValue() as string[]) ?? [];
+        if (courses.length === 0) {
+          return <span className="text-muted italic text-[11px]">None</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {courses.map((title) => (
+              <span
+                key={title}
+                className="inline-flex items-center px-2 py-0.5 text-[14px] font-medium text-muted-foreground"
+              >
+                {title}
+              </span>
+            ))}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -127,6 +149,11 @@ export function StudentsTable({ students, canCreate }: StudentsTableProps) {
             { value: "active", label: "Active" },
             { value: "inactive", label: "Inactive" },
           ],
+        },
+        {
+          column: "enrolled_courses",
+          label: "Course",
+          options: uniqueCourses.map((title) => ({ value: title, label: title })),
         },
       ]}
       emptyMessage="No students yet."

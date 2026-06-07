@@ -9,9 +9,13 @@ async function getStudents() {
   return sql`
     SELECT
       s.id, s.name, s.email, s.created_at, s.status, s.temp_password,
-      COUNT(sc.id)::int AS course_count
+      COALESCE(
+        ARRAY_AGG(c.title ORDER BY c.title) FILTER (WHERE c.title IS NOT NULL),
+        ARRAY[]::text[]
+      ) AS enrolled_courses
     FROM students s
     LEFT JOIN student_courses sc ON sc.student_id = s.id
+    LEFT JOIN courses c ON c.id = sc.course_id
     GROUP BY s.id, s.name, s.email, s.created_at, s.status, s.temp_password
     ORDER BY s.created_at DESC
   `;
