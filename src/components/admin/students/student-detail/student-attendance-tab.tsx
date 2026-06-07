@@ -290,10 +290,7 @@ export function StudentAttendanceTab({ studentId, studentName, canMark }: Props)
                       {day.note && day.status !== "future" && (
                         <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-amber-400" />
                       )}
-                      {/* Start day marker — top left */}
-                      {isStartDay && (
-                        <span className="absolute top-0 left-0 text-[10px]">🎯</span>
-                      )}
+
                       {day.status !== "future" && bulletColor(day.status) && (
                         <span className={cn("absolute bottom-0.5 size-1 rounded-full", bulletColor(day.status))} />
                       )}

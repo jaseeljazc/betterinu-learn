@@ -439,7 +439,7 @@ export function OverdueDashboard() {
           loading={isLoading}
           emptyMessage="No overdue installments"
           emptyIcon={Coins}
-          caption={`${sorted.length} overdue installment${sorted.length !== 1 ? "s" : ""} · auto-refreshes every 5 min`}
+          // caption={`${sorted.length} overdue installment${sorted.length !== 1 ? "s" : ""} · auto-refreshes every 5 min`}
         />
       )}
 

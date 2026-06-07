@@ -351,7 +351,7 @@ export default function StudentAttendanceCalendarPage() {
                         )}
                         {/* Start day marker — top left */}
                         {isStartDay && (
-                          <span className="absolute top-0.5 left-0.5 text-xs">🎯</span>
+                          <span className="absolute top-0.5 left-0.5 text-xs"></span>
                         )}
                         {/* Status bullet indicator — bottom center */}
                         {day.status !== "future" && (
