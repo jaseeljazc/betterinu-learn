@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { toast } from "sonner";
 import {
@@ -281,25 +282,61 @@ function ReviewModal({
 /* ─────────────────────────────────────────────────────── */
 
 export default function LeaveRequestsAdminPage() {
-  const [requests, setRequests]       = useState<LeaveRequest[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected">("");
   const [modal, setModal] = useState<{
     request: LeaveRequest;
     action: "approved" | "rejected";
     summary: StudentSummary | null;
   } | null>(null);
+  
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  const fetchRequests = useCallback(() => {
-    setLoading(true);
-    const qs = statusFilter ? `?status=${statusFilter}` : "";
-    fetch(`/api/admin/student-attendance/leave-requests${qs}`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => setRequests(d.requests ?? []))
-      .finally(() => setLoading(false));
-  }, [statusFilter]);
+  // Infinite query
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["leave-requests", statusFilter],
+    queryFn: async ({ pageParam }) => {
+      const qs = new URLSearchParams();
+      if (statusFilter) qs.set("status", statusFilter);
+      if (pageParam) qs.set("cursor", pageParam);
+      qs.set("limit", "20");
+      
+      const res = await fetch(`/api/admin/student-attendance/leave-requests?${qs}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
+  });
 
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const requests = data?.pages.flatMap((page) => page.requests) ?? [];
 
   async function openModal(request: LeaveRequest, action: "approved" | "rejected") {
     // Fetch student summary for this month
@@ -378,7 +415,7 @@ export default function LeaveRequestsAdminPage() {
 
         {/* Table */}
         <div className="rounded-md border border-default bg-white overflow-hidden">
-          {loading ? (
+          {isLoading ? (
             <div className="p-10 text-center text-muted text-sm animate-pulse">
               Loading leave requests…
             </div>
@@ -446,6 +483,13 @@ export default function LeaveRequestsAdminPage() {
                   )}
                 </div>
               ))}
+              
+              {/* Infinite scroll trigger */}
+              <div ref={observerTarget} className="h-10 flex items-center justify-center">
+                {isFetchingNextPage && (
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -459,7 +503,7 @@ export default function LeaveRequestsAdminPage() {
           onClose={() => setModal(null)}
           onDone={() => {
             setModal(null);
-            fetchRequests();
+            queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
           }}
         />
       )}
