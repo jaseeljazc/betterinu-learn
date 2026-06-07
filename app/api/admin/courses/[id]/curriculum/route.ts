@@ -23,6 +23,8 @@ export async function GET(
 
   const { id } = await params
 
+  console.log("🔍 GET curriculum - Querying for course_id:", id)
+
   const weeks = await sql`
     SELECT
       id,
@@ -36,7 +38,9 @@ export async function GET(
     ORDER BY position ASC
   `
 
-  return NextResponse.json({ weeks })
+  console.log("📦 Found weeks:", weeks.length, "- IDs:", weeks.map(w => w.id))
+
+  return NextResponse.json({ weeks, debug: { queriedCourseId: id, foundCount: weeks.length } })
 }
 
 // ── POST ──────────────────────────────────────────────────────────────────────

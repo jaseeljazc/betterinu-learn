@@ -164,6 +164,8 @@ export default function CourseCurriculumPage() {
   const [collapsedModules, setCollapsedModules] = useState<
     Record<string, boolean>
   >({});
+  const [apiWeeks, setApiWeeks] = useState<any[]>([]);
+  const [loadingWeeks, setLoadingWeeks] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/courses", { credentials: "include" })
@@ -188,6 +190,25 @@ export default function CourseCurriculumPage() {
           });
       })
       .catch((err) => console.error(err));
+    
+    // Load full weeks from course_weeks table for JSON editor
+    setLoadingWeeks(true);
+    fetch(`/api/admin/courses/${id}/curriculum`, { credentials: "include" })
+      .then((r) => r.json())
+      .then(async (data) => {
+        const weekStubs = data.weeks ?? [];
+        // Fetch full data for each week
+        const fullWeeks = await Promise.all(
+          weekStubs.map(async (stub: any) => {
+            const res = await fetch(`/api/admin/courses/${id}/curriculum/${stub.id}`, { credentials: "include" });
+            const weekData = await res.json();
+            return weekData.week || stub;
+          })
+        );
+        setApiWeeks(fullWeeks);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoadingWeeks(false));
   }, [id, router]);
 
   function update(field: keyof CourseRow | "curriculum", value: unknown) {
@@ -478,18 +499,31 @@ export default function CourseCurriculumPage() {
 
               {jsonMode === "edit-weeks" ? (
                 <div className="space-y-4">
-                  {(form.curriculum ?? []).map((week: any, wIdx: number) => (
+                  {apiWeeks.map((week: any, wIdx: number) => (
                     <WeekJsonEditor
                       key={week.id || wIdx}
                       week={week}
-                      onSave={(parsed) => {
-                        const next = [...form.curriculum!];
-                        next[wIdx] = parsed;
-                        update("curriculum", next);
+                      onSave={async (parsed) => {
+                        // Save to course_weeks table
+                        try {
+                          await fetch(`/api/admin/courses/${id}/curriculum/${week.id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify(parsed),
+                          });
+                          toast.success("Week updated successfully");
+                          // Refresh weeks list
+                          const res = await fetch(`/api/admin/courses/${id}/curriculum`, { credentials: "include" });
+                          const data = await res.json();
+                          setApiWeeks(data.weeks ?? []);
+                        } catch (err) {
+                          toast.error("Failed to save week");
+                        }
                       }}
                     />
                   ))}
-                  {(form.curriculum ?? []).length === 0 && (
+                  {apiWeeks.length === 0 && (
                     <p className="text-sm text-muted text-center py-8">
                       No weeks to edit. Add a week first.
                     </p>
