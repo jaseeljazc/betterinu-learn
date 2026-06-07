@@ -33,17 +33,18 @@ async function checkAndGenerateFine(
 
   const count = Number(countResult[0].count);
   if (count > settings.free_leaves_per_period) {
+    // Store the actual DATE in period_label for display consistency
     await sql`
       INSERT INTO student_leave_fines
-        (student_id, leave_request_id, period_label, fine_amount, status, fine_type)
+        (student_id, leave_request_id, fine_type, period_label, fine_amount, status)
       VALUES
-        (${studentId}, ${leaveRequestId}, ${periodLabel}, ${settings.fine_amount}, 'pending', 'leave')
-      ON CONFLICT (leave_request_id) WHERE fine_type = 'leave' AND leave_request_id IS NOT NULL DO NOTHING
+        (${studentId}, ${leaveRequestId}, 'leave', ${approvedDate}, ${settings.fine_amount}, 'pending')
+      ON CONFLICT (leave_request_id) DO NOTHING
     `;
     return {
       fineGenerated: true,
       fineAmount: settings.fine_amount,
-      periodLabel,
+      periodLabel: approvedDate,  // Return date instead of period for display
     };
   }
   return null;

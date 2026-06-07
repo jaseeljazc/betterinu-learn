@@ -4,7 +4,8 @@ import { sql } from "@/lib/db";
 
 /**
  * GET /api/admin/student-attendance/leave-requests
- * Lists leave requests. Optional: ?status=pending|approved|rejected&studentId=uuid
+ * Lists leave requests with pagination support
+ * Query params: ?status=pending|approved|rejected&studentId=uuid&limit=20&cursor=lastCreatedAt
  */
 export async function GET(req: NextRequest) {
   const token =
@@ -15,8 +16,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const statusFilter    = searchParams.get("status");     // pending | approved | rejected
+  const statusFilter    = searchParams.get("status");
   const studentIdFilter = searchParams.get("studentId");
+  const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
+  const cursor = searchParams.get("cursor"); // ISO timestamp
 
   try {
     const rows = await sql`
@@ -39,10 +42,16 @@ export async function GET(req: NextRequest) {
       WHERE 1=1
         ${statusFilter    ? sql`AND lr.status = ${statusFilter}` : sql``}
         ${studentIdFilter ? sql`AND lr.student_id = ${studentIdFilter}` : sql``}
+        ${cursor ? sql`AND lr.created_at < ${cursor}::timestamptz` : sql``}
       ORDER BY lr.created_at DESC
-      LIMIT 200
+      LIMIT ${limit + 1}
     `;
-    return NextResponse.json({ requests: rows });
+
+    const hasMore = rows.length > limit;
+    const requests = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? requests[requests.length - 1].created_at : null;
+
+    return NextResponse.json({ requests, nextCursor, hasMore });
   } catch (err: any) {
     console.error("GET /api/admin/student-attendance/leave-requests:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { toast } from "sonner";
 import { DollarSign, Check, X, Loader2, Search } from "lucide-react";
@@ -33,33 +34,56 @@ function fmtDate(dateStr: string) {
 }
 
 export default function StudentFinesPage() {
-  const [fines, setFines] = useState<Fine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [waiveModalId, setWaiveModalId] = useState<string | null>(null);
   const [waiveReason, setWaiveReason] = useState("");
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  const fetchFines = async () => {
-    setLoading(true);
-    try {
+  // Infinite query
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["student-fines", statusFilter],
+    queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
+      if (pageParam) params.set("cursor", pageParam);
+      params.set("limit", "10");
+      
       const res = await fetch(`/api/admin/student-fines?${params}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch fines");
-      const data = await res.json();
-      setFines(data.fines ?? []);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.json();
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
+  });
 
+  // Intersection observer for infinite scroll
   useEffect(() => {
-    fetchFines();
-  }, [statusFilter]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const fines = data?.pages.flatMap((page) => page.fines) ?? [];
 
   const handleMarkPaid = async (id: string) => {
     setActioningId(id);
@@ -72,7 +96,7 @@ export default function StudentFinesPage() {
       });
       if (!res.ok) throw new Error("Failed to mark as paid");
       toast.success("Fine marked as paid");
-      fetchFines();
+      queryClient.invalidateQueries({ queryKey: ["student-fines"] });
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -93,7 +117,7 @@ export default function StudentFinesPage() {
       toast.success("Fine waived");
       setWaiveModalId(null);
       setWaiveReason("");
-      fetchFines();
+      queryClient.invalidateQueries({ queryKey: ["student-fines"] });
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -146,7 +170,7 @@ export default function StudentFinesPage() {
 
         {/* Table */}
         <div className="bg-white border border-default rounded-xl shadow-sm overflow-hidden">
-          {loading ? (
+          {isLoading ? (
             <div className="p-8 text-center">
               <Loader2 className="size-6 animate-spin mx-auto text-primary" />
             </div>
@@ -255,6 +279,16 @@ export default function StudentFinesPage() {
                       </tr>
                     );
                   })}
+                  {/* Infinite scroll trigger */}
+                  <tr>
+                    <td colSpan={6} className="p-0">
+                      <div ref={observerTarget} className="h-10 flex items-center justify-center">
+                        {isFetchingNextPage && (
+                          <Loader2 className="size-5 animate-spin text-primary" />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

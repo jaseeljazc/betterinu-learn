@@ -1,6 +1,79 @@
 import { sql } from "@/lib/db";
 import type { StudentLeaveFineSettings, StudentAttendanceSettings } from "@/lib/app-settings";
 
+/**
+ * Called when an admin directly marks a student's attendance as "Leave"
+ * (without going through the leave-request approval flow).
+ * Checks fine settings and generates a pending fine if the student has
+ * exceeded their free leave quota for the period.
+ */
+export async function processLeaveDay(
+  studentId: string,
+  attendanceId: string,
+  date: string, // "YYYY-MM-DD"
+  fineSettings: StudentLeaveFineSettings
+) {
+  // Master switch — skip if leave fines are disabled
+  if (!fineSettings.enabled) return;
+
+  const [year, month] = date.split("-");
+  const periodLabel =
+    fineSettings.fine_period === "monthly" ? `${year}-${month}` : year;
+
+  // Count approved leave-request leaves for this student in this period
+  const countResult =
+    fineSettings.fine_period === "monthly"
+      ? await sql`
+          SELECT COUNT(*) AS count FROM student_leave_requests
+          WHERE student_id = ${studentId}
+            AND status = 'approved'
+            AND TO_CHAR(date, 'YYYY-MM') = ${periodLabel}
+        `
+      : await sql`
+          SELECT COUNT(*) AS count FROM student_leave_requests
+          WHERE student_id = ${studentId}
+            AND status = 'approved'
+            AND TO_CHAR(date, 'YYYY') = ${periodLabel}
+        `;
+
+  const count = Number(countResult[0].count);
+
+  // Count admin-direct Leave marks in this period, EXCLUDING the current row
+  // (the INSERT already saved this row, so we subtract it to avoid off-by-one)
+  const directLeaveResult =
+    fineSettings.fine_period === "monthly"
+      ? await sql`
+          SELECT COUNT(*) AS count FROM student_attendance
+          WHERE student_id = ${studentId}
+            AND status = 'Leave'
+            AND id != ${attendanceId}
+            AND TO_CHAR(date, 'YYYY-MM') = ${periodLabel}
+        `
+      : await sql`
+          SELECT COUNT(*) AS count FROM student_attendance
+          WHERE student_id = ${studentId}
+            AND status = 'Leave'
+            AND id != ${attendanceId}
+            AND TO_CHAR(date, 'YYYY') = ${periodLabel}
+        `;
+
+  // Total = prior approved leaves + prior direct Leave marks + this new Leave (counts as 1)
+  const directLeaveCount = Number(directLeaveResult[0].count);
+  const totalLeaves = count + directLeaveCount + 1;
+
+  if (totalLeaves > fineSettings.free_leaves_per_period) {
+    // Fine triggered — insert a pending fine linked to the attendance row
+    // Store the actual DATE in period_label for display (not the period)
+    await sql`
+      INSERT INTO student_leave_fines
+        (student_id, attendance_id, fine_type, period_label, fine_amount, status)
+      VALUES
+        (${studentId}, ${attendanceId}, 'leave', ${date}, ${fineSettings.fine_amount}, 'pending')
+      ON CONFLICT (attendance_id) DO NOTHING
+    `;
+  }
+}
+
 export async function processAbsentDay(
   studentId: string,
   attendanceId: string,
@@ -12,13 +85,15 @@ export async function processAbsentDay(
 
   if (fineSettings.absent_fine_rule === "use_balance") {
     const [year, month] = date.split("-");
+    // Correctly use the period format (monthly OR yearly) for the quota check
     const periodLabel = fineSettings.fine_period === "monthly" ? `${year}-${month}` : year;
+    const periodFormat = fineSettings.fine_period === "monthly" ? "YYYY-MM" : "YYYY";
 
     const usedResult = await sql`
       SELECT COUNT(*) AS count FROM student_leave_requests
       WHERE student_id = ${studentId}
         AND status = 'approved'
-        AND TO_CHAR(date, 'YYYY-MM') = ${periodLabel}
+        AND TO_CHAR(date, ${periodFormat}) = ${periodLabel}
     `;
     const used = Number(usedResult[0].count);
 

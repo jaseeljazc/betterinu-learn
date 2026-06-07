@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
 import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
-import { processAbsentDay } from "@/lib/attendance-fines";
+import { processAbsentDay, processLeaveDay, runCatchUp } from "@/lib/attendance-fines";
 
 /**
  * POST /api/admin/student-attendance/mark
@@ -71,6 +71,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Get settings first
+    const [attSettings, fineSettings] = await Promise.all([
+      getStudentAttendanceSettings(),
+      getStudentLeaveFineSettings(),
+    ]);
+
+    // Get student's started_at date for catch-up
+    const studentRows = await sql`
+      SELECT started_at::text FROM students WHERE id = ${studentId} LIMIT 1
+    `;
+    const startedAt = studentRows.length > 0 ? (studentRows[0].started_at as string | null) : null;
+
+    // Run catch-up to auto-mark any missing past days as Absent (with fines)
+    await runCatchUp(studentId, attSettings, fineSettings, startedAt).catch((e) =>
+      console.error("runCatchUp failed:", e)
+    );
+
     const rows = await sql`
       INSERT INTO student_attendance (student_id, date, status, note, marked_by, holiday_type)
       VALUES (${studentId}, ${date}::date, ${status}, ${note ?? null}, ${session.adminId}, ${resolvedHolidayType})
@@ -88,15 +105,23 @@ export async function POST(req: NextRequest) {
 
     if (status === "Absent") {
       // Generate absent fine if applicable
-      const [attSettings, fineSettings] = await Promise.all([
-        getStudentAttendanceSettings(),
-        getStudentLeaveFineSettings(),
-      ]);
       await processAbsentDay(studentId, attendanceId, date, fineSettings, attSettings).catch((e) =>
         console.error("processAbsentDay failed:", e)
       );
-    } else {
-      // Status changed away from Absent — waive any pending absent fine for this attendance row
+      // Waive any pending Leave fine for this row (status changed from Leave → Absent)
+      await sql`
+        UPDATE student_leave_fines
+        SET status = 'waived', waive_reason = 'Attendance status changed by admin', updated_at = NOW()
+        WHERE attendance_id = ${attendanceId}
+          AND fine_type = 'leave'
+          AND status = 'pending'
+      `.catch((e) => console.error("waive leave fine failed:", e));
+    } else if (status === "Leave") {
+      // Generate leave fine if student has exceeded their free leave quota
+      await processLeaveDay(studentId, attendanceId, date, fineSettings).catch((e) =>
+        console.error("processLeaveDay failed:", e)
+      );
+      // Waive any pending absent fine for this row (status changed from Absent → Leave)
       await sql`
         UPDATE student_leave_fines
         SET status = 'waived', waive_reason = 'Attendance status changed by admin', updated_at = NOW()
@@ -104,6 +129,14 @@ export async function POST(req: NextRequest) {
           AND fine_type = 'absent'
           AND status = 'pending'
       `.catch((e) => console.error("waive absent fine failed:", e));
+    } else {
+      // Status changed away from Absent/Leave — waive any pending fines for this attendance row
+      await sql`
+        UPDATE student_leave_fines
+        SET status = 'waived', waive_reason = 'Attendance status changed by admin', updated_at = NOW()
+        WHERE attendance_id = ${attendanceId}
+          AND status = 'pending'
+      `.catch((e) => console.error("waive fine failed:", e));
     }
 
     return NextResponse.json({ ok: true, id: attendanceId }, { status: 201 });

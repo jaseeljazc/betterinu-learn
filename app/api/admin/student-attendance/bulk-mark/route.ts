@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveSession } from "@/lib/admin-rbac";
 import { sql } from "@/lib/db";
 import { getStudentAttendanceSettings, getStudentLeaveFineSettings } from "@/lib/app-settings";
-import { processAbsentDay } from "@/lib/attendance-fines";
+import { processAbsentDay, processLeaveDay } from "@/lib/attendance-fines";
 
 const VALID_STATUSES = ["Present", "Late", "Half_Day", "Absent", "Leave", "Holiday", "CLEAR"] as const;
 
@@ -93,12 +93,31 @@ export async function POST(req: NextRequest) {
 
       if (status === "Absent") {
         await processAbsentDay(studentId, attendanceId, date, fineSettings, markSettings);
-      } else {
+        // Waive any pending Leave fine for this row
+        await sql`
+          UPDATE student_leave_fines
+          SET status = 'waived', waive_reason = 'Attendance status changed by admin (bulk)', updated_at = NOW()
+          WHERE attendance_id = ${attendanceId}
+            AND fine_type = 'leave'
+            AND status = 'pending'
+        `;
+      } else if (status === "Leave") {
+        // Generate leave fine if student has exceeded their free leave quota
+        await processLeaveDay(studentId, attendanceId, date, fineSettings);
+        // Waive any pending absent fine for this row
         await sql`
           UPDATE student_leave_fines
           SET status = 'waived', waive_reason = 'Attendance status changed by admin (bulk)', updated_at = NOW()
           WHERE attendance_id = ${attendanceId}
             AND fine_type = 'absent'
+            AND status = 'pending'
+        `;
+      } else {
+        // Status changed away from Absent/Leave — waive any pending fines
+        await sql`
+          UPDATE student_leave_fines
+          SET status = 'waived', waive_reason = 'Attendance status changed by admin (bulk)', updated_at = NOW()
+          WHERE attendance_id = ${attendanceId}
             AND status = 'pending'
         `;
       }
