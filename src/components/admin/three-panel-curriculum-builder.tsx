@@ -1069,10 +1069,16 @@ export function ThreePanelCurriculumBuilder({
     setStubsLoading(true);
     fetch(`/api/admin/courses/${courseId}/curriculum`, { credentials: "include" })
       .then((r) => r.json())
-      .then((data) => setWeekStubs(data.weeks ?? []))
+      .then((data) => {
+        console.log("🎯 Three-panel builder received weeks:", data.weeks);
+        setWeekStubs(data.weeks ?? []);
+      })
       .catch(console.error)
       .finally(() => setStubsLoading(false));
   }, [courseId, isNewMode]);
+
+  // Debug: log render state
+  console.log("🔧 Render state:", { isNewMode, stubsLoading, weekStubsCount: weekStubs.length, sidebarCollapsed });
 
   // ── Derived: active week full data from cache ─────────────────────────────
   const activeWeekData =

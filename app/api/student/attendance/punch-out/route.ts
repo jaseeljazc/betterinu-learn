@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyStudentToken, extractToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getClientIp } from "@/lib/attendance";
+import { getClientIp, checkIpTrusted, notifyAdminsUnknownIp } from "@/lib/attendance";
 import { getStudentAttendanceSettings, DEFAULT_STUDENT_ATTENDANCE_SETTINGS } from "@/lib/app-settings";
 
 export async function POST(req: NextRequest) {
@@ -73,6 +73,23 @@ export async function POST(req: NextRequest) {
       updated_at   = NOW()
     WHERE id = ${openRow[0].id as string}
   `;
+
+  // Check if punch-out IP is trusted — reuse same logic as punch-in
+  const isPunchOutTrusted = await checkIpTrusted(ip);
+  if (!isPunchOutTrusted) {
+    const studentRows = await sql`
+      SELECT name FROM students WHERE id = ${student.studentId} LIMIT 1
+    `;
+    const studentName = studentRows.length > 0
+      ? (studentRows[0].name as string)
+      : "Unknown Student";
+    notifyAdminsUnknownIp({
+      studentId: student.studentId,
+      studentName,
+      ip,
+      attendanceId: openRow[0].id as string,
+    }).catch(console.error);
+  }
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
