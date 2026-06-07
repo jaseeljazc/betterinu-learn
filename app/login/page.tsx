@@ -170,7 +170,7 @@ export default function StudentLoginPage() {
           {/* Right: Branding Image */}
           <div className="relative hidden md:block overflow-hidden border-l border-default">
             <Image
-              src="/betty-img.png"
+              src="/betty-img-main.png"
               alt="Betterinu Login Branding"
               fill
               className="object-cover"
