@@ -220,7 +220,7 @@ export function AdminSidebar({
               } satisfies NavItem,
             ]
           : []),
-        { href: "/admin/events", label: "Events", Icon: Calendar },
+        // { href: "/admin/events", label: "Events", Icon: Calendar },
         {
           href: "/admin/settings",
           label: "Settings",
