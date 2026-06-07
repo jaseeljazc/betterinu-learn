@@ -64,6 +64,7 @@ function buildCorsHeaders(origin: string | null): Record<string, string> {
 // ── Auth gate ────────────────────────────────────────────────────────────────
 
 const PUBLIC_PATHS = [
+  "/",
   "/login",
   "/admin/login",
   "/api/student/auth/verify",
