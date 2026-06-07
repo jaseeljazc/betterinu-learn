@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
   const weekIds = [...new Set(rows.map((r) => r.week_id as string).filter(Boolean))];
   const weekRows: { id: string; days: any }[] =
     weekIds.length > 0
-      ? await sql`SELECT id, days FROM course_weeks WHERE id = ANY(${weekIds})`
+      ? (await sql`SELECT id, days FROM course_weeks WHERE id = ANY(${weekIds})`) as { id: string; days: any }[]
       : [];
 
   const weekDaysMap: Record<string, any[]> = {};

@@ -45,11 +45,11 @@ export async function GET(req: NextRequest) {
   // Batch-fetch all relevant course_weeks rows
   const weekRows: { id: string; days: any }[] =
     weekIds.length > 0
-      ? await sql`
+      ? (await sql`
           SELECT id, days
           FROM course_weeks
           WHERE id = ANY(${weekIds})
-        `
+        `) as { id: string; days: any }[]
       : [];
 
   // Build lookup: weekId → days array
