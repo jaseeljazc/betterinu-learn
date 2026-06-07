@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -1899,7 +1899,7 @@ export function ThreePanelCurriculumBuilder({
                   <ClipboardList className="size-4 text-orange-600 shrink-0" />
                   <span className="text-xs font-bold text-orange-700">Student Preview — edit settings in the right panel</span>
                 </div>
-                <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm">
+                <div className="rounded-2xl border border-default bg-surface p-6 shadow-sm overflow-hidden min-w-0">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="flex size-10 items-center justify-center rounded-xl bg-orange-100">
                       <ClipboardList className="size-5 text-orange-600" />
@@ -1927,7 +1927,7 @@ export function ThreePanelCurriculumBuilder({
                     ))}
                   </div>
                   {activeModule.assignmentData?.instructions ? (
-                    <div className="prose prose-sm max-w-none text-secondary leading-relaxed" dangerouslySetInnerHTML={{ __html: activeModule.assignmentData.instructions }} />
+                    <div className="prose prose-sm max-w-none text-foreground leading-relaxed overflow-hidden break-words [&_*]:max-w-full [&_img]:h-auto" dangerouslySetInnerHTML={{ __html: activeModule.assignmentData.instructions }} />
                   ) : (
                     <p className="text-muted text-sm italic">No instructions added yet.</p>
                   )}
@@ -1944,12 +1944,40 @@ export function ThreePanelCurriculumBuilder({
                     </div>
                   )}
                   {(activeModule.assignmentData?.referenceLinks || []).length > 0 && (
-                    <div className="mt-4 space-y-1.5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted">Reference Links</p>
-                      <div className="space-y-1">
+                    <div className="mt-5 space-y-2 border-t border-default pt-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Reference Links</p>
+                      <div className="space-y-2">
                         {(activeModule.assignmentData.referenceLinks as any[]).map((l: any, i: number) => (
-                          <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                            <ExternalLink className="size-3.5 shrink-0" />{l.label || l.url}
+                          <a
+                            key={i}
+                            href={l.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex w-full items-start gap-3 rounded-sm border border-default bg-background px-3 py-3 shadow-xs transition-all hover:border-primary hover:shadow-sm"
+                          >
+                            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-teal-100 bg-teal-50">
+                              {l.url ? (
+                                <Image
+                                  src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(l.url).hostname } catch { return '' } })()}&sz=128`}
+                                  alt=""
+                                  width={48}
+                                  height={48}
+                                  unoptimized
+                                  className="size-10 object-contain"
+                                />
+                              ) : (
+                                <ExternalLink className="size-6 text-teal-600" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                                {l.label || l.url}
+                              </p>
+                              <p className="mt-1 truncate text-[10px] text-muted-foreground/80">
+                                {l.url}
+                              </p>
+                            </div>
+                            <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                           </a>
                         ))}
                       </div>

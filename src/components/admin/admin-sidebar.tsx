@@ -63,7 +63,7 @@ const FALLBACK_NAV: NavItem[] = [
     Icon: LibraryBig,
     groupItems: [
       { href: "/admin/courses",                label: "Courses" },
-      { href: "/admin/submissions",            label: "Submissions" },
+      { href: "/admin/submissions",            label: "Course Tasks" },
       { href: "/admin/standalone-assignments", label: "Standalone Tasks" },
     ],
   },
@@ -125,7 +125,7 @@ export function AdminSidebar({
       ? [{ href: "/admin/courses", label: "Courses" }]
       : []),
     ...(can("tasks", "view")
-      ? [{ href: "/admin/submissions", label: "Submissions" }]
+      ? [{ href: "/admin/submissions", label: "Course Tasks" }]
       : []),
     ...(can("tasks", "view")
       ? [{ href: "/admin/standalone-assignments", label: "Standalone Tasks" }]

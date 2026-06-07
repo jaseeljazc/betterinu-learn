@@ -48,7 +48,7 @@ function SubmissionsContent() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [acting, setActing] = useState(false);
+  const [acting, setActing] = useState<"approve" | "reject" | null>(null);
   const [actionError, setActionError] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
@@ -73,7 +73,7 @@ function SubmissionsContent() {
       setActionError("Please provide feedback before rejecting.");
       return;
     }
-    setActing(true);
+    setActing(action);
     setActionError("");
     try {
       const res = await fetch(`/api/admin/assignments/${selected.id}`, {
@@ -89,7 +89,7 @@ function SubmissionsContent() {
     } catch (e: any) {
       setActionError(e.message);
     } finally {
-      setActing(false);
+      setActing(null);
     }
   }
 
@@ -238,7 +238,7 @@ function SubmissionsContent() {
                   {/* Handle legacy (instructions) or new (description) */}
                   {(selected.assignment_data.instructions || selected.assignment_data.description) && (
                     <div
-                      className="rounded-xl border border-default bg-subtle p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed prose prose-sm max-w-none"
+                      className="rounded-xl border border-default bg-subtle p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed prose prose-sm max-w-none overflow-hidden break-words [&_*]:max-w-full [&_img]:h-auto"
                       dangerouslySetInnerHTML={{ __html: selected.assignment_data.instructions || selected.assignment_data.description }}
                     />
                   )}
@@ -270,7 +270,7 @@ function SubmissionsContent() {
               {/* Student's Answer */}
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-muted mb-2">Student's Answer</p>
-                <div className="rounded-xl border border-default bg-surface p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                <div className="rounded-xl border border-default bg-surface p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words overflow-hidden">
                   {selected.submitted_text || <span className="italic text-muted">No text provided.</span>}
                 </div>
               </div>
@@ -308,18 +308,18 @@ function SubmissionsContent() {
               <div className="flex items-center gap-3 pt-2 border-t border-default">
                 <button
                   onClick={() => handleAction("approve")}
-                  disabled={acting || selected.status === "approved"}
+                  disabled={acting !== null || selected.status === "approved"}
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-green-800 disabled:opacity-50 transition-colors"
                 >
-                  {acting ? <RoboLoader size="xs" /> : <CheckCircle2 className="size-4" />}
+                  {acting === "approve" ? <RoboLoader size="xs" /> : <CheckCircle2 className="size-4" />}
                   Approve & Unlock Next Day
                 </button>
                 <button
                   onClick={() => handleAction("reject")}
-                  disabled={acting || selected.status === "approved"}
+                  disabled={acting !== null || selected.status === "approved"}
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors"
                 >
-                  {acting ? <RoboLoader size="xs" /> : <XCircle className="size-4" />}
+                  {acting === "reject" ? <RoboLoader size="xs" /> : <XCircle className="size-4" />}
                   Reject
                 </button>
               </div>

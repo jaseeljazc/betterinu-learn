@@ -485,7 +485,7 @@ export default function CourseEditPage() {
                   min={0}
                   value={form.total_modules ?? ""}
                   onChange={(e) =>
-                    update("total_modules", Number(e.target.value))
+                    update("total_modules", e.target.value === "" ? "" : Number(e.target.value))
                   }
                   className={inputClass}
                   placeholder="e.g. 32"
